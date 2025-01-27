@@ -1,2 +1,2 @@
-# CeXA-Experimental
-Repository to contain new features developed at CeXA, before their inclusion into Kokkos
+# CExA-Experimental
+Repository to contain new features developed at CExA, before their inclusion into Kokkos
