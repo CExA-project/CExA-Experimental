@@ -14,16 +14,18 @@ namespace
 
 template<typename T, std::size_t width>
 constexpr auto init(T x) {
-    if constexpr (width == 4) {
-        if constexpr (std::is_same_v<T, float>) {
-            return __m128{x, x, x, x};
-        } else {
-            return __m256d{x, x, x, x};
-        }
-    } else if constexpr (width == 8 && std::is_same_v<T, float>) {
+    constexpr bool is_m128 = width == 4 && std::is_same_v<T, float>;
+    constexpr bool is_m256 = width == 8 && std::is_same_v<T, float>;
+    constexpr bool is_m256d = width == 4 && std::is_same_v<T, double>;
+
+    static_assert(is_m128 || is_m256 || is_m256d, "only floating point vector types are supported");
+
+    if constexpr (is_m128) {
+        return __m128{x, x, x, x};
+    } else if constexpr (is_m256d) {
+        return __m256d{x, x, x, x};
+    } else if constexpr (is_m256) {
         return __m256{x, x, x, x, x, x, x, x};
-    } else {
-        static_assert(false, "only floating point vector types are supported");
     }
 }
 
