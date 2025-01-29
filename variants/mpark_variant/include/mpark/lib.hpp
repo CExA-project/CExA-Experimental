@@ -12,6 +12,7 @@
 #include <functional>
 #include <type_traits>
 #include <utility>
+#include <Kokkos_Core.hpp>
 
 #include "config.hpp"
 
@@ -26,7 +27,7 @@ namespace mpark {
     inline namespace cpp14 {
       template <typename T, std::size_t N>
       struct array {
-        constexpr const T &operator[](std::size_t index) const {
+        KOKKOS_FUNCTION constexpr const T &operator[](std::size_t index) const {
           return data[index];
         }
 
@@ -56,19 +57,19 @@ namespace mpark {
           typename std::remove_cv<remove_reference_t<T>>::type;
 
       template <typename T>
-      inline constexpr T &&forward(remove_reference_t<T> &t) noexcept {
+      KOKKOS_INLINE_FUNCTION constexpr T &&forward(remove_reference_t<T> &t) noexcept {
         return static_cast<T &&>(t);
       }
 
       template <typename T>
-      inline constexpr T &&forward(remove_reference_t<T> &&t) noexcept {
+      KOKKOS_INLINE_FUNCTION constexpr T &&forward(remove_reference_t<T> &&t) noexcept {
         static_assert(!std::is_lvalue_reference<T>::value,
                       "can not forward an rvalue as an lvalue");
         return static_cast<T &&>(t);
       }
 
       template <typename T>
-      inline constexpr remove_reference_t<T> &&move(T &&t) noexcept {
+      KOKKOS_INLINE_FUNCTION constexpr remove_reference_t<T> &&move(T &&t) noexcept {
         return static_cast<remove_reference_t<T> &&>(t);
       }
 
@@ -81,7 +82,7 @@ namespace mpark {
       template <typename T, T... Is>
       struct integer_sequence {
         using value_type = T;
-        static constexpr std::size_t size() noexcept { return sizeof...(Is); }
+        KOKKOS_FUNCTION static constexpr std::size_t size() noexcept { return sizeof...(Is); }
       };
 
       template <std::size_t... Is>
@@ -122,7 +123,7 @@ namespace mpark {
 #else
       struct equal_to {
         template <typename Lhs, typename Rhs>
-        inline constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+        KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
           MPARK_RETURN(lib::forward<Lhs>(lhs) == lib::forward<Rhs>(rhs))
       };
 #endif
@@ -132,7 +133,7 @@ namespace mpark {
 #else
       struct not_equal_to {
         template <typename Lhs, typename Rhs>
-        inline constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+        KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
           MPARK_RETURN(lib::forward<Lhs>(lhs) != lib::forward<Rhs>(rhs))
       };
 #endif
@@ -142,7 +143,7 @@ namespace mpark {
 #else
       struct less {
         template <typename Lhs, typename Rhs>
-        inline constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+        KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
           MPARK_RETURN(lib::forward<Lhs>(lhs) < lib::forward<Rhs>(rhs))
       };
 #endif
@@ -152,7 +153,7 @@ namespace mpark {
 #else
       struct greater {
         template <typename Lhs, typename Rhs>
-        inline constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+        KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
           MPARK_RETURN(lib::forward<Lhs>(lhs) > lib::forward<Rhs>(rhs))
       };
 #endif
@@ -162,7 +163,7 @@ namespace mpark {
 #else
       struct less_equal {
         template <typename Lhs, typename Rhs>
-        inline constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+        KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
           MPARK_RETURN(lib::forward<Lhs>(lhs) <= lib::forward<Rhs>(rhs))
       };
 #endif
@@ -172,7 +173,7 @@ namespace mpark {
 #else
       struct greater_equal {
         template <typename Lhs, typename Rhs>
-        inline constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+        KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
           MPARK_RETURN(lib::forward<Lhs>(lhs) >= lib::forward<Rhs>(rhs))
       };
 #endif
@@ -201,10 +202,10 @@ namespace mpark {
             template <typename U,
                       typename = decltype(swap(std::declval<U &>(),
                                                std::declval<U &>()))>
-            inline static std::true_type test(int);
+            KOKKOS_INLINE_FUNCTION static std::true_type test(int);
 
             template <typename U>
-            inline static std::false_type test(...);
+            KOKKOS_INLINE_FUNCTION static std::false_type test(...);
 
             public:
             static constexpr bool value = decltype(test<T>(0))::value;
@@ -244,47 +245,47 @@ namespace mpark {
         template <>
         struct Invoke<true /* pmf */, 0 /* is_base_of */> {
           template <typename R, typename T, typename Arg, typename... Args>
-          inline static constexpr auto invoke(R T::*pmf, Arg &&arg, Args &&... args)
+          KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmf, Arg &&arg, Args &&... args)
             MPARK_RETURN((lib::forward<Arg>(arg).*pmf)(lib::forward<Args>(args)...))
         };
 
         template <>
         struct Invoke<true /* pmf */, 1 /* is_reference_wrapper */> {
           template <typename R, typename T, typename Arg, typename... Args>
-          inline static constexpr auto invoke(R T::*pmf, Arg &&arg, Args &&... args)
+          KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmf, Arg &&arg, Args &&... args)
             MPARK_RETURN((lib::forward<Arg>(arg).get().*pmf)(lib::forward<Args>(args)...))
         };
 
         template <>
         struct Invoke<true /* pmf */, 2 /* otherwise */> {
           template <typename R, typename T, typename Arg, typename... Args>
-          inline static constexpr auto invoke(R T::*pmf, Arg &&arg, Args &&... args)
+          KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmf, Arg &&arg, Args &&... args)
             MPARK_RETURN(((*lib::forward<Arg>(arg)).*pmf)(lib::forward<Args>(args)...))
         };
 
         template <>
         struct Invoke<false /* pmo */, 0 /* is_base_of */> {
           template <typename R, typename T, typename Arg>
-          inline static constexpr auto invoke(R T::*pmo, Arg &&arg)
+          KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmo, Arg &&arg)
             MPARK_RETURN(lib::forward<Arg>(arg).*pmo)
         };
 
         template <>
         struct Invoke<false /* pmo */, 1 /* is_reference_wrapper */> {
           template <typename R, typename T, typename Arg>
-          inline static constexpr auto invoke(R T::*pmo, Arg &&arg)
+          KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmo, Arg &&arg)
             MPARK_RETURN(lib::forward<Arg>(arg).get().*pmo)
         };
 
         template <>
         struct Invoke<false /* pmo */, 2 /* otherwise */> {
           template <typename R, typename T, typename Arg>
-          inline static constexpr auto invoke(R T::*pmo, Arg &&arg)
+          KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmo, Arg &&arg)
               MPARK_RETURN((*lib::forward<Arg>(arg)).*pmo)
         };
 
         template <typename R, typename T, typename Arg, typename... Args>
-        inline constexpr auto invoke(R T::*f, Arg &&arg, Args &&... args)
+        KOKKOS_INLINE_FUNCTION constexpr auto invoke(R T::*f, Arg &&arg, Args &&... args)
           MPARK_RETURN(
               Invoke<std::is_function<R>::value,
                      (std::is_base_of<T, lib::decay_t<Arg>>::value
@@ -300,7 +301,7 @@ namespace mpark {
 #pragma warning(disable : 4100)
 #endif
         template <typename F, typename... Args>
-        inline constexpr auto invoke(F &&f, Args &&... args)
+        KOKKOS_INLINE_FUNCTION constexpr auto invoke(F &&f, Args &&... args)
           MPARK_RETURN(lib::forward<F>(f)(lib::forward<Args>(args)...))
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -308,7 +309,7 @@ namespace mpark {
       }  // namespace detail
 
       template <typename F, typename... Args>
-      inline constexpr auto invoke(F &&f, Args &&... args)
+      KOKKOS_INLINE_FUNCTION constexpr auto invoke(F &&f, Args &&... args)
         MPARK_RETURN(detail::invoke(lib::forward<F>(f),
                                     lib::forward<Args>(args)...))
 
@@ -363,7 +364,7 @@ namespace mpark {
       // <memory>
 #ifdef MPARK_BUILTIN_ADDRESSOF
       template <typename T>
-      inline constexpr T *addressof(T &arg) noexcept {
+      KOKKOS_INLINE_FUNCTION constexpr T *addressof(T &arg) noexcept {
         return __builtin_addressof(arg);
       }
 #else
@@ -374,10 +375,10 @@ namespace mpark {
           struct fail;
 
           template <typename T>
-          inline fail operator&(T &&);
+          KOKKOS_INLINE_FUNCTION fail operator&(T &&);
 
           template <typename T>
-          inline static constexpr bool impl() {
+          KOKKOS_INLINE_FUNCTION static constexpr bool impl() {
             return (std::is_class<T>::value || std::is_union<T>::value) &&
                    !std::is_same<decltype(&std::declval<T &>()), fail>::value;
           }
@@ -388,25 +389,25 @@ namespace mpark {
         using has_addressof = bool_constant<has_addressof_impl::impl<T>()>;
 
         template <typename T>
-        inline constexpr T *addressof(T &arg, std::true_type) noexcept {
+        KOKKOS_INLINE_FUNCTION constexpr T *addressof(T &arg, std::true_type) noexcept {
           return std::addressof(arg);
         }
 
         template <typename T>
-        inline constexpr T *addressof(T &arg, std::false_type) noexcept {
+        KOKKOS_INLINE_FUNCTION constexpr T *addressof(T &arg, std::false_type) noexcept {
           return &arg;
         }
 
       }  // namespace detail
 
       template <typename T>
-      inline constexpr T *addressof(T &arg) noexcept {
+      KOKKOS_INLINE_FUNCTION constexpr T *addressof(T &arg) noexcept {
         return detail::addressof(arg, detail::has_addressof<T>{});
       }
 #endif
 
       template <typename T>
-      inline constexpr T *addressof(const T &&) = delete;
+      KOKKOS_INLINE_FUNCTION constexpr T *addressof(const T &&) = delete;
 
     }  // namespace cpp17
 
@@ -443,9 +444,9 @@ namespace mpark {
       struct set<index_sequence<Is...>> : indexed_type<Is, Ts>... {};
 
       template <typename T>
-      inline static std::enable_if<true, T> impl(indexed_type<I, T>);
+      KOKKOS_INLINE_FUNCTION static std::enable_if<true, T> impl(indexed_type<I, T>);
 
-      inline static std::enable_if<false> impl(...);
+      KOKKOS_INLINE_FUNCTION static std::enable_if<false> impl(...);
 
       public:
       using type = decltype(impl(set<index_sequence_for<Ts...>>{}));
