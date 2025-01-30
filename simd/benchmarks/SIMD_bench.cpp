@@ -1,218 +1,250 @@
-#include <iostream>
-#include <string>
-#include <chrono>
-#include <ctime>
-#include <unistd.h>
 #include <cassert>
 #include <immintrin.h>
 #include <type_traits>
+#include <numeric>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_SIMD.hpp>
 #include <AVX2_Math.hpp>
+#include <benchmark/benchmark.h>
 
-struct BenchmarkResult {
-    double time;
-    double speedup;
-    char name[32];
+
+double base_line_double = 0.0;
+double base_line_float  = 0.0;
+
+enum class Intrinsics {
+    Intel,
+    Custom,
 };
 
-template<typename simd_type>
-constexpr auto tested_exp(simd_type x) {
-    if constexpr (std::is_same_v<simd_type, __m256d>) {
-        #ifdef __INTEL_BENCHMARK
-            return _mm256_exp_pd(x);
-        #else
-            return exp4d(x);
-        #endif
-    } else if constexpr (std::is_same_v<simd_type, __m256>) {
-        #ifdef __INTEL_BENCHMARK
-            return _mm256_exp_ps(x);
-        #else
-            return exp8f(x);
-        #endif
-    } else if constexpr (std::is_same_v<simd_type, __m128>) {
-        #ifdef __INTEL_BENCHMARK
-            return _mm_exp_ps(x);
-        #else
-            return exp4f(x);
-        #endif
-    } else if constexpr (std::is_same_v<simd_type, double> || 
-                         std::is_same_v<simd_type, float>  || 
-                         std::is_same_v<simd_type, int>) {
-        return std::exp(x);
+template<Intrinsics intrinsics>
+constexpr __m128 tested_exp(__m128 x) {
+    if constexpr(intrinsics == Intrinsics::Intel) {
+        return _mm_exp_ps(x);
     } else {
-        static_assert(false, "unsupported type");
+        return exp4f(x);
     }
+}
+
+template<Intrinsics intrinsics>
+constexpr __m256 tested_exp(__m256 x) {
+    if constexpr(intrinsics == Intrinsics::Intel) {
+        return _mm256_exp_ps(x);
+    } else {
+        return exp8f(x);
+    }
+}
+
+template<Intrinsics intrinsics>
+constexpr __m256d tested_exp(__m256d x) {
+    if constexpr(intrinsics == Intrinsics::Intel) {
+        return _mm256_exp_pd(x);
+    } else {
+        return exp4d(x);
+    }
+}
+
+template<typename T>
+constexpr T tested_exp(T x) {
+    return Kokkos::exp(x);
 }
 
 template<typename T, std::size_t width>
 constexpr auto init_test(T x) {
-    if constexpr (width == 4) {
-        if constexpr (std::is_same_v<T, float>) {
-            return __m128{x, x, x, x};
-        } else {
-            return __m256d{x, x, x, x};
-        }
-    } else if constexpr (width == 8 && std::is_same_v<T, float>) {
+    constexpr bool is_m128 = width == 4 && std::is_same_v<T, float>;
+    constexpr bool is_m256 = width == 8 && std::is_same_v<T, float>;
+    constexpr bool is_m256d = width == 4 && std::is_same_v<T, double>;
+    static_assert(is_m128 || is_m256 || is_m256d, "only floating point vector types are supported");
+
+    if constexpr(is_m128) {
+        return __m128{x, x, x, x};
+    } else if constexpr(is_m256d) {
+        return __m256d{x, x, x, x};
+    } else if constexpr(is_m256) {
         return __m256{x, x, x, x, x, x, x, x};
-    } else if constexpr (width == 1 && std::is_same_v<T, double> ||
-                         width == 1 && std::is_same_v<T, float>  ||
-                         width == 1 && std::is_same_v<T, int>) {
+    } else {
         return x;
-    }else {
-        static_assert(false, "Only floating point vector types are supported");
     }
 }
 
 template<typename T>
 constexpr auto init_test(T x0, T x1, T x2, T x3) {
-    if constexpr (std::is_same_v<T, float>) {
+    constexpr bool is_m128 = std::is_same_v<T, float>;
+    constexpr bool is_m256d = std::is_same_v<T, double>;
+    static_assert(is_m128 || is_m256d, "Only double and float for 4 lanes are supported");
+
+    if constexpr (is_m128) {
         return __m128{x0, x1, x2, x3};
-    } else if constexpr (std::is_same_v<T, double>){
+    } else if constexpr (is_m256d) {
         return __m256d{x0, x1, x2, x3};
-    } else {
-        static_assert(false, "Only double and float for 4 lanes are supported");
     }
 }
 
 template<typename T>
 constexpr auto init_test(T x0, T x1, T x2, T x3, T x4, T x5, T x6, T x7) {
-    if constexpr (std::is_same_v<T, float>) {
+    constexpr bool is_m256 = std::is_same_v<T, float>;
+    static_assert(is_m256, "Only float for 8 lanes are supported");
+    if constexpr (is_m256) {
         return __m256{x0, x1, x2, x3, x4, x5, x6, x7};
-    } else {
-        static_assert(false, "Only float for 8 lanes are supported");
     }
 }
 
-void print_result(const std::vector<BenchmarkResult> results, long sample){
-    char* fileOutput = (char*)malloc(sizeof(char) * 256);
-    char date[32];
-    auto in_time_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    std::strftime(date, sizeof(date), "%d-%m-%Y-%H-%M-%S", std::localtime(&in_time_t));
-    
-    #ifdef __INTEL_BENCHMARK
-        snprintf(fileOutput, 256, "exp_benchmark_icpx_%s", date);
-    #else
-        snprintf(fileOutput, 256, "exp_benchmark_%s", date);
-    #endif
-    FILE* ofile = fopen(fileOutput, "w");
-    
-    fprintf(ofile, "%-16s %10s %12s %12s\n", "Fonction", "Sample", "Time", "Speedup");
-    for (const auto& result : results) {
-        fprintf(ofile, "%-16s %10ld %12.4f %12.4f\n", result.name, sample, result.time, result.speedup);
-    }
-    fclose(ofile);
-    free(fileOutput);
-}
+template <typename data_type>
+data_type* setup(double lower_bound, double upper_bound, long samples) {
+    static_assert(std::is_floating_point<data_type>::value);
+    assert(samples > 0);
+    assert(lower_bound < upper_bound);
 
-void print_usage(const char* argv0 ) {
-    printf("%s\n", argv0);
-    printf("Arguments: S N L U\n");
-    printf("  S:   Number of samples\n");
-    printf("  N:   Repeat the experiment N times\n");
-    printf("  L:   Lower bound of the range\n");
-    printf("  U:   Upper bound of the range\n");
-    printf("Example Arguments:\n");
-}
-
-template <typename data_type, std::size_t width>
-double bench_function(long samples, long nrepeat) {
-    Kokkos::Timer timer;
-    long simd_loop = static_cast<long>((double)samples/(double)width);
-    long rest = samples - simd_loop*width;
-    volatile data_type data_simd[width];
-    double time = 0.0;
-    for (int meta_rep = 0; meta_rep < nrepeat; meta_rep++) {
-        timer.reset();
-        for (int i = 0; i < simd_loop; i++)
-        { 
-            auto v = init_test<data_type, width>(i);
-            volatile auto res = tested_exp(v);
-            if constexpr (width != 1) {
-                for (int lane = 0; lane < width; ++lane) {
-                    data_simd[lane] = res[lane];
-                }
-            }
-        }
-        time += timer.seconds();
-    }
-    time = time/static_cast<double>(nrepeat);
-    return time;
-}
-
-template <typename data_type, std::size_t width>
-double bench_function(double lower_bound, double upper_bound, long samples, long nrepeat) {
-    Kokkos::Timer timer;
     const double step = (upper_bound - lower_bound)/(double)samples;
-    const long simd_loop = static_cast<long>((double)samples/(double)width);
-    volatile data_type data_simd[width];
-    double time = 0.0;
-
-    for (int meta_rep = 0; meta_rep < nrepeat; meta_rep++) {
-        timer.reset();
-        for (int i = 0; i < simd_loop; i++)
-        {
-            volatile auto x = lower_bound + i*step;
-            if constexpr (width == 1) {
-                volatile auto res = tested_exp(x);
-                data_simd[0] = res;
-            } else if constexpr (width == 4) {
-                auto v = init_test<data_type>(x, x+step, x+2*step, x+3*step);
-                volatile auto res = tested_exp(v);
-                for (int lane = 0; lane < width; ++lane) {
-                    data_simd[lane] = res[lane];
-                }
-            } else if constexpr (width == 8) {
-                auto v = init_test<data_type>(x, x+step, x+2*step, x+3*step, x+4*step, x+5*step, x+6*step, x+7*step);
-                volatile auto res = tested_exp(v);
-                for (int lane = 0; lane < width; ++lane) {
-                    data_simd[lane] = res[lane];
-                }
-            }
-        }
-        time += timer.seconds();
+    data_type* data_test = new data_type[samples];
+    for (int i = 0; i < samples; i++) {
+        data_test[i] = lower_bound + i*step;
     }
-    time = time/static_cast<double>(nrepeat);
-    return time;
+    return data_test;
 }
 
-int main (int argc, char* argv[]) {
-    if (argc < 5) {
-        print_usage(argv[0]);
-        return 1;
-    }
+template <typename data_type, std::size_t width, Intrinsics intrinsics>
+static void bench_function(benchmark::State& state) {
+    double lower_bound = state.range(0);
+    double upper_bound = state.range(1);
+    long samples = state.range(2);
 
-    long samples = std::stol(argv[1]);
-    long nrepeat = std::stol(argv[2]); 
-    long lower_bound = std::stod(argv[3]);
-    long upper_bound = std::stod(argv[4]);
     assert(samples > 0);
     assert(nrepeat > 0);
-    
-    double elapsed_time = 0.0;
-    std::vector<BenchmarkResult> results;
-    Kokkos::initialize();
-    {
-        // fp32 reference
-        double base_time_fp32 = bench_function<float,1>(lower_bound, upper_bound, samples, nrepeat);
-        results.push_back({base_time_fp32, base_time_fp32/base_time_fp32 ,"expf"});
+    assert(lower_bound < upper_bound);
 
-        // fp64 reference
-        double base_time_fp64 = bench_function<double,1>(lower_bound, upper_bound, samples, nrepeat);
-        results.push_back({base_time_fp64, base_time_fp64/base_time_fp64 ,"expd"});
-
-        // 4 lanes double
-        elapsed_time = bench_function<double,4>(lower_bound, upper_bound, samples, nrepeat);
-        results.push_back({elapsed_time, base_time_fp64/elapsed_time, "exp4d"});              
-
-        // 8 lanes float
-        elapsed_time = bench_function<float,8>(lower_bound, upper_bound, samples, nrepeat);
-        results.push_back({elapsed_time, base_time_fp32/elapsed_time, "exp8f"});
-        
-        // 4 lanes float
-        elapsed_time = bench_function<float,4>(lower_bound, upper_bound, samples, nrepeat);
-        results.push_back({elapsed_time, base_time_fp32/elapsed_time, "exp4f"});
+    double time = 0.0;
+    const volatile data_type* data_test = setup<data_type>(lower_bound, upper_bound, samples);
+    volatile data_type* result = new data_type[samples];
+    for (auto _ : state) {
+        for (size_t i = 0; i < samples; i += width)
+        {
+            if constexpr (width == 1) {
+                volatile auto res = tested_exp<data_type>(data_test[i]);
+                result[i] = res;
+            } else if constexpr (width == 4) {
+                const auto v = init_test<data_type>(data_test[i], data_test[i+1], data_test[i+2], data_test[i+3]);
+                volatile auto res = tested_exp<intrinsics>(v);
+                for (size_t lane = 0; lane < width; ++lane) {
+                    result[i+lane] = res[i+lane];
+                }
+            } else if constexpr (width == 8) {
+                const auto v = init_test<data_type>(data_test[i], data_test[i+1], data_test[i+2], data_test[i+3], 
+                                              data_test[i+4], data_test[i+5], data_test[i+6], data_test[i+7]);
+                volatile auto res = tested_exp<intrinsics>(v);
+                for (size_t lane = 0; lane < width; ++lane) {
+                    result[i+lane] = res[i+lane];
+                }
+            }
+        }
     }
-    print_result(results, samples);
-    Kokkos::finalize();
+    delete[] data_test;
+    delete[] result;
+    return;
 }
+
+
+BENCHMARK(bench_function<double,1, Intrinsics::Custom>)
+    ->Name("exp1d")
+    ->Args({-1000, 1000, 100000})
+    ->Iterations(32)
+    ->Repetitions(256)
+    ->ReportAggregatesOnly(true)
+    ->ComputeStatistics("speedUp", [](const std::vector<double>& v) -> double {
+        double accum =  std::accumulate(v.begin(), v.end(), 0.0);
+        base_line_double = accum / v.size();
+        return 1.0;
+    }, benchmark::StatisticUnit::kPercentage)
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK(bench_function<float,1, Intrinsics::Custom>)
+    ->Name("exp1f")
+    ->Args({-1000, 1000, 100000})
+    ->Iterations(32)
+    ->Repetitions(256)
+    ->ReportAggregatesOnly(true)
+    ->ComputeStatistics("speedUp", [](const std::vector<double>& v) -> double {
+        double accum =  std::accumulate(v.begin(), v.end(), 0.0);
+        base_line_float = accum / v.size();
+        return 1.0;
+    }, benchmark::StatisticUnit::kPercentage)
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK(bench_function<double,4, Intrinsics::Custom>)
+    ->Name("exp4d-custom")
+    ->Args({-1000, 1000, 100000})
+    ->Iterations(32)
+    ->Repetitions(256)
+    ->ReportAggregatesOnly(true)
+    ->ComputeStatistics("speedUp", [](const std::vector<double>& v) -> double {
+        double accum = std::accumulate(v.begin(), v.end(), 0.0);
+        double mean = accum / v.size();
+        return base_line_double / mean;
+    }, benchmark::StatisticUnit::kPercentage)
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK(bench_function<double,4, Intrinsics::Intel>)
+    ->Name("exp4d-Intel")
+    ->Args({-1000, 1000, 100000})
+    ->Iterations(32)
+    ->Repetitions(256)
+    ->ReportAggregatesOnly(true)
+    ->ComputeStatistics("speedUp", [](const std::vector<double>& v) -> double {
+        double accum = std::accumulate(v.begin(), v.end(), 0.0);
+        double mean = accum / v.size();
+        return base_line_double / mean;
+    }, benchmark::StatisticUnit::kPercentage)
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK(bench_function<float,8, Intrinsics::Custom>)
+    ->Name("exp8f-custom")
+    ->Args({-1000, 1000, 100000})
+    ->Iterations(32)
+    ->Repetitions(256)
+    ->ReportAggregatesOnly(true)
+    ->ComputeStatistics("speedUp", [](const std::vector<double>& v) -> double {
+        double accum = std::accumulate(v.begin(), v.end(), 0.0);
+        double mean = accum / v.size();
+        return base_line_float / mean;
+    }, benchmark::StatisticUnit::kPercentage)
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK(bench_function<float,8, Intrinsics::Intel>)
+    ->Name("exp8f-Intel")
+    ->Args({-1000, 1000, 100000})
+    ->Iterations(32)
+    ->Repetitions(256)
+    ->ReportAggregatesOnly(true)
+    ->ComputeStatistics("speedUp", [](const std::vector<double>& v) -> double {
+        double accum = std::accumulate(v.begin(), v.end(), 0.0);
+        double mean = accum / v.size();
+        return base_line_float / mean;
+    }, benchmark::StatisticUnit::kPercentage)
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK(bench_function<float,4, Intrinsics::Custom>)
+    ->Name("exp4f-custom")
+    ->Args({-1000, 1000, 100000})
+    ->Iterations(32)
+    ->Repetitions(256)
+    ->ReportAggregatesOnly(true)
+    ->ComputeStatistics("speedUp", [](const std::vector<double>& v) -> double {
+        double accum = std::accumulate(v.begin(), v.end(), 0.0);
+        double mean = accum / v.size();
+        return base_line_float / mean;
+    }, benchmark::StatisticUnit::kPercentage)
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK(bench_function<float,4, Intrinsics::Intel>)
+    ->Name("exp4f-Intel")
+    ->Args({-1000, 1000, 100000})
+    ->Iterations(32)
+    ->Repetitions(256)
+    ->ReportAggregatesOnly(true)
+    ->ComputeStatistics("speedUp", [](const std::vector<double>& v) -> double {
+        double accum = std::accumulate(v.begin(), v.end(), 0.0);
+        double mean = accum / v.size();
+        return base_line_float / mean;
+    }, benchmark::StatisticUnit::kPercentage)
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_MAIN();
