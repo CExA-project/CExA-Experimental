@@ -145,9 +145,9 @@ data_type* setup(double lower_bound, double upper_bound, long samples) {
 
 template<typename Abi, typename data_type, Intrinsics intrinsics>
 static void bench_function(benchmark::State& state) {
-    double lower_bound = state.range(0);
-    double upper_bound = state.range(1);
-    long samples = state.range(2);
+    double lower_bound = -80.0;
+    double upper_bound = 80.0;
+    long samples = 1000000;
 
     assert(samples > 0);
     assert(lower_bound < upper_bound);
@@ -183,7 +183,6 @@ T baseline_kokkos;
 #define GENERATE_BENCHMARK(TYPE, ABI)                                    \
     BENCHMARK(bench_function<ABI, TYPE, Intrinsics::Kokkos>)             \
         ->Name(std::string("kokkos ") + simd_name<ABI, TYPE>)            \
-        ->Args({-1000, 1000, 100000})                                    \
         ->Iterations(32)                                                 \
         ->Repetitions(256)                                               \
         ->ReportAggregatesOnly(true)                                     \
@@ -201,7 +200,6 @@ T baseline_kokkos;
                                                                          \
     BENCHMARK(bench_function<ABI, TYPE, Intrinsics::Custom>)             \
         ->Name(std::string("custom ") + simd_name<ABI, TYPE>)            \
-        ->Args({-1000, 1000, 100000})                                    \
         ->Iterations(32)                                                 \
         ->Repetitions(256)                                               \
         ->ReportAggregatesOnly(true)                                     \
@@ -230,7 +228,6 @@ BENCHMARK(bench_function<
               float,
               Intrinsics::Kokkos>)
     ->Name(std::string("kokkos ") + simd_name<Kokkos::Experimental::simd_abi::scalar, float>)
-    ->Args({-1000, 1000, 100000})
     ->Iterations(32)
     ->Repetitions(256)
     ->ReportAggregatesOnly(true)
@@ -250,7 +247,6 @@ BENCHMARK(bench_function<
               double,
               Intrinsics::Kokkos>)
     ->Name(std::string("kokkos ") + simd_name<Kokkos::Experimental::simd_abi::scalar, double>)
-    ->Args({-1000, 1000, 100000})
     ->Iterations(32)
     ->Repetitions(256)
     ->ReportAggregatesOnly(true)
