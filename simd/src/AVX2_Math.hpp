@@ -8,17 +8,19 @@
 #include <immintrin.h>
 #include <type_traits>
 
-// TODO: visibility ? namespace detail ?
-namespace 
+namespace avx2
 {
 
 template<typename T, std::size_t width>
-constexpr auto init(T x) {
+constexpr auto init_vector(T x) {
     constexpr bool is_m128 = width == 4 && std::is_same_v<T, float>;
     constexpr bool is_m256 = width == 8 && std::is_same_v<T, float>;
     constexpr bool is_m256d = width == 4 && std::is_same_v<T, double>;
 
-    static_assert(is_m128 || is_m256 || is_m256d, "only floating point vector types are supported");
+    static_assert(
+        is_m128 || is_m256 || is_m256d,
+        "only floating point vector types are supported"
+    );
 
     if constexpr (is_m128) {
         return __m128{x, x, x, x};
@@ -31,19 +33,19 @@ constexpr auto init(T x) {
 
 template<typename T, std::size_t width>
 constexpr std::array taylor_exp_coeffs = {
-    init<T, width>(1.0),
-    init<T, width>(1.0 / 2),
-    init<T, width>(1.0 / 6),
-    init<T, width>(1.0 / 24),
-    init<T, width>(1.0 / 120),
-    init<T, width>(1.0 / 720),
-    init<T, width>(1.0 / 5040),
-    init<T, width>(1.0 / 40320),
-    init<T, width>(1.0 / 362880),
-    init<T, width>(1.0 / 3628800),
-    init<T, width>(1.0 / 39916800),
-    init<T, width>(1.0 / 479001600),
-    init<T, width>(1.0 / 6227020800)
+    init_vector<T, width>(1.0),
+    init_vector<T, width>(1.0 / 2),
+    init_vector<T, width>(1.0 / 6),
+    init_vector<T, width>(1.0 / 24),
+    init_vector<T, width>(1.0 / 120),
+    init_vector<T, width>(1.0 / 720),
+    init_vector<T, width>(1.0 / 5040),
+    init_vector<T, width>(1.0 / 40320),
+    init_vector<T, width>(1.0 / 362880),
+    init_vector<T, width>(1.0 / 3628800),
+    init_vector<T, width>(1.0 / 39916800),
+    init_vector<T, width>(1.0 / 479001600),
+    init_vector<T, width>(1.0 / 6227020800)
 };
 
 // convert a packed double to packed i64 (the intrinsic for this is only available for
@@ -59,13 +61,11 @@ inline __m256i cvtpd_epi64(__m256d x) {
     );
 }
 
-}  // namespace
-
 inline __m256d exp4d(__m256d x) {
-    constexpr __m256d ln2 = init<double, 4>(0.693147180559945309417232121458);
-    constexpr __m256d inv_ln2 = init<double, 4>(1.44269504088896340735992468100);
-    constexpr __m256d half = init<double, 4>(0.5);
-    constexpr __m256d zero = init<double, 4>(0.0);
+    constexpr __m256d ln2 = init_vector<double, 4>(0.693147180559945309417232121458);
+    constexpr __m256d inv_ln2 = init_vector<double, 4>(1.44269504088896340735992468100);
+    constexpr __m256d half = init_vector<double, 4>(0.5);
+    constexpr __m256d zero = init_vector<double, 4>(0.0);
 
     // Range reduction
     // We express e^x as e^(k * ln(2) + r) = e^(k * ln(2)) * e^r = 2^k * e^r
@@ -82,7 +82,7 @@ inline __m256d exp4d(__m256d x) {
         _mm256_castsi256_pd(_mm256_slli_epi64(_mm256_add_epi64(k_int, bias), 52));
 
     // compute the taylor approximation of e^r
-    __m256d approx = init<double, 4>(1.0);
+    __m256d approx = init_vector<double, 4>(1.0);
     __m256d r_pow = r;
     for (__m256d coeff: taylor_exp_coeffs<double, 4>) {
         approx = _mm256_fmadd_pd(r_pow, coeff, approx);
@@ -92,8 +92,8 @@ inline __m256d exp4d(__m256d x) {
     __m256d res = _mm256_mul_pd(two_k, approx);
 
     // handle special values, e^-inf = 0, e^inf = inf, nans are already correctly handled
-    constexpr __m256d minus_inf = init<double, 4>(-INFINITY);
-    constexpr __m256d inf = init<double, 4>(INFINITY);
+    constexpr __m256d minus_inf = init_vector<double, 4>(-INFINITY);
+    constexpr __m256d inf = init_vector<double, 4>(INFINITY);
 
     const __m256d inf_mask = _mm256_cmp_pd(x, inf, 0);
     const __m256d minus_inf_mask = _mm256_cmp_pd(x, minus_inf, 0);
@@ -105,10 +105,10 @@ inline __m256d exp4d(__m256d x) {
 }
 
 inline __m256 exp8f(__m256 x) {
-    constexpr __m256 ln2 = init<float, 8>(0.693147180559945309417232121458);
-    constexpr __m256 inv_ln2 = init<float, 8>(1.44269504088896340735992468100);
-    constexpr __m256 half = init<float, 8>(0.5);
-    constexpr __m256 zero = init<float, 8>(0.0);
+    constexpr __m256 ln2 = init_vector<float, 8>(0.693147180559945309417232121458);
+    constexpr __m256 inv_ln2 = init_vector<float, 8>(1.44269504088896340735992468100);
+    constexpr __m256 half = init_vector<float, 8>(0.5);
+    constexpr __m256 zero = init_vector<float, 8>(0.0);
 
     const __m256 k = _mm256_floor_ps(_mm256_fmadd_ps(x, inv_ln2, half));
     const __m256 r = _mm256_fnmadd_ps(k, ln2, x);
@@ -120,7 +120,7 @@ inline __m256 exp8f(__m256 x) {
         _mm256_castsi256_ps(_mm256_slli_epi32(_mm256_add_epi32(k_int, bias), 23));
 
     // compute the taylor approximation of e^r
-    __m256 approx = init<float, 8>(1.0);
+    __m256 approx = init_vector<float, 8>(1.0);
     __m256 r_pow = r;
     for (__m256 coeff: taylor_exp_coeffs<float, 8>) {
         approx = _mm256_fmadd_ps(r_pow, coeff, approx);
@@ -130,8 +130,8 @@ inline __m256 exp8f(__m256 x) {
     __m256 res = _mm256_mul_ps(two_k, approx);
 
     // special cases
-    constexpr __m256 minus_inf = init<float, 8>(-INFINITY);
-    constexpr __m256 inf = init<float, 8>(INFINITY);
+    constexpr __m256 minus_inf = init_vector<float, 8>(-INFINITY);
+    constexpr __m256 inf = init_vector<float, 8>(INFINITY);
 
     const __m256 inf_mask = _mm256_cmp_ps(x, inf, 0);
     const __m256 minus_inf_mask = _mm256_cmp_ps(x, minus_inf, 0);
@@ -143,10 +143,10 @@ inline __m256 exp8f(__m256 x) {
 }
 
 inline __m128 exp4f(__m128 x) {
-    constexpr __m128 ln2 = init<float, 4>(0.693147180559945309417232121458);
-    constexpr __m128 inv_ln2 = init<float, 4>(1.44269504088896340735992468100);
-    constexpr __m128 half = init<float, 4>(0.5);
-    constexpr __m128 zero = init<float, 4>(0.0);
+    constexpr __m128 ln2 = init_vector<float, 4>(0.693147180559945309417232121458);
+    constexpr __m128 inv_ln2 = init_vector<float, 4>(1.44269504088896340735992468100);
+    constexpr __m128 half = init_vector<float, 4>(0.5);
+    constexpr __m128 zero = init_vector<float, 4>(0.0);
 
     const __m128 k = _mm_floor_ps(_mm_fmadd_ps(x, inv_ln2, half));
     const __m128 r = _mm_fnmadd_ps(k, ln2, x);
@@ -158,7 +158,7 @@ inline __m128 exp4f(__m128 x) {
         _mm_castsi128_ps(_mm_slli_epi32(_mm_add_epi32(k_int, bias), 23));
 
     // compute the taylor approximation of e^r
-    __m128 approx = init<float, 4>(1.0);
+    __m128 approx = init_vector<float, 4>(1.0);
     __m128 r_pow = r;
     for (__m128 coeff: taylor_exp_coeffs<float, 4>) {
         approx = _mm_fmadd_ps(r_pow, coeff, approx);
@@ -168,8 +168,8 @@ inline __m128 exp4f(__m128 x) {
     __m128 res = _mm_mul_ps(two_k, approx);
 
     // special cases
-    constexpr __m128 minus_inf = init<float, 4>(-INFINITY);
-    constexpr __m128 inf = init<float, 4>(INFINITY);
+    constexpr __m128 minus_inf = init_vector<float, 4>(-INFINITY);
+    constexpr __m128 inf = init_vector<float, 4>(INFINITY);
 
     const __m128 inf_mask = _mm_cmp_ps(x, inf, 0);
     const __m128 minus_inf_mask = _mm_cmp_ps(x, minus_inf, 0);
@@ -179,5 +179,7 @@ inline __m128 exp4f(__m128 x) {
 
     return res;
 }
+
+}  // namespace avx2
 
 #endif

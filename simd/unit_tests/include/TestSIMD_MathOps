@@ -1,6 +1,0 @@
-#ifndef CEXA_EXPERIMENTAL_TEST_SIMD_MATH_OPS_HPP
-#define CEXA_EXPERIMENTAL_TEST_SIMD_MATH_OPS_HPP
-
-#include <Kokkos_SIMD_AVX2_math.hpp>
-
-#endif

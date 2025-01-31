@@ -5,20 +5,18 @@
 #include <limits>
 #include <type_traits>
 
-#include <Kokkos_SIMD.hpp>
-#include <Kokkos_SIMD_AVX2_Math.hpp>
+#include <Kokkos_SIMD_AVX_Math.hpp>
 #include <SIMDTesting_Utilities.hpp>
 
 class exp_op {
 public:
     template<typename T>
     auto on_host(T const& a) const {
-        // TODO
-        // #if defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
-        //         return Kokkos::Experimental::exp(a);
-        // #else
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+        return Kokkos::Experimental::exp(a);
+#else
         return Kokkos::exp(a);
-        // #endif
+#endif
     }
 
     template<typename T>
