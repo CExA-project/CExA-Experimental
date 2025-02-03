@@ -61,22 +61,16 @@ public:
                 checker.truth(std::isnan(computed[lane]) && std::isnan(computed_serial));
             }
 
-            // 0
-            simd_type zero(T{0.0});
-            computed = on_host(zero);
-            computed_serial = on_host_serial(zero[0]);
+            T special_values[] = {0.0, -103, 88.7, -2.38164398e+10, 2.38164398e+10};
+            for (auto value: special_values) {
+                // subnormal
+                simd_type vec(value);
+                computed = on_host(vec);
+                computed_serial = on_host_serial(vec[0]);
 
-            for (std::size_t lane = 0; lane < width; lane++) {
-                checker.equality(computed[lane], computed_serial);
-            }
-
-            // subnormal
-            simd_type denorm(std::numeric_limits<T>::denorm_min());
-            computed = on_host(denorm);
-            computed_serial = on_host_serial(denorm[0]);
-
-            for (std::size_t lane = 0; lane < width; lane++) {
-                checker.equality(computed[lane], computed_serial);
+                for (std::size_t lane = 0; lane < width; lane++) {
+                    checker.equality(computed[lane], computed_serial);
+                }
             }
         }
     }

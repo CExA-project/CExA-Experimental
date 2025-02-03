@@ -36,7 +36,7 @@ void host_check_math_op_accuracy(UnaryOp op) {
         host_check_equality(expected_result, computed_result, width);
 
         for (auto& value: values) {
-            value += 1;
+            value += width;
         }
     }
 }

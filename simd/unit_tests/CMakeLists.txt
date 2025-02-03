@@ -1,39 +1,28 @@
-find_package(googletest QUIET 1.11.0)
-if(googletest_FOUND)
-  message(STATUS "Using googletest found in ${googletest_DIR}")
-else()
-  message(STATUS "No installed googletest found, fetching from GitHub")
-  include(FetchContent)
-  set(BUILD_GMOCK OFF)
-  set(INSTALL_GTEST OFF)
-
-  list(APPEND CMAKE_MESSAGE_INDENT "[googletest] ")
-  FetchContent_Declare(
-    googletest
-    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG release-1.11.0
-  )
-  FetchContent_MakeAvailable(googletest)
-  list(POP_BACK CMAKE_MESSAGE_INDENT)
-
-  # Suppress clang-tidy diagnostics on code that we do not have control over
-  if(CMAKE_CXX_CLANG_TIDY)
-    set_target_properties(googletest PROPERTIES CXX_CLANG_TIDY "")
-  endif()
-
-  target_compile_options(gtest PRIVATE -w)
-  target_compile_options(gtest_main PRIVATE -w)
-endif()
+CPMAddPackage(
+  googletest
+  GITHUB_REPOSITORY google/googletest
+  VERSION 1.15.2
+  OPTIONS "BUILD_GMOCK OFF" "INSTALL_GTEST OFF"
+)
 
 add_executable(UnitTest UnitTestMain.cpp TestSIMD.cpp)
-target_link_libraries(UnitTest PRIVATE math-simd GTest::gtest_main Kokkos::kokkoscore Kokkos::kokkossimd)
+target_link_libraries(
+  UnitTest
+  PRIVATE math-simd GTest::gtest_main Kokkos::kokkoscore Kokkos::kokkossimd
+)
 target_include_directories(UnitTest PRIVATE include)
-target_compile_options(UnitTest PRIVATE -march=native $<$<CXX_COMPILER_ID:IntelLLVM>:-fp-model=precise>)
 
-if (UNIX)
+if("${COMPILER_SUPPORTS_MARCH_NATIVE}")
+  target_compile_options(UnitTest PRIVATE -march=native)
+endif()
+
+if("${COMPILER_SUPPORTS_PTHREAD}")
   target_link_libraries(UnitTest PRIVATE pthread)
   target_compile_options(UnitTest PRIVATE -pthread)
+endif()
+
+if("${SIMD_USE_INTEL_FP_PRECISE}" AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL IntelLLVM)
+  target_compile_options(UnitTest INTERFACE -fp-model=precise)
 endif()
 
 include(GoogleTest)

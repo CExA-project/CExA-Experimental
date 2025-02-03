@@ -3,6 +3,7 @@
 #include <immintrin.h>
 #include <Kokkos_Complex.hpp>
 #include <Kokkos_Core.hpp>
+#include <Kokkos_Macros.hpp>
 #include <Kokkos_SIMD.hpp>
 #include <numeric>
 #include <type_traits>
@@ -120,7 +121,7 @@ const char* simd_name<Kokkos::Experimental::simd_abi::avx512_fixed_size<8>, doub
 #endif
 
 template<Intrinsics intrinsics, typename Abi, typename data_type>
-constexpr Kokkos::Experimental::basic_simd<data_type, Abi>
+constexpr Kokkos::Experimental::basic_simd<data_type, Abi> KOKKOS_FORCEINLINE_FUNCTION
 tested_exp(Kokkos::Experimental::basic_simd<data_type, Abi> const& x) {
     if constexpr (intrinsics == Intrinsics::Kokkos) {
         return Kokkos::exp(x);
@@ -130,41 +131,44 @@ tested_exp(Kokkos::Experimental::basic_simd<data_type, Abi> const& x) {
 }
 
 template<typename data_type>
-data_type* setup(double lower_bound, double upper_bound, long samples) {
+void setup(data_type* data, std::size_t samples) {
     static_assert(std::is_floating_point<data_type>::value);
+    double lower_bound = -80.0;
+    double upper_bound = 80.0;
+
     assert(samples > 0);
     assert(lower_bound < upper_bound);
 
     const double step = (upper_bound - lower_bound) / (double)samples;
-    data_type* data_test = new data_type[samples];
     for (int i = 0; i < samples; i++) {
-        data_test[i] = lower_bound + i * step;
+        data[i] = lower_bound + i * step;
     }
-    return data_test;
 }
 
 template<typename Abi, typename data_type, Intrinsics intrinsics>
 static void bench_function(benchmark::State& state) {
-    double lower_bound = -80.0;
-    double upper_bound = 80.0;
-    long samples = 1000000;
-
-    assert(samples > 0);
-    assert(lower_bound < upper_bound);
-
     using simd_type = Kokkos::Experimental::basic_simd<data_type, Abi>;
     constexpr std::size_t width = simd_type::size();
 
-    const data_type* data_test = setup<data_type>(lower_bound, upper_bound, samples);
-    data_type* result = new data_type[samples];
+    std::size_t samples = 1000000;
+
+    data_type* data_test =
+        new (std::align_val_t(width * sizeof(data_type))) data_type[samples];
+    setup<data_type>(data_test, samples);
+    data_type* result =
+        new (std::align_val_t(width * sizeof(data_type))) data_type[samples];
 
     for (auto _: state) {
-        for (size_t i = 0; i < samples; i += width) {
-            simd_type v;
-            v.copy_from(&data_test[i], Kokkos::Experimental::simd_flag_default);
+        for (std::size_t i = 0; i < samples; i += width) {
+            simd_type vec;
+            vec.copy_from(&data_test[i], Kokkos::Experimental::simd_flag_aligned);
             simd_type res;
-            benchmark::DoNotOptimize(res = tested_exp<intrinsics>(v));
-            res.copy_to(&result[i], Kokkos::Experimental::simd_flag_default);
+            if constexpr (intrinsics == Intrinsics::Kokkos) {
+                benchmark::DoNotOptimize(res = Kokkos::exp(vec));
+            } else {
+                benchmark::DoNotOptimize(res = custom_exp(vec));
+            }
+            res.copy_to(&result[i], Kokkos::Experimental::simd_flag_aligned);
         }
     }
 
@@ -174,53 +178,15 @@ static void bench_function(benchmark::State& state) {
     delete[] result;
 }
 
-template<typename T>
-T baseline;
-
-template<typename T, typename Abi>
-T baseline_kokkos;
-
-#define GENERATE_BENCHMARK(TYPE, ABI)                                    \
-    BENCHMARK(bench_function<ABI, TYPE, Intrinsics::Kokkos>)             \
-        ->Name(std::string("kokkos ") + simd_name<ABI, TYPE>)            \
-        ->Iterations(32)                                                 \
-        ->Repetitions(256)                                               \
-        ->ReportAggregatesOnly(true)                                     \
-        ->ComputeStatistics(                                             \
-            "speedup from scalar",                                       \
-            [](const std::vector<double>& v) -> double {                 \
-                double accum = std::accumulate(v.begin(), v.end(), 0.0); \
-                double mean = accum / v.size();                          \
-                baseline_kokkos<TYPE, ABI> = mean;                       \
-                return baseline<TYPE> / mean;                            \
-            },                                                           \
-            benchmark::StatisticUnit::kPercentage                        \
-        )                                                                \
-        ->Unit(benchmark::kMillisecond);                                 \
-                                                                         \
-    BENCHMARK(bench_function<ABI, TYPE, Intrinsics::Custom>)             \
-        ->Name(std::string("custom ") + simd_name<ABI, TYPE>)            \
-        ->Iterations(32)                                                 \
-        ->Repetitions(256)                                               \
-        ->ReportAggregatesOnly(true)                                     \
-        ->ComputeStatistics(                                             \
-            "speedup from scalar",                                       \
-            [](const std::vector<double>& v) -> double {                 \
-                double accum = std::accumulate(v.begin(), v.end(), 0.0); \
-                double mean = accum / v.size();                          \
-                return baseline<TYPE> / mean;                            \
-            },                                                           \
-            benchmark::StatisticUnit::kPercentage                        \
-        )                                                                \
-        ->ComputeStatistics(                                             \
-            "speedup from kokkos",                                       \
-            [](const std::vector<double>& v) -> double {                 \
-                double accum = std::accumulate(v.begin(), v.end(), 0.0); \
-                double mean = accum / v.size();                          \
-                return baseline_kokkos<TYPE, ABI> / mean;                \
-            },                                                           \
-            benchmark::StatisticUnit::kPercentage                        \
-        )                                                                \
+#define GENERATE_BENCHMARK(TYPE, ABI)                         \
+    BENCHMARK(bench_function<ABI, TYPE, Intrinsics::Kokkos>)  \
+        ->Name(std::string("kokkos ") + simd_name<ABI, TYPE>) \
+        ->ReportAggregatesOnly(true)                          \
+        ->Unit(benchmark::kMillisecond);                      \
+                                                              \
+    BENCHMARK(bench_function<ABI, TYPE, Intrinsics::Custom>)  \
+        ->Name(std::string("custom ") + simd_name<ABI, TYPE>) \
+        ->ReportAggregatesOnly(true)                          \
         ->Unit(benchmark::kMillisecond);
 
 BENCHMARK(bench_function<
@@ -228,18 +194,7 @@ BENCHMARK(bench_function<
               float,
               Intrinsics::Kokkos>)
     ->Name(std::string("kokkos ") + simd_name<Kokkos::Experimental::simd_abi::scalar, float>)
-    ->Iterations(32)
-    ->Repetitions(256)
     ->ReportAggregatesOnly(true)
-    ->ComputeStatistics(
-        "speedup",
-        [](const std::vector<double>& v) -> double {
-            double accum = std::accumulate(v.begin(), v.end(), 0.0);
-            baseline<float> = accum / v.size();
-            return 1.0;
-        },
-        benchmark::StatisticUnit::kPercentage
-    )
     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK(bench_function<
@@ -247,18 +202,7 @@ BENCHMARK(bench_function<
               double,
               Intrinsics::Kokkos>)
     ->Name(std::string("kokkos ") + simd_name<Kokkos::Experimental::simd_abi::scalar, double>)
-    ->Iterations(32)
-    ->Repetitions(256)
     ->ReportAggregatesOnly(true)
-    ->ComputeStatistics(
-        "speedup",
-        [](const std::vector<double>& v) -> double {
-            double accum = std::accumulate(v.begin(), v.end(), 0.0);
-            baseline<double> = accum / v.size();
-            return 1.0;
-        },
-        benchmark::StatisticUnit::kPercentage
-    )
     ->Unit(benchmark::kMillisecond);
 
 #ifdef KOKKOS_ARCH_AVX2
