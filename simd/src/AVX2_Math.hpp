@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <immintrin.h>
 #include <type_traits>
 
@@ -49,10 +50,11 @@ constexpr std::array taylor_exp_coeffs = {
 };
 
 // convert a packed double to packed i64 (the intrinsic for this is only available for
-// avx512). We need to store because msvc doesnt support proper indexing on simd vectors.
+// avx512). We need to store because msvc doesn't support proper indexing on simd
+// vectors.
 inline __m256i cvtpd_epi64(__m256d x) {
-    double buf[4];
-    _mm256_storeu_pd(buf, x);
+    alignas(__m256d) double buf[4];
+    _mm256_store_pd(buf, x);
     return _mm256_setr_epi64x(
         static_cast<std::int64_t>(buf[0]),
         static_cast<std::int64_t>(buf[1]),
@@ -61,10 +63,22 @@ inline __m256i cvtpd_epi64(__m256d x) {
     );
 }
 
+// convert a packed i64 to packed double
+inline __m256d cvtepi64_pd(__m256i x) {
+    alignas(__m256i) std::int64_t buf[4];
+    std::memcpy(buf, &x, sizeof(x));
+    return _mm256_setr_pd(
+        static_cast<double>(buf[0]),
+        static_cast<double>(buf[1]),
+        static_cast<double>(buf[2]),
+        static_cast<double>(buf[3])
+    );
+}
+
 // computes the min of 64 bit integers contained in two vectors
 inline __m256i min_epi64(__m256i a, __m256i b) {
     __m256i mask = _mm256_cmpgt_epi64(b, a);
-    return _mm256_blendv_epi8(a, b, mask);
+    return _mm256_blendv_epi8(b, a, mask);
 }
 
 inline __m256d exp4d(__m256d x) {
@@ -77,7 +91,7 @@ inline __m256d exp4d(__m256d x) {
     // We express e^x as e^(k * ln(2) + r) = e^(k * ln(2)) * e^r = 2^k * e^r
     // k = floor(x / ln(2) + 1/2)
     const __m256d k = _mm256_floor_pd(_mm256_fmadd_pd(x, inv_ln2, half)
-    );  // _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC
+    );  // _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC
     // r = x - k * ln(2)
     const __m256d r = _mm256_fnmadd_pd(k, ln2, x);
 
@@ -88,18 +102,19 @@ inline __m256d exp4d(__m256d x) {
 
     const __m256i one = _mm256_set1_epi64x(1);
     const __m256i normal_shift = _mm256_set1_epi64x(52);
+    // if the biased exponent b is less than 0, 2^k is 1 << (normal_shift - 1 + b)
     const __m256i shift = min_epi64(
         normal_shift,
         _mm256_sub_epi64(_mm256_add_epi64(normal_shift, biased_exp), one)
     );
     const __m256i shift_mask = _mm256_cmpeq_epi64(shift, normal_shift);
-    const __m256i shifted_value = _mm256_blendv_epi8(one, biased_exp, shift_mask);
+    __m256i shifted_value = _mm256_blendv_epi8(one, biased_exp, shift_mask);
+    // if k is equal to the maximum exponent + 1, we compute 2^(k-1) and multiply the
+    // final result by 2
+    __m256i mul_mask = _mm256_cmpeq_epi64(k_int, _mm256_set1_epi64x(1024ll));
+    mul_mask = _mm256_and_si256(mul_mask, _mm256_set1_epi64x(1ll));
+    shifted_value = _mm256_sub_epi64(shifted_value, mul_mask);
     const __m256d two_k = _mm256_castsi256_pd(_mm256_sllv_epi64(shifted_value, shift));
-
-    // const __m256i bias = _mm256_set1_epi64x(1023ll);
-    // const __m256i k_int = cvtpd_epi64(k);
-    // const __m256d two_k =
-    //     _mm256_castsi256_pd(_mm256_slli_epi64(_mm256_add_epi64(k_int, bias), 52));
 
     // compute the taylor approximation of e^r
     __m256d approx = init_vector<double, 4>(1.0);
@@ -109,11 +124,13 @@ inline __m256d exp4d(__m256d x) {
         r_pow = _mm256_mul_pd(r_pow, r);
     }
 
-    __m256d res = _mm256_mul_pd(two_k, approx);
+    mul_mask = _mm256_add_epi64(mul_mask, one);
+    __m256d res = _mm256_mul_pd(_mm256_mul_pd(two_k, approx), cvtepi64_pd(mul_mask));
 
-    // handle special values, e^-inf = 0, e^inf = inf, nans are already correctly handled
+    // handle special values, e^-inf = 0, e^inf = inf, ...
     constexpr __m256d minus_inf = init_vector<double, 4>(-INFINITY);
     constexpr __m256d inf = init_vector<double, 4>(INFINITY);
+    constexpr __m256d minus_zero = init_vector<double, 4>(-0.0);
 
     // if the result contains -nan, an underflow occured
     // nan == nan returns false
@@ -121,14 +138,16 @@ inline __m256d exp4d(__m256d x) {
     // we do a binary and to only keep the nans with the sign bit set
     minus_nan_mask = _mm256_andnot_pd(minus_nan_mask, res);
     // we also need to propagate nans from the input
-    const __m256d input_minus_nan_mask = _mm256_cmp_pd(x, x, _CMP_EQ_OQ);
-    const __m256d exponent_mask = _mm256_cmp_pd(k, _mm256_set1_pd(127.f), _CMP_GT_OQ);
-    const __m256d inf_mask = _mm256_or_pd(_mm256_cmp_pd(x, inf, 0), exponent_mask);
-    const __m256d minus_inf_mask = _mm256_cmp_pd(x, minus_inf, 0);
+    const __m256d input_nan_mask = _mm256_cmp_pd(x, x, _CMP_EQ_OQ);
+    const __m256d exponent_mask = _mm256_cmp_pd(k, _mm256_set1_pd(1024.f), _CMP_GT_OQ);
+    const __m256d inf_mask =
+        _mm256_or_pd(_mm256_cmp_pd(x, inf, _CMP_EQ_OQ), exponent_mask);
+    const __m256d minus_inf_mask = _mm256_cmp_pd(x, minus_inf, _CMP_EQ_OQ);
+    const __m256d minus_zero_mask = _mm256_cmp_pd(res, minus_zero, _CMP_EQ_OQ);
 
     res = _mm256_blendv_pd(res, zero, minus_nan_mask);
-    res = _mm256_blendv_pd(x, res, input_minus_nan_mask);
-    res = _mm256_blendv_pd(res, zero, minus_inf_mask);
+    res = _mm256_blendv_pd(x, res, input_nan_mask);
+    res = _mm256_blendv_pd(res, zero, _mm256_or_pd(minus_inf_mask, minus_zero_mask));
     res = _mm256_blendv_pd(res, inf, inf_mask);
 
     return res;
@@ -144,7 +163,7 @@ inline __m256 exp8f(__m256 x) {
     const __m256 r = _mm256_fnmadd_ps(k, ln2, x);
 
     // compute 2^k
-    const __m256i bias = _mm256_set1_epi32(127ll);
+    const __m256i bias = _mm256_set1_epi32(127);
     const __m256i k_int = _mm256_cvtps_epi32(k);
     const __m256i biased_exp = _mm256_add_epi32(k_int, bias);
 
@@ -155,13 +174,11 @@ inline __m256 exp8f(__m256 x) {
         _mm256_sub_epi32(_mm256_add_epi32(normal_shift, biased_exp), one)
     );
     const __m256i shift_mask = _mm256_cmpeq_epi32(shift, normal_shift);
-    const __m256i shifted_value = _mm256_blendv_epi8(one, biased_exp, shift_mask);
+    __m256i shifted_value = _mm256_blendv_epi8(one, biased_exp, shift_mask);
+    __m256i mul_mask = _mm256_cmpeq_epi32(k_int, _mm256_set1_epi32(128));
+    mul_mask = _mm256_and_si256(mul_mask, _mm256_set1_epi32(1));
+    shifted_value = _mm256_sub_epi32(shifted_value, mul_mask);
     const __m256 two_k = _mm256_castsi256_ps(_mm256_sllv_epi32(shifted_value, shift));
-
-    // const __m256i bias = _mm256_set1_epi32(127ll);
-    // const __m256i k_int = _mm256_cvtps_epi32(k);
-    // const __m256 two_k =
-    //     _mm256_castsi256_ps(_mm256_slli_epi32(_mm256_add_epi32(k_int, bias), 23));
 
     // compute the taylor approximation of e^r
     __m256 approx = init_vector<float, 8>(1.0);
@@ -171,22 +188,27 @@ inline __m256 exp8f(__m256 x) {
         r_pow = _mm256_mul_ps(r_pow, r);
     }
 
-    __m256 res = _mm256_mul_ps(two_k, approx);
+    mul_mask = _mm256_add_epi32(mul_mask, one);
+    __m256 res =
+        _mm256_mul_ps(_mm256_mul_ps(two_k, approx), _mm256_cvtepi32_ps(mul_mask));
 
     // special cases
     constexpr __m256 minus_inf = init_vector<float, 8>(-INFINITY);
     constexpr __m256 inf = init_vector<float, 8>(INFINITY);
+    constexpr __m256 minus_zero = init_vector<float, 8>(-0.0);
 
     __m256 minus_nan_mask = _mm256_cmp_ps(res, res, _CMP_EQ_OQ);
     minus_nan_mask = _mm256_andnot_ps(minus_nan_mask, res);
-    const __m256 input_minus_nan_mask = _mm256_cmp_ps(x, x, _CMP_EQ_OQ);
-    const __m256 exponent_mask = _mm256_cmp_ps(k, _mm256_set1_ps(127.f), _CMP_GT_OQ);
-    const __m256 inf_mask = _mm256_or_ps(_mm256_cmp_ps(x, inf, 0), exponent_mask);
-    const __m256 minus_inf_mask = _mm256_cmp_ps(x, minus_inf, 0);
+    const __m256 input_nan_mask = _mm256_cmp_ps(x, x, _CMP_EQ_OQ);
+    const __m256 exponent_mask = _mm256_cmp_ps(k, _mm256_set1_ps(128.f), _CMP_GT_OQ);
+    const __m256 inf_mask =
+        _mm256_or_ps(_mm256_cmp_ps(x, inf, _CMP_EQ_OQ), exponent_mask);
+    const __m256 minus_inf_mask = _mm256_cmp_ps(x, minus_inf, _CMP_EQ_OQ);
+    const __m256 minus_zero_mask = _mm256_cmp_ps(res, minus_zero, _CMP_EQ_OQ);
 
     res = _mm256_blendv_ps(res, zero, minus_nan_mask);
-    res = _mm256_blendv_ps(x, res, input_minus_nan_mask);
-    res = _mm256_blendv_ps(res, zero, minus_inf_mask);
+    res = _mm256_blendv_ps(x, res, input_nan_mask);
+    res = _mm256_blendv_ps(res, zero, _mm256_or_ps(minus_inf_mask, minus_zero_mask));
     res = _mm256_blendv_ps(res, inf, inf_mask);
 
     return res;
@@ -202,7 +224,7 @@ inline __m128 exp4f(__m128 x) {
     const __m128 r = _mm_fnmadd_ps(k, ln2, x);
 
     // compute 2^k
-    const __m128i bias = _mm_set1_epi32(127ll);
+    const __m128i bias = _mm_set1_epi32(127);
     const __m128i k_int = _mm_cvtps_epi32(k);
     const __m128i biased_exp = _mm_add_epi32(k_int, bias);
 
@@ -213,13 +235,11 @@ inline __m128 exp4f(__m128 x) {
         _mm_sub_epi32(_mm_add_epi32(normal_shift, biased_exp), one)
     );
     const __m128i shift_mask = _mm_cmpeq_epi32(shift, normal_shift);
-    const __m128i shifted_value = _mm_blendv_epi8(one, biased_exp, shift_mask);
+    __m128i shifted_value = _mm_blendv_epi8(one, biased_exp, shift_mask);
+    __m128i mul_mask = _mm_cmpeq_epi32(k_int, _mm_set1_epi32(128));
+    mul_mask = _mm_and_si128(mul_mask, _mm_set1_epi32(1));
+    shifted_value = _mm_sub_epi32(shifted_value, mul_mask);
     const __m128 two_k = _mm_castsi128_ps(_mm_sllv_epi32(shifted_value, shift));
-
-    // const __m128i bias = _mm_set1_epi32(127ll);
-    // const __m128i k_int = _mm_cvtps_epi32(k);
-    // const __m128 two_k =
-    // _mm_castsi128_ps(_mm_slli_epi32(_mm_add_epi32(k_int, bias), 23));
 
     // compute the taylor approximation of e^r
     __m128 approx = init_vector<float, 4>(1.0);
@@ -229,22 +249,25 @@ inline __m128 exp4f(__m128 x) {
         r_pow = _mm_mul_ps(r_pow, r);
     }
 
-    __m128 res = _mm_mul_ps(two_k, approx);
+    mul_mask = _mm_add_epi32(mul_mask, one);
+    __m128 res = _mm_mul_ps(_mm_mul_ps(two_k, approx), _mm_cvtepi32_ps(mul_mask));
 
     // special cases
     constexpr __m128 minus_inf = init_vector<float, 4>(-INFINITY);
     constexpr __m128 inf = init_vector<float, 4>(INFINITY);
+    constexpr __m128 minus_zero = init_vector<float, 4>(-0.0);
 
     __m128 minus_nan_mask = _mm_cmp_ps(res, res, _CMP_EQ_OQ);
     minus_nan_mask = _mm_andnot_ps(minus_nan_mask, res);
-    const __m128 input_minus_nan_mask = _mm_cmp_ps(x, x, _CMP_EQ_OQ);
-    const __m128 exponent_mask = _mm_cmp_ps(k, _mm_set1_ps(127.f), _CMP_GT_OQ);
-    const __m128 inf_mask = _mm_or_ps(_mm_cmp_ps(x, inf, 0), exponent_mask);
-    const __m128 minus_inf_mask = _mm_cmp_ps(x, minus_inf, 0);
+    const __m128 input_nan_mask = _mm_cmp_ps(x, x, _CMP_EQ_OQ);
+    const __m128 exponent_mask = _mm_cmp_ps(k, _mm_set1_ps(128.f), _CMP_GT_OQ);
+    const __m128 inf_mask = _mm_or_ps(_mm_cmp_ps(x, inf, _CMP_EQ_OQ), exponent_mask);
+    const __m128 minus_inf_mask = _mm_cmp_ps(x, minus_inf, _CMP_EQ_OQ);
+    const __m128 minus_zero_mask = _mm_cmp_ps(res, minus_zero, _CMP_EQ_OQ);
 
     res = _mm_blendv_ps(res, zero, minus_nan_mask);
-    res = _mm_blendv_ps(x, res, input_minus_nan_mask);
-    res = _mm_blendv_ps(res, zero, minus_inf_mask);
+    res = _mm_blendv_ps(x, res, input_nan_mask);
+    res = _mm_blendv_ps(res, zero, _mm_or_ps(minus_inf_mask, minus_zero_mask));
     res = _mm_blendv_ps(res, inf, inf_mask);
 
     return res;

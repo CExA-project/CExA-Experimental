@@ -49,10 +49,17 @@ void bench_accuracy_kokkos() {
         for (std::size_t lane = 0; lane < width; ++lane) {
             float expected = mpfr::exp(values[lane]).toFloat();
             std::uint32_t ulp = ulp_distance(computed[lane], expected);
-            min_ulp = ulp < min_ulp ? ulp : min_ulp;
-            max_ulp_val = ulp > max_ulp ? Kokkos::bit_cast<std::uint32_t>(values[lane])
-                                        : max_ulp_val;
-            max_ulp = ulp > max_ulp ? ulp : max_ulp;
+            // min_ulp = ulp < min_ulp ? ulp : min_ulp;
+            // max_ulp_val = ulp > max_ulp ?
+            // Kokkos::bit_cast<std::uint32_t>(values[lane])
+            //                             : max_ulp_val;
+            // max_ulp = ulp > max_ulp ? ulp : max_ulp;
+            if (ulp > max_ulp) {
+                max_ulp_val = Kokkos::bit_cast<std::uint32_t>(values[lane]);
+                max_ulp = ulp;
+                std::cout << "New max: " << max_ulp << " at " << max_ulp_val << " ("
+                          << values[lane] << ")" << std::endl;
+            }
             total_ulp += ulp;
         }
 
@@ -64,8 +71,10 @@ void bench_accuracy_kokkos() {
 
     double mean_ulp =
         static_cast<double>(total_ulp) / std::numeric_limits<std::uint32_t>::max();
-    std::cout << "Kokkos: " << mean_ulp << ' ' << min_ulp << ' ' << max_ulp << ' '
-              << max_ulp_val << std::endl;
+    // std::cout << "Kokkos: " << mean_ulp << ' ' << min_ulp << ' ' << max_ulp << ' '
+    //           << max_ulp_val << std::endl;
+    std::cout << "Kokkos: " << mean_ulp << ' ' << max_ulp << ' ' << max_ulp_val
+              << std::endl;
 }
 
 void bench_accuracy_custom_avx2() {
@@ -96,10 +105,17 @@ void bench_accuracy_custom_avx2() {
         for (std::size_t lane = 0; lane < width; ++lane) {
             float expected = mpfr::exp(values[lane]).toFloat();
             std::uint32_t ulp = ulp_distance(computed[lane], expected);
-            min_ulp = ulp < min_ulp ? ulp : min_ulp;
-            max_ulp_val = ulp > max_ulp ? Kokkos::bit_cast<std::uint32_t>(values[lane])
-                                        : max_ulp_val;
-            max_ulp = ulp > max_ulp ? ulp : max_ulp;
+            // min_ulp = ulp < min_ulp ? ulp : min_ulp;
+            // max_ulp_val = ulp > max_ulp ?
+            // Kokkos::bit_cast<std::uint32_t>(values[lane])
+            //                             : max_ulp_val;
+            // max_ulp = ulp > max_ulp ? ulp : max_ulp;
+            if (ulp > max_ulp) {
+                max_ulp_val = Kokkos::bit_cast<std::uint32_t>(values[lane]);
+                max_ulp = ulp;
+                std::cout << "New max: " << max_ulp << " at " << max_ulp_val << " ("
+                          << values[lane] << ")" << std::endl;
+            }
             total_ulp += ulp;
         }
 
@@ -111,7 +127,10 @@ void bench_accuracy_custom_avx2() {
 
     double mean_ulp =
         static_cast<double>(total_ulp) / std::numeric_limits<std::uint32_t>::max();
-    std::cout << "AVX2: " << mean_ulp << ' ' << min_ulp << ' ' << max_ulp << ' ' << max_ulp_val << std::endl;
+    // std::cout << "AVX2: " << mean_ulp << ' ' << min_ulp << ' ' << max_ulp << ' ' <<
+    // max_ulp_val << std::endl;
+    std::cout << "AVX2: " << mean_ulp << ' ' << max_ulp << ' ' << max_ulp_val
+              << std::endl;
 }
 
 #ifdef KOKKOS_ARCH_AVX512XEON
@@ -144,10 +163,17 @@ void bench_accuracy_custom_avx512() {
         for (std::size_t lane = 0; lane < width; ++lane) {
             float expected = mpfr::exp(values[lane]).toFloat();
             std::uint32_t ulp = ulp_distance(computed[lane], expected);
-            min_ulp = ulp < min_ulp ? ulp : min_ulp;
-            max_ulp_val = ulp > max_ulp ? Kokkos::bit_cast<std::uint32_t>(values[lane])
-                                        : max_ulp_val;
-            max_ulp = ulp > max_ulp ? ulp : max_ulp;
+            // min_ulp = ulp < min_ulp ? ulp : min_ulp;
+            // max_ulp_val = ulp > max_ulp ?
+            // Kokkos::bit_cast<std::uint32_t>(values[lane])
+            //                             : max_ulp_val;
+            // max_ulp = ulp > max_ulp ? ulp : max_ulp;
+            if (ulp > max_ulp) {
+                max_ulp_val = Kokkos::bit_cast<std::uint32_t>(values[lane]);
+                max_ulp = ulp;
+                std::cout << "New max: " << max_ulp << " at " << max_ulp_val << " ("
+                          << values[lane] << ")" << std::endl;
+            }
             total_ulp += ulp;
         }
 
@@ -159,8 +185,10 @@ void bench_accuracy_custom_avx512() {
 
     double mean_ulp =
         static_cast<double>(total_ulp) / std::numeric_limits<std::uint32_t>::max();
-    std::cout << "AVX512: " << mean_ulp << ' ' << min_ulp << ' ' << max_ulp << ' '
-              << max_ulp_val << std::endl;
+    // std::cout << "AVX512: " << mean_ulp << ' ' << min_ulp << ' ' << max_ulp << ' '
+    //           << max_ulp_val << std::endl;
+    std::cout << "AVX512: " << mean_ulp << ' ' << max_ulp << ' ' << max_ulp_val
+              << std::endl;
 }
 
 #endif

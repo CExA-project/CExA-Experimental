@@ -61,7 +61,7 @@ public:
                 checker.truth(std::isnan(computed[lane]) && std::isnan(computed_serial));
             }
 
-            T special_values[] = {0.0, -103, 88.7, -2.38164398e+10, 2.38164398e+10};
+            T special_values[] = {0.0, -103, 88.7, -9.30327e+07, -2.38164398e+10, 2.38164398e+10};
             for (auto value: special_values) {
                 // subnormal
                 simd_type vec(value);
