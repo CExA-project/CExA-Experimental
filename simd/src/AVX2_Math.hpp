@@ -63,18 +63,6 @@ inline __m256i cvtpd_epi64(__m256d x) {
     );
 }
 
-// convert a packed i64 to packed double
-inline __m256d cvtepi64_pd(__m256i x) {
-    alignas(__m256i) std::int64_t buf[4];
-    std::memcpy(buf, &x, sizeof(x));
-    return _mm256_setr_pd(
-        static_cast<double>(buf[0]),
-        static_cast<double>(buf[1]),
-        static_cast<double>(buf[2]),
-        static_cast<double>(buf[3])
-    );
-}
-
 // computes the min of 64 bit integers contained in two vectors
 inline __m256i min_epi64(__m256i a, __m256i b) {
     __m256i mask = _mm256_cmpgt_epi64(b, a);
@@ -112,7 +100,7 @@ inline __m256d exp4d(__m256d x) {
     // if k is equal to the maximum exponent + 1, we compute 2^(k-1) and multiply the
     // final result by 2
     __m256i mul_mask = _mm256_cmpeq_epi64(k_int, _mm256_set1_epi64x(1024ll));
-    mul_mask = _mm256_and_si256(mul_mask, _mm256_set1_epi64x(1ll));
+    mul_mask = _mm256_and_si256(mul_mask, one);
     shifted_value = _mm256_sub_epi64(shifted_value, mul_mask);
     const __m256d two_k = _mm256_castsi256_pd(_mm256_sllv_epi64(shifted_value, shift));
 
@@ -124,8 +112,11 @@ inline __m256d exp4d(__m256d x) {
         r_pow = _mm256_mul_pd(r_pow, r);
     }
 
-    mul_mask = _mm256_add_epi64(mul_mask, one);
-    __m256d res = _mm256_mul_pd(_mm256_mul_pd(two_k, approx), cvtepi64_pd(mul_mask));
+    mul_mask = _mm256_add_epi64(mul_mask, bias);
+    __m256d res = _mm256_mul_pd(
+        _mm256_mul_pd(two_k, approx),
+        _mm256_castsi256_pd(_mm256_slli_epi64(mul_mask, 52))
+    );
 
     // handle special values, e^-inf = 0, e^inf = inf, ...
     constexpr __m256d minus_inf = init_vector<double, 4>(-INFINITY);
@@ -176,7 +167,7 @@ inline __m256 exp8f(__m256 x) {
     const __m256i shift_mask = _mm256_cmpeq_epi32(shift, normal_shift);
     __m256i shifted_value = _mm256_blendv_epi8(one, biased_exp, shift_mask);
     __m256i mul_mask = _mm256_cmpeq_epi32(k_int, _mm256_set1_epi32(128));
-    mul_mask = _mm256_and_si256(mul_mask, _mm256_set1_epi32(1));
+    mul_mask = _mm256_and_si256(mul_mask, one);
     shifted_value = _mm256_sub_epi32(shifted_value, mul_mask);
     const __m256 two_k = _mm256_castsi256_ps(_mm256_sllv_epi32(shifted_value, shift));
 
@@ -188,9 +179,11 @@ inline __m256 exp8f(__m256 x) {
         r_pow = _mm256_mul_ps(r_pow, r);
     }
 
-    mul_mask = _mm256_add_epi32(mul_mask, one);
-    __m256 res =
-        _mm256_mul_ps(_mm256_mul_ps(two_k, approx), _mm256_cvtepi32_ps(mul_mask));
+    mul_mask = _mm256_add_epi32(mul_mask, bias);
+    __m256 res = _mm256_mul_ps(
+        _mm256_mul_ps(two_k, approx),
+        _mm256_castsi256_ps(_mm256_slli_epi32(mul_mask, 23))
+    );
 
     // special cases
     constexpr __m256 minus_inf = init_vector<float, 8>(-INFINITY);
@@ -237,7 +230,7 @@ inline __m128 exp4f(__m128 x) {
     const __m128i shift_mask = _mm_cmpeq_epi32(shift, normal_shift);
     __m128i shifted_value = _mm_blendv_epi8(one, biased_exp, shift_mask);
     __m128i mul_mask = _mm_cmpeq_epi32(k_int, _mm_set1_epi32(128));
-    mul_mask = _mm_and_si128(mul_mask, _mm_set1_epi32(1));
+    mul_mask = _mm_and_si128(mul_mask, one);
     shifted_value = _mm_sub_epi32(shifted_value, mul_mask);
     const __m128 two_k = _mm_castsi128_ps(_mm_sllv_epi32(shifted_value, shift));
 
@@ -249,8 +242,11 @@ inline __m128 exp4f(__m128 x) {
         r_pow = _mm_mul_ps(r_pow, r);
     }
 
-    mul_mask = _mm_add_epi32(mul_mask, one);
-    __m128 res = _mm_mul_ps(_mm_mul_ps(two_k, approx), _mm_cvtepi32_ps(mul_mask));
+    mul_mask = _mm_add_epi32(mul_mask, bias);
+    __m128 res = _mm_mul_ps(
+        _mm_mul_ps(two_k, approx),
+        _mm_castsi128_ps(_mm_slli_epi32(mul_mask, 23))
+    );
 
     // special cases
     constexpr __m128 minus_inf = init_vector<float, 4>(-INFINITY);

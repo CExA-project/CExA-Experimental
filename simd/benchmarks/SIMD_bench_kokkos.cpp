@@ -150,7 +150,7 @@ static void bench_function(benchmark::State& state) {
     using simd_type = Kokkos::Experimental::basic_simd<data_type, Abi>;
     constexpr std::size_t width = simd_type::size();
 
-    std::size_t samples = 1000000;
+    std::size_t samples = 10000000;
 
     data_type* data_test =
         new (std::align_val_t(width * sizeof(data_type))) data_type[samples];
