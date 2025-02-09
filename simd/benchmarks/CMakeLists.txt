@@ -33,6 +33,9 @@ endif()
 add_executable(bench_kokkos SIMD_bench_kokkos.cpp)
 target_link_libraries(bench_kokkos PRIVATE benchmark_common)
 
+add_executable(bench_kokkos_parallel SIMD_bench_kokkos_parallel.cpp)
+target_link_libraries(bench_kokkos_parallel PRIVATE benchmark_common)
+
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL IntelLLVM)
   add_executable(bench_intrinsics SIMD_bench_intrinsics.cpp)
   target_link_libraries(bench_intrinsics PRIVATE benchmark_common)

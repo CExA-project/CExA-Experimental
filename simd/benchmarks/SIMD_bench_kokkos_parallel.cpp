@@ -1,11 +1,8 @@
 #include <benchmark/benchmark.h>
 #include <cassert>
 #include <immintrin.h>
-#include <Kokkos_Complex.hpp>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Macros.hpp>
 #include <Kokkos_SIMD.hpp>
-#include <numeric>
 #include <type_traits>
 
 enum class Intrinsics {
@@ -159,17 +156,24 @@ static void bench_function(benchmark::State& state) {
         new (std::align_val_t(width * sizeof(data_type))) data_type[samples];
 
     for (auto _: state) {
-        for (std::size_t i = 0; i < samples; i += width) {
-            simd_type vec;
-            vec.copy_from(&data_test[i], Kokkos::Experimental::simd_flag_aligned);
-            simd_type res;
-            if constexpr (intrinsics == Intrinsics::Kokkos) {
-                benchmark::DoNotOptimize(res = Kokkos::exp(vec));
-            } else {
-                benchmark::DoNotOptimize(res = custom_exp(vec));
+        Kokkos::parallel_for(
+            "loop",
+            Kokkos::RangePolicy(0, samples / width),
+            KOKKOS_LAMBDA(const std::size_t i) {
+                simd_type vec;
+                vec.copy_from(
+                    &data_test[i * width],
+                    Kokkos::Experimental::simd_flag_aligned
+                );
+                simd_type res;
+                if constexpr (intrinsics == Intrinsics::Kokkos) {
+                    benchmark::DoNotOptimize(res = Kokkos::exp(vec));
+                } else {
+                    benchmark::DoNotOptimize(res = custom_exp(vec));
+                }
+                res.copy_to(&result[i * width], Kokkos::Experimental::simd_flag_aligned);
             }
-            res.copy_to(&result[i], Kokkos::Experimental::simd_flag_aligned);
-        }
+        );
     }
 
     benchmark::DoNotOptimize(result[state.bytes_processed() % samples]);

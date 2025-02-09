@@ -1,7 +1,9 @@
 #ifndef CEXA_EXPERIMENTAL_SIMD_TESTING_OPS_HPP
 #define CEXA_EXPERIMENTAL_SIMD_TESTING_OPS_HPP
 
+#include <algorithm>
 #include <cmath>
+#include <iterator>
 #include <limits>
 #include <type_traits>
 
@@ -24,7 +26,7 @@ public:
         return Kokkos::exp(a);
     }
 
-    template<class Abi, class Loader, typename T>
+    template<bool check_relative_error, class Abi, class Loader, typename T>
     void check_special_values() {
         if constexpr (!std::is_integral_v<T>) {
             using simd_type = Kokkos::Experimental::basic_simd<T, Abi>;
@@ -33,24 +35,6 @@ public:
             gtest_checker checker;
             simd_type computed;
             T computed_serial;
-
-            // +inf
-            simd_type inf(std::numeric_limits<T>::infinity());
-            computed = on_host(inf);
-            computed_serial = on_host_serial(inf[0]);
-
-            for (std::size_t lane = 0; lane < width; lane++) {
-                checker.equality(computed[lane], computed_serial);
-            }
-
-            // -inf
-            simd_type negative_inf(-std::numeric_limits<T>::infinity());
-            computed = on_host(negative_inf);
-            computed_serial = on_host_serial(negative_inf[0]);
-
-            for (std::size_t lane = 0; lane < width; lane++) {
-                checker.equality(computed[lane], computed_serial);
-            }
 
             // nan
             simd_type nan(std::numeric_limits<T>::quiet_NaN());
@@ -61,17 +45,38 @@ public:
                 checker.truth(std::isnan(computed[lane]) && std::isnan(computed_serial));
             }
 
-            T special_values[] = {0.0, -103, 88.7, -9.30327e+07, -2.38164398e+10, 2.38164398e+10};
-            for (auto value: special_values) {
-                // subnormal
-                simd_type vec(value);
-                computed = on_host(vec);
-                computed_serial = on_host_serial(vec[0]);
+            T tested_values[] = {
+                0.0,
+                std::numeric_limits<T>::infinity(),
+                -std::numeric_limits<T>::infinity(),
+                -103,
+                88.7,
+                -9.30327e+07,
+                -2.38164398e+10,
+                2.38164398e+10
+            };
 
-                for (std::size_t lane = 0; lane < width; lane++) {
-                    checker.equality(computed[lane], computed_serial);
+            load_masked loader;
+            for (std::size_t i = 0; i < std::size(tested_values); i += width) {
+                std::size_t nlanes = std::min(width, std::size(tested_values) - i);
+                simd_type vec;
+                loader.host_load(
+                    tested_values + i,
+                    nlanes,
+                    vec
+                );
+                computed = on_host(vec);
+
+                for (std::size_t j = 0; j < nlanes; j++) {
+                    computed_serial = on_host_serial(tested_values[i + j]);
+                    if constexpr (check_relative_error) {
+                        checker.closeness(computed_serial, computed[j]);
+                    } else {
+                        checker.equality(computed_serial, computed[j]);
+                    }
                 }
             }
+
         }
     }
 };

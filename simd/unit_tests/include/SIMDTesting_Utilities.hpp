@@ -17,8 +17,22 @@
 #ifndef KOKKOS_SIMD_TESTING_UTILITIES_HPP
 #define KOKKOS_SIMD_TESTING_UTILITIES_HPP
 
+#include <cstdlib>
 #include <gtest/gtest.h>
 #include <Kokkos_SIMD.hpp>
+#include <limits>
+
+#define EXPECT_NEAR_REL(a, b, threshold)                                       \
+    do {                                                                       \
+        const auto a_ = (a);                                                   \
+        const auto b_ = (b);                                                   \
+        const auto inf = std::numeric_limits<decltype(a_)>::infinity();        \
+        if ((a_ == inf && b_ == inf) || (a_ == -inf && b_ == -inf)) {          \
+            break;                                                             \
+        }                                                                      \
+        double error = b_ != 0 ? std::abs((a_ - b_) / b_) : std::abs(a_ - b_); \
+        EXPECT_LT(error, (threshold)) << "a = " << a_ << ", b = " << b_;       \
+    } while (false)
 
 class gtest_checker {
  public:
@@ -29,6 +43,16 @@ class gtest_checker {
       EXPECT_DOUBLE_EQ(a, b);
     } else if constexpr (std::is_same_v<T, float>) {
       EXPECT_FLOAT_EQ(a, b);
+    } else {
+      EXPECT_EQ(a, b);
+    }
+  }
+  template<class T>
+  void closeness(T const& a, T const& b) const {
+    if constexpr (std::is_same_v<T, double>) {
+      EXPECT_NEAR_REL(a, b, 1e-14);
+    } else if constexpr (std::is_same_v<T, float>) {
+      EXPECT_NEAR_REL(a, b, 1e-6);
     } else {
       EXPECT_EQ(a, b);
     }
@@ -55,6 +79,32 @@ inline void host_check_equality(
   gtest_checker checker;
   for (std::size_t i = 0; i < nlanes; ++i) {
     checker.equality(expected_result[i], computed_result[i]);
+  }
+
+// TODO
+// #ifdef __INTEL_COMPILER
+  if constexpr (!std::is_integral_v<T>) return;
+// #endif
+
+  using mask_type =
+      typename Kokkos::Experimental::basic_simd<T, Abi>::mask_type;
+  if constexpr (std::is_same_v<Abi, Kokkos::Experimental::simd_abi::scalar>) {
+    mask_type mask(KOKKOS_LAMBDA(std::size_t i) { return (i < nlanes); });
+    checker.equality((expected_result == computed_result) && mask, mask);
+  } else {
+    mask_type mask([=](std::size_t i) { return (i < nlanes); });
+    checker.equality((expected_result == computed_result) && mask, mask);
+  }
+}
+
+template <class T, class Abi>
+inline void host_check_closeness(
+    Kokkos::Experimental::basic_simd<T, Abi> const& expected_result,
+    Kokkos::Experimental::basic_simd<T, Abi> const& computed_result,
+    std::size_t nlanes) {
+  gtest_checker checker;
+  for (std::size_t i = 0; i < nlanes; ++i) {
+    checker.closeness(expected_result[i], computed_result[i]);
   }
 
 // TODO
