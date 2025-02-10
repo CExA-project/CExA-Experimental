@@ -7,7 +7,7 @@
 
 #include "Constants.hpp"
 
-namespace avx512
+namespace Cexa::Experimental::simd::avx512
 {
 
 inline __m512d exp8d(__m512d x) {
@@ -296,6 +296,6 @@ inline __m256 exp8f(__m256 x) {
     return res;
 }
 
-}  // namespace avx512
+}  // namespace Cexa::Experimental::simd::avx512
 
 #endif

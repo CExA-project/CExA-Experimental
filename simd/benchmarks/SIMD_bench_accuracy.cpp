@@ -99,7 +99,7 @@ void bench_accuracy_custom_avx2() {
          i <= static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max());
          i += width) {
         vec = _mm256_load_ps(values);
-        computed_vec = avx2::exp8f(vec);
+        computed_vec = Cexa::Experimental::simd::avx2::exp8f(vec);
         _mm256_store_ps(computed, computed_vec);
 
         for (std::size_t lane = 0; lane < width; ++lane) {
@@ -157,7 +157,7 @@ void bench_accuracy_custom_avx512() {
          i <= static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max());
          i += width) {
         vec = _mm512_load_ps(values);
-        computed_vec = avx512::exp16f(vec);
+        computed_vec = Cexa::Experimental::simd::avx512::exp16f(vec);
         _mm512_store_ps(computed, computed_vec);
 
         for (std::size_t lane = 0; lane < width; ++lane) {

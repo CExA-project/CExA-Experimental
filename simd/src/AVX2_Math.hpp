@@ -10,7 +10,7 @@
 
 #include "Constants.hpp"
 
-namespace avx2
+namespace Cexa::Experimental::simd::avx2
 {
 
 // Convert a packed double to packed i64 (the intrinsic for this is only available for
@@ -339,6 +339,6 @@ inline __m128 exp4f(__m128 x) {
 
     return res;
 }
-}  // namespace avx2
+}  // namespace Cexa::Experimental::simd::avx2
 
 #endif

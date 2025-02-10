@@ -33,7 +33,7 @@ const char* simd_name<Kokkos::Experimental::simd_abi::scalar, double> = "scalar 
                Kokkos::Experimental::simd_abi::avx2_fixed_size<4>> const& x) {
     return Kokkos::Experimental::
         basic_simd<double, Kokkos::Experimental::simd_abi::avx2_fixed_size<4>>(
-            avx2::exp4d(static_cast<__m256d>(x))
+            Cexa::Experimental::simd::avx2::exp4d(static_cast<__m256d>(x))
         );
 }
 
@@ -44,7 +44,7 @@ const char* simd_name<Kokkos::Experimental::simd_abi::scalar, double> = "scalar 
                Kokkos::Experimental::simd_abi::avx2_fixed_size<8>> const& x) {
     return Kokkos::Experimental::
         basic_simd<float, Kokkos::Experimental::simd_abi::avx2_fixed_size<8>>(
-            avx2::exp8f(static_cast<__m256>(x))
+            Cexa::Experimental::simd::avx2::exp8f(static_cast<__m256>(x))
         );
 }
 
@@ -55,7 +55,7 @@ const char* simd_name<Kokkos::Experimental::simd_abi::scalar, double> = "scalar 
                Kokkos::Experimental::simd_abi::avx2_fixed_size<4>> const& x) {
     return Kokkos::Experimental::
         basic_simd<float, Kokkos::Experimental::simd_abi::avx2_fixed_size<4>>(
-            avx2::exp4f(static_cast<__m128>(x))
+            Cexa::Experimental::simd::avx2::exp4f(static_cast<__m128>(x))
         );
 }
 
@@ -79,7 +79,7 @@ const char* simd_name<Kokkos::Experimental::simd_abi::avx2_fixed_size<4>, double
                Kokkos::Experimental::simd_abi::avx512_fixed_size<8>> const& x) {
     return Kokkos::Experimental::
         basic_simd<double, Kokkos::Experimental::simd_abi::avx512_fixed_size<8>>(
-            avx512::exp8d(static_cast<__m512d>(x))
+            Cexa::Experimental::simd::avx512::exp8d(static_cast<__m512d>(x))
         );
 }
 
@@ -90,7 +90,7 @@ const char* simd_name<Kokkos::Experimental::simd_abi::avx2_fixed_size<4>, double
                Kokkos::Experimental::simd_abi::avx512_fixed_size<16>> const& x) {
     return Kokkos::Experimental::
         basic_simd<float, Kokkos::Experimental::simd_abi::avx512_fixed_size<16>>(
-            avx512::exp16f(static_cast<__m512>(x))
+            Cexa::Experimental::simd::avx512::exp16f(static_cast<__m512>(x))
         );
 }
 
@@ -101,7 +101,7 @@ const char* simd_name<Kokkos::Experimental::simd_abi::avx2_fixed_size<4>, double
                Kokkos::Experimental::simd_abi::avx512_fixed_size<8>> const& x) {
     return Kokkos::Experimental::
         basic_simd<float, Kokkos::Experimental::simd_abi::avx512_fixed_size<8>>(
-            avx512::exp8f(static_cast<__m256>(x))
+            Cexa::Experimental::simd::avx512::exp8f(static_cast<__m256>(x))
         );
 }
 

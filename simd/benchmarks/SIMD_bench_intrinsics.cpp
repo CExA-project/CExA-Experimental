@@ -25,7 +25,7 @@ __m128 tested_exp(__m128 x) {
     if constexpr (intrinsics == Intrinsics::Intel) {
         return _mm_exp_ps(x);
     } else {
-        return avx2::exp4f(x);
+        return Cexa::Experimental::simd::avx2::exp4f(x);
     }
 }
 
@@ -34,7 +34,7 @@ __m256d tested_exp(__m256d x) {
     if constexpr (intrinsics == Intrinsics::Intel) {
         return _mm256_exp_pd(x);
     } else {
-        return avx2::exp4d(x);
+        return Cexa::Experimental::simd::avx2::exp4d(x);
     }
 }
 
@@ -44,7 +44,7 @@ __m256 tested_exp(__m256 x) {
     if constexpr (intrinsics == Intrinsics::Intel) {
         return _mm256_exp_ps(x);
     } else {
-        return avx2::exp8f(x);
+        return Cexa::Experimental::simd::avx2::exp8f(x);
     }
 }
 #else
@@ -53,7 +53,7 @@ __m256 tested_exp(__m256 x) {
     if constexpr (intrinsics == Intrinsics::Intel) {
         return _mm256_exp_ps(x);
     } else {
-        return avx512::exp8f(x);
+        return Cexa::Experimental::simd::avx512::exp8f(x);
     }
 }
 
@@ -62,7 +62,7 @@ __m512 tested_exp(__m512 x) {
     if constexpr (intrinsics == Intrinsics::Intel) {
         return _mm512_exp_ps(x);
     } else {
-        return avx512::exp16f(x);
+        return Cexa::Experimental::simd::avx512::exp16f(x);
     }
 }
 
@@ -71,7 +71,7 @@ __m512d tested_exp(__m512d x) {
     if constexpr (intrinsics == Intrinsics::Intel) {
         return _mm512_exp_pd(x);
     } else {
-        return avx512::exp8d(x);
+        return Cexa::Experimental::simd::avx512::exp8d(x);
     }
 }
 #endif

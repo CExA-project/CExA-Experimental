@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <Kokkos_BitManipulation.hpp>
 
-namespace constants
+namespace Cexa::Experimental::simd::constants
 {
 
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION float hex_to_float(std::uint32_t i) {
@@ -122,6 +122,6 @@ inline const std::array<double, 32> S_trail = {
     hex_to_double(0x3CF9858F73A18F5E), hex_to_double(0x3C99D3E12DD8A18B),
 };
 }  // namespace double_precision
-}  // namespace constants
+}  // namespace Cexa::Experimental::simd::constants
 
 #endif
