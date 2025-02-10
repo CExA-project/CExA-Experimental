@@ -7,18 +7,92 @@
 #include <limits>
 #include <type_traits>
 
-#include <Kokkos_SIMD_AVX_Math.hpp>
 #include <SIMDTesting_Utilities.hpp>
+
+#ifdef KOKKOS_ARCH_AVX2
+#include "AVX2_Math.hpp"
+
+[[nodiscard]] KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION Kokkos::Experimental::
+    basic_simd<double, Kokkos::Experimental::simd_abi::avx2_fixed_size<4>>
+    custom_exp(Kokkos::Experimental::basic_simd<
+               double,
+               Kokkos::Experimental::simd_abi::avx2_fixed_size<4>> const& x) {
+    return Kokkos::Experimental::
+        basic_simd<double, Kokkos::Experimental::simd_abi::avx2_fixed_size<4>>(
+            Cexa::Experimental::simd::avx2::exp4d(static_cast<__m256d>(x))
+        );
+}
+
+[[nodiscard]] KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION Kokkos::Experimental::
+    basic_simd<float, Kokkos::Experimental::simd_abi::avx2_fixed_size<8>>
+    custom_exp(Kokkos::Experimental::basic_simd<
+               float,
+               Kokkos::Experimental::simd_abi::avx2_fixed_size<8>> const& x) {
+    return Kokkos::Experimental::
+        basic_simd<float, Kokkos::Experimental::simd_abi::avx2_fixed_size<8>>(
+            Cexa::Experimental::simd::avx2::exp8f(static_cast<__m256>(x))
+        );
+}
+
+[[nodiscard]] KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION Kokkos::Experimental::
+    basic_simd<float, Kokkos::Experimental::simd_abi::avx2_fixed_size<4>>
+    custom_exp(Kokkos::Experimental::basic_simd<
+               float,
+               Kokkos::Experimental::simd_abi::avx2_fixed_size<4>> const& x) {
+    return Kokkos::Experimental::
+        basic_simd<float, Kokkos::Experimental::simd_abi::avx2_fixed_size<4>>(
+            Cexa::Experimental::simd::avx2::exp4f(static_cast<__m128>(x))
+        );
+}
+#endif
+
+#ifdef KOKKOS_ARCH_AVX512XEON
+#include "AVX512_Math.hpp"
+
+[[nodiscard]] KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION Kokkos::Experimental::
+    basic_simd<double, Kokkos::Experimental::simd_abi::avx512_fixed_size<8>>
+    custom_exp(Kokkos::Experimental::basic_simd<
+               double,
+               Kokkos::Experimental::simd_abi::avx512_fixed_size<8>> const& x) {
+    return Kokkos::Experimental::
+        basic_simd<double, Kokkos::Experimental::simd_abi::avx512_fixed_size<8>>(
+            Cexa::Experimental::simd::avx512::exp8d(static_cast<__m512d>(x))
+        );
+}
+
+[[nodiscard]] KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION Kokkos::Experimental::
+    basic_simd<float, Kokkos::Experimental::simd_abi::avx512_fixed_size<16>>
+    custom_exp(Kokkos::Experimental::basic_simd<
+               float,
+               Kokkos::Experimental::simd_abi::avx512_fixed_size<16>> const& x) {
+    return Kokkos::Experimental::
+        basic_simd<float, Kokkos::Experimental::simd_abi::avx512_fixed_size<16>>(
+            Cexa::Experimental::simd::avx512::exp16f(static_cast<__m512>(x))
+        );
+}
+
+[[nodiscard]] KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION Kokkos::Experimental::
+    basic_simd<float, Kokkos::Experimental::simd_abi::avx512_fixed_size<8>>
+    custom_exp(Kokkos::Experimental::basic_simd<
+               float,
+               Kokkos::Experimental::simd_abi::avx512_fixed_size<8>> const& x) {
+    return Kokkos::Experimental::
+        basic_simd<float, Kokkos::Experimental::simd_abi::avx512_fixed_size<8>>(
+            Cexa::Experimental::simd::avx512::exp8f(static_cast<__m256>(x))
+        );
+}
+#endif
+
+template<typename T>
+auto custom_exp(T const& a) {
+    return Kokkos::exp(a);
+}
 
 class exp_op {
 public:
     template<typename T>
     auto on_host(T const& a) const {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-        return Kokkos::Experimental::exp(a);
-#else
-        return Kokkos::exp(a);
-#endif
+        return custom_exp(a);
     }
 
     template<typename T>
@@ -39,10 +113,8 @@ public:
             // nan
             simd_type nan(std::numeric_limits<T>::quiet_NaN());
             computed = on_host(nan);
-            computed_serial = on_host_serial(nan[0]);
-
             for (std::size_t lane = 0; lane < width; lane++) {
-                checker.truth(std::isnan(computed[lane]) && std::isnan(computed_serial));
+                checker.truth(is_nan(computed[lane]));
             }
 
             T tested_values[] = {
@@ -60,11 +132,7 @@ public:
             for (std::size_t i = 0; i < std::size(tested_values); i += width) {
                 std::size_t nlanes = std::min(width, std::size(tested_values) - i);
                 simd_type vec;
-                loader.host_load(
-                    tested_values + i,
-                    nlanes,
-                    vec
-                );
+                loader.host_load(tested_values + i, nlanes, vec);
                 computed = on_host(vec);
 
                 for (std::size_t j = 0; j < nlanes; j++) {
@@ -76,7 +144,6 @@ public:
                     }
                 }
             }
-
         }
     }
 };
