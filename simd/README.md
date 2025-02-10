@@ -22,7 +22,7 @@ in the namespace `Cexa::Experimental::simd`:
 These functions can be made available as `Kokkos::exp` overloads by including
 the file [Kokkos_SIMD_AVX_Math.hpp](./src/Kokkos_SIMD_AVX_Math.hpp).
 
-```
+```c++
 #include <Kokkos_SIMD_AVX_Math.hpp>
 ```
 
