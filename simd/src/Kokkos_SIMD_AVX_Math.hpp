@@ -7,7 +7,7 @@
                           // defined
 
 #ifdef KOKKOS_ARCH_AVX2
-#include <AVX2_Math.hpp>
+#include "AVX2_Math.hpp"
 
 namespace Kokkos
 {
@@ -68,7 +68,7 @@ namespace Experimental
 #endif
 
 #ifdef KOKKOS_ARCH_AVX512XEON
-#include <AVX512_Math.hpp>
+#include "AVX512_Math.hpp"
 
 namespace Kokkos
 {
