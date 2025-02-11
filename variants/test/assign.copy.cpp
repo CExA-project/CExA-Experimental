@@ -23,12 +23,12 @@ struct Obj {
   KOKKOS_FUNCTION Obj(const Obj &o) noexcept : _f(o._f) {
     _f.copy_constructor_called = true;
   }
-  KOKKOS_FUNCTION Obj(Obj &&) = default;
+  Obj(Obj &&) = default;
   KOKKOS_FUNCTION Obj &operator=(const Obj &) noexcept {
     _f.operator_equal_called = true;
     return *this;
   }
-  KOKKOS_FUNCTION Obj &operator=(Obj &&) = delete;
+  Obj &operator=(Obj &&) = delete;
 };
 
 struct Assign_Copy_SameType {

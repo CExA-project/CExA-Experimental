@@ -659,8 +659,8 @@ namespace mpark {
   dispatcher<(I < lib::decay_t<V>::size()), R>::template dispatch_case<I>( \
       lib::forward<F>(f), lib::forward<V>(v), lib::forward<Vs>(vs)...)
 
-#define MPARK_DEFAULT(I)                                                 \
-  dispatcher<(I < lib::decay_t<V>::size()), R>::template dispatch_at<I>( \
+#define MPARK_DEFAULT(I)                                                      \
+  dispatcher<(I < lib::decay_t<V>::size()), R>::template dispatch_at<I>(      \
       index, lib::forward<F>(f), lib::forward<V>(v), lib::forward<Vs>(vs)...)
 
             switch (index) {
@@ -1004,23 +1004,23 @@ namespace mpark {
       noexcept                                                             \
         : dummy_{} {}                                                      \
                                                                            \
-    template <typename... Args>                                            \
-    KOKKOS_INLINE_FUNCTION explicit constexpr recursive_union(in_place_index_t<0>,         \
+    template <typename... Args> KOKKOS_INLINE_FUNCTION                     \
+    explicit constexpr recursive_union(in_place_index_t<0>,                \
                                               Args &&... args)             \
         : head_(in_place_t{}, lib::forward<Args>(args)...) {}              \
                                                                            \
-    template <std::size_t I, typename... Args>                             \
-    KOKKOS_INLINE_FUNCTION explicit constexpr recursive_union(in_place_index_t<I>,         \
+    template <std::size_t I, typename... Args> KOKKOS_INLINE_FUNCTION      \
+    explicit constexpr recursive_union(in_place_index_t<I>,                \
                                               Args &&... args)             \
         : tail_(in_place_index_t<I - 1>{}, lib::forward<Args>(args)...) {} \
                                                                            \
-    KOKKOS_FUNCTION recursive_union(const recursive_union &) = default;                    \
-    KOKKOS_FUNCTION recursive_union(recursive_union &&) = default;                         \
+     recursive_union(const recursive_union &) = default;                   \
+     recursive_union(recursive_union &&) = default;                        \
                                                                            \
-    KOKKOS_FUNCTION destructor                                                             \
+     destructor                                                            \
                                                                            \
-    KOKKOS_FUNCTION recursive_union &operator=(const recursive_union &) = default;         \
-    KOKKOS_FUNCTION recursive_union &operator=(recursive_union &&) = default;              \
+     recursive_union &operator=(const recursive_union &) = default;        \
+     recursive_union &operator=(recursive_union &&) = default;             \
                                                                            \
     private:                                                               \
     char dummy_;                                                           \
@@ -1033,7 +1033,7 @@ namespace mpark {
     MPARK_VARIANT_RECURSIVE_UNION(Trait::TriviallyAvailable,
                                   ~recursive_union() = default;);
     MPARK_VARIANT_RECURSIVE_UNION(Trait::Available,
-                                  ~recursive_union() {});
+                                  KOKKOS_FUNCTION ~recursive_union() {});
     MPARK_VARIANT_RECURSIVE_UNION(Trait::Unavailable,
                                   ~recursive_union() = delete;);
 
@@ -1105,9 +1105,9 @@ namespace mpark {
 #if !defined(_MSC_VER) || _MSC_VER >= 1910
 #define MPARK_INHERITING_CTOR(type, base) using base::base;
 #else
-#define MPARK_INHERITING_CTOR(type, base)         \
-  template <typename... Args>                     \
-  KOKKOS_INLINE_FUNCTION explicit constexpr type(Args &&... args) \
+#define MPARK_INHERITING_CTOR(type, base)            \
+  template <typename... Args> KOKKOS_INLINE_FUNCTION \
+  explicit constexpr type(Args &&... args)           \
       : base(lib::forward<Args>(args)...) {}
 #endif
 
@@ -1124,27 +1124,27 @@ namespace mpark {
     MPARK_INHERITING_CTOR(destructor, super)                              \
     using super::operator=;                                               \
                                                                           \
-    KOKKOS_FUNCTION destructor(const destructor &) = default;                             \
-    KOKKOS_FUNCTION destructor(destructor &&) = default;                                  \
-    KOKKOS_FUNCTION definition                                                            \
-    KOKKOS_FUNCTION destructor &operator=(const destructor &) = default;                  \
-    KOKKOS_FUNCTION destructor &operator=(destructor &&) = default;                       \
+     destructor(const destructor &) = default;                            \
+     destructor(destructor &&) = default;                                 \
+     definition                                                           \
+     destructor &operator=(const destructor &) = default;                 \
+     destructor &operator=(destructor &&) = default;                      \
                                                                           \
     protected:                                                            \
-    KOKKOS_FUNCTION destroy                                                               \
+    destroy                                                               \
   }
 
     MPARK_VARIANT_DESTRUCTOR(
         Trait::TriviallyAvailable,
         ~destructor() = default;,
-        constexpr void destroy() noexcept {
+        KOKKOS_FUNCTION constexpr void destroy() noexcept {
           this->index_ = static_cast<index_t<Ts...>>(-1);
         });
 
     MPARK_VARIANT_DESTRUCTOR(
         Trait::Available,
-        ~destructor() { destroy(); },
-        void destroy() noexcept {
+        KOKKOS_FUNCTION ~destructor() { destroy(); },
+        KOKKOS_FUNCTION void destroy() noexcept {
           if (!this->valueless_by_exception()) {
             visitation::alt::visit_alt(dtor{}, *this);
           }
@@ -1219,11 +1219,11 @@ namespace mpark {
     MPARK_INHERITING_CTOR(move_constructor, super)                           \
     using super::operator=;                                                  \
                                                                              \
-    KOKKOS_FUNCTION move_constructor(const move_constructor &) = default;                    \
-    KOKKOS_FUNCTION definition                                                               \
-    KOKKOS_FUNCTION ~move_constructor() = default;                                           \
-    KOKKOS_FUNCTION move_constructor &operator=(const move_constructor &) = default;         \
-    KOKKOS_FUNCTION move_constructor &operator=(move_constructor &&) = default;              \
+     move_constructor(const move_constructor &) = default;                   \
+     definition                                                              \
+     ~move_constructor() = default;                                          \
+     move_constructor &operator=(const move_constructor &) = default;        \
+     move_constructor &operator=(move_constructor &&) = default;             \
   }
 
     MPARK_VARIANT_MOVE_CONSTRUCTOR(
@@ -1232,7 +1232,7 @@ namespace mpark {
 
     MPARK_VARIANT_MOVE_CONSTRUCTOR(
         Trait::Available,
-        constexpr move_constructor(move_constructor &&that) noexcept(
+        KOKKOS_FUNCTION constexpr move_constructor(move_constructor &&that) noexcept(
             lib::all<std::is_nothrow_move_constructible<Ts>::value...>::value)
             : move_constructor(valueless_t{}) {
           this->generic_construct(*this, lib::move(that));
@@ -1257,11 +1257,11 @@ namespace mpark {
     MPARK_INHERITING_CTOR(copy_constructor, super)                           \
     using super::operator=;                                                  \
                                                                              \
-    KOKKOS_FUNCTION definition                                                               \
-    KOKKOS_FUNCTION copy_constructor(copy_constructor &&) = default;                         \
-    KOKKOS_FUNCTION ~copy_constructor() = default;                                           \
-    KOKKOS_FUNCTION copy_constructor &operator=(const copy_constructor &) = default;         \
-    KOKKOS_FUNCTION copy_constructor &operator=(copy_constructor &&) = default;              \
+    definition                                                               \
+    copy_constructor(copy_constructor &&) = default;                         \
+    ~copy_constructor() = default;                                           \
+    copy_constructor &operator=(const copy_constructor &) = default;         \
+    copy_constructor &operator=(copy_constructor &&) = default;              \
   }
 
     MPARK_VARIANT_COPY_CONSTRUCTOR(
@@ -1270,7 +1270,7 @@ namespace mpark {
 
     MPARK_VARIANT_COPY_CONSTRUCTOR(
         Trait::Available,
-        constexpr copy_constructor(const copy_constructor &that)
+        KOKKOS_FUNCTION constexpr copy_constructor(const copy_constructor &that)
             : copy_constructor(valueless_t{}) {
           this->generic_construct(*this, that);
         });
@@ -1377,11 +1377,11 @@ namespace mpark {
     MPARK_INHERITING_CTOR(move_assignment, super)                        \
     using super::operator=;                                              \
                                                                          \
-    KOKKOS_FUNCTION move_assignment(const move_assignment &) = default;                  \
-    KOKKOS_FUNCTION move_assignment(move_assignment &&) = default;                       \
-    KOKKOS_FUNCTION ~move_assignment() = default;                                        \
-    KOKKOS_FUNCTION move_assignment &operator=(const move_assignment &) = default;       \
-    KOKKOS_FUNCTION definition                                                           \
+    move_assignment(const move_assignment &) = default;                  \
+    move_assignment(move_assignment &&) = default;                       \
+    ~move_assignment() = default;                                        \
+    move_assignment &operator=(const move_assignment &) = default;       \
+    definition                                                           \
   }
 
     MPARK_VARIANT_MOVE_ASSIGNMENT(
@@ -1390,7 +1390,7 @@ namespace mpark {
 
     MPARK_VARIANT_MOVE_ASSIGNMENT(
         Trait::Available,
-        constexpr move_assignment &
+        KOKKOS_FUNCTION constexpr move_assignment &
         operator=(move_assignment &&that) noexcept(
             lib::all<(std::is_nothrow_move_constructible<Ts>::value &&
                       std::is_nothrow_move_assignable<Ts>::value)...>::value) {
@@ -1417,16 +1417,16 @@ namespace mpark {
     MPARK_INHERITING_CTOR(copy_assignment, super)                        \
     using super::operator=;                                              \
                                                                          \
-    KOKKOS_FUNCTION copy_assignment(const copy_assignment &) = default;                  \
-    KOKKOS_FUNCTION copy_assignment(copy_assignment &&) = default;                       \
-    KOKKOS_FUNCTION ~copy_assignment() = default;                                        \
-    KOKKOS_FUNCTION definition                                                           \
-    KOKKOS_FUNCTION copy_assignment &operator=(copy_assignment &&) = default;            \
+    copy_assignment(const copy_assignment &) = default;                  \
+    copy_assignment(copy_assignment &&) = default;                       \
+    ~copy_assignment() = default;                                        \
+    definition                                                           \
+    copy_assignment &operator=(copy_assignment &&) = default;            \
   }
 
     MPARK_VARIANT_COPY_ASSIGNMENT(
         Trait::TriviallyAvailable,
-        KOKKOS_FUNCTION copy_assignment &operator=(const copy_assignment &that) = default;);
+         copy_assignment &operator=(const copy_assignment &that) = default;);
 
     MPARK_VARIANT_COPY_ASSIGNMENT(
         Trait::Available,
@@ -1437,7 +1437,7 @@ namespace mpark {
 
     MPARK_VARIANT_COPY_ASSIGNMENT(
         Trait::Unavailable,
-        KOKKOS_FUNCTION copy_assignment &operator=(const copy_assignment &) = delete;);
+        copy_assignment &operator=(const copy_assignment &) = delete;);
 
 #undef MPARK_VARIANT_COPY_ASSIGNMENT
 
@@ -1449,11 +1449,11 @@ namespace mpark {
       MPARK_INHERITING_CTOR(impl, super)
       using super::operator=;
 
-      KOKKOS_FUNCTION impl(const impl&) = default;
-      KOKKOS_FUNCTION impl(impl&&) = default;
-      KOKKOS_FUNCTION ~impl() = default;
-      KOKKOS_FUNCTION impl &operator=(const impl &) = default;
-      KOKKOS_FUNCTION impl &operator=(impl &&) = default;
+       impl(const impl&) = default;
+       impl(impl&&) = default;
+       ~impl() = default;
+       impl &operator=(const impl &) = default;
+       impl &operator=(impl &&) = default;
 
       template <std::size_t I, typename Arg>
       KOKKOS_INLINE_FUNCTION constexpr void assign(Arg &&arg) {
@@ -1627,8 +1627,8 @@ namespace mpark {
         std::is_nothrow_default_constructible<Front>::value)
         : impl_(in_place_index_t<0>{}) {}
 
-    KOKKOS_FUNCTION variant(const variant &) = default;
-    KOKKOS_FUNCTION variant(variant &&) = default;
+     variant(const variant &) = default;
+     variant(variant &&) = default;
 
     template <
         typename Arg,
@@ -1703,10 +1703,10 @@ namespace mpark {
                                           Args...>::value)
         : impl_(in_place_index_t<I>{}, il, lib::forward<Args>(args)...) {}
 
-    KOKKOS_FUNCTION ~variant() = default;
+     ~variant() = default;
 
-    KOKKOS_FUNCTION constexpr variant &operator=(const variant &) = default;
-    KOKKOS_FUNCTION constexpr variant &operator=(variant &&) = default;
+     constexpr variant &operator=(const variant &) = default;
+     constexpr variant &operator=(variant &&) = default;
 
     template <typename Arg,
               lib::enable_if_t<!std::is_same<lib::decay_t<Arg>, variant>::value,

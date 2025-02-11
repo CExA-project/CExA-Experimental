@@ -16,15 +16,15 @@
 namespace mpark {
 
 struct in_place_t {
-  explicit KOKKOS_FUNCTION in_place_t() = default;
+  explicit  in_place_t() = default;
 };
 
 template <std::size_t I> struct in_place_index_t {
-  explicit KOKKOS_FUNCTION in_place_index_t() = default;
+  explicit  in_place_index_t() = default;
 };
 
 template <typename T> struct in_place_type_t {
-  explicit KOKKOS_FUNCTION in_place_type_t() = default;
+  explicit  in_place_type_t() = default;
 };
 
 #ifdef MPARK_VARIABLE_TEMPLATES

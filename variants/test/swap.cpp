@@ -85,11 +85,11 @@ struct Swap_DtorsSame {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
     struct Obj {
       KOKKOS_FUNCTION Obj(size_t *dtor_count) : dtor_count_(dtor_count) {}
-      KOKKOS_FUNCTION Obj(const Obj &) = default;
-      KOKKOS_FUNCTION Obj(Obj &&) = default;
+      Obj(const Obj &) = default;
+      Obj(Obj &&) = default;
       KOKKOS_FUNCTION ~Obj() { ++(*dtor_count_); }
-      KOKKOS_FUNCTION Obj &operator=(const Obj &) = default;
-      KOKKOS_FUNCTION Obj &operator=(Obj &&) = default;
+      Obj &operator=(const Obj &) = default;
+      Obj &operator=(Obj &&) = default;
       size_t *dtor_count_;
     }; // Obj
     size_t v_count = 0;
@@ -120,11 +120,11 @@ namespace detail {
 
 struct Obj {
   KOKKOS_FUNCTION Obj(size_t *dtor_count) : dtor_count_(dtor_count) {}
-  KOKKOS_FUNCTION Obj(const Obj &) = default;
-  KOKKOS_FUNCTION Obj(Obj &&) = default;
+  Obj(const Obj &) = default;
+  Obj(Obj &&) = default;
   KOKKOS_FUNCTION ~Obj() { ++(*dtor_count_); }
-  KOKKOS_FUNCTION Obj &operator=(const Obj &) = default;
-  KOKKOS_FUNCTION Obj &operator=(Obj &&) = default;
+  Obj &operator=(const Obj &) = default;
+  Obj &operator=(Obj &&) = default;
   size_t *dtor_count_;
 }; // Obj
 
@@ -158,20 +158,20 @@ struct Swap_DtorsDifferent {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
     struct V {
       KOKKOS_FUNCTION V(size_t *dtor_count) : dtor_count_(dtor_count) {}
-      KOKKOS_FUNCTION V(const V &) = default;
-      KOKKOS_FUNCTION V(V &&) = default;
+      V(const V &) = default;
+      V(V &&) = default;
       KOKKOS_FUNCTION ~V() { ++(*dtor_count_); }
-      KOKKOS_FUNCTION V &operator=(const V &) = default;
-      KOKKOS_FUNCTION V &operator=(V &&) = default;
+      V &operator=(const V &) = default;
+      V &operator=(V &&) = default;
       size_t *dtor_count_;
     }; // V
     struct W {
       KOKKOS_FUNCTION W(size_t *dtor_count) : dtor_count_(dtor_count) {}
-      KOKKOS_FUNCTION W(const W &) = default;
-      KOKKOS_FUNCTION W(W &&) = default;
+      W(const W &) = default;
+      W(W &&) = default;
       KOKKOS_FUNCTION ~W() { ++(*dtor_count_); }
-      KOKKOS_FUNCTION W &operator=(const W &) = default;
-      KOKKOS_FUNCTION W &operator=(W &&) = default;
+      W &operator=(const W &) = default;
+      W &operator=(W &&) = default;
       size_t *dtor_count_;
     }; // W
     size_t v_count = 0;
