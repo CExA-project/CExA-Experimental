@@ -87,10 +87,6 @@
 #define MPARK_RETURN_TYPE_DEDUCTION
 #endif
 
-#if defined(__cpp_lib_transparent_operators) || defined(_MSC_VER)
-#define MPARK_TRANSPARENT_OPERATORS
-#endif
-
 #if defined(__cpp_variable_templates) || defined(_MSC_VER)
 #define MPARK_VARIABLE_TEMPLATES
 #endif

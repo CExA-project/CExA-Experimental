@@ -8,46 +8,68 @@
 
 #include <Kokkos_Variant.hpp>
 
-#include <string>
-
 #include <gtest/gtest.h>
 
-TEST(Ctor_Fwd, Direct) {
-  Cexa::Experimental::variant<int, std::string> v(42);
-  EXPECT_EQ(42, Cexa::Experimental::get<int>(v));
+#include "util.hpp"
 
-  /* constexpr */ {
-    constexpr Cexa::Experimental::variant<int, const char *> cv(42);
-    static_assert(42 == Cexa::Experimental::get<int>(cv), "");
+struct Ctor_Fwd_Direct {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v(42);
+    DEXPECT_EQ(42, Cexa::Experimental::get<int>(v));
+
+    /* constexpr */ {
+      constexpr Cexa::Experimental::variant<int, const char *> cv(42);
+      static_assert(42 == Cexa::Experimental::get<int>(cv), "");
+    }
   }
-}
+};
 
-TEST(Ctor_Fwd, DirectConversion) {
-  Cexa::Experimental::variant<int, std::string> v("42");
-  EXPECT_EQ("42", Cexa::Experimental::get<std::string>(v));
+TEST(Ctor_Fwd, Direct) { test_helper<Ctor_Fwd_Direct>(); }
 
-  /* constexpr */ {
-    constexpr Cexa::Experimental::variant<int, const char *> cv('A');
-    static_assert(65 == Cexa::Experimental::get<int>(cv), "");
+struct Ctor_Fwd_DirectConversion {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v("42");
+    DEXPECT_EQ("42", Cexa::Experimental::get<test_util::DeviceString>(v));
+
+    /* constexpr */ {
+      constexpr Cexa::Experimental::variant<int, const char *> cv('A');
+      static_assert(65 == Cexa::Experimental::get<int>(cv), "");
+    }
   }
-}
+};
+
+TEST(Ctor_Fwd, DirectConversion) { test_helper<Ctor_Fwd_DirectConversion>(); }
+
+struct Ctor_Fwd_CopyInitialization {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v = 42;
+    DEXPECT_EQ(42, Cexa::Experimental::get<int>(v));
+
+    /* constexpr */ {
+      constexpr Cexa::Experimental::variant<int, const char *> cv = 42;
+      static_assert(42 == Cexa::Experimental::get<int>(cv), "");
+    }
+  }
+};
 
 TEST(Ctor_Fwd, CopyInitialization) {
-  Cexa::Experimental::variant<int, std::string> v = 42;
-  EXPECT_EQ(42, Cexa::Experimental::get<int>(v));
-
-  /* constexpr */ {
-    constexpr Cexa::Experimental::variant<int, const char *> cv = 42;
-    static_assert(42 == Cexa::Experimental::get<int>(cv), "");
-  }
+  test_helper<Ctor_Fwd_CopyInitialization>();
 }
+
+struct Ctor_Fwd_CopyInitializationConversion {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v = "42";
+    DEXPECT_EQ("42", Cexa::Experimental::get<test_util::DeviceString>(v));
+
+    /* constexpr */ {
+      constexpr Cexa::Experimental::variant<int, const char *> cv = 'A';
+      static_assert(65 == Cexa::Experimental::get<int>(cv), "");
+    }
+  }
+};
 
 TEST(Ctor_Fwd, CopyInitializationConversion) {
-  Cexa::Experimental::variant<int, std::string> v = "42";
-  EXPECT_EQ("42", Cexa::Experimental::get<std::string>(v));
-
-  /* constexpr */ {
-    constexpr Cexa::Experimental::variant<int, const char *> cv = 'A';
-    static_assert(65 == Cexa::Experimental::get<int>(cv), "");
-  }
+  test_helper<Ctor_Fwd_CopyInitializationConversion>();
 }
+
+TEST_MAIN

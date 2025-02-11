@@ -14,23 +14,28 @@
 
 #include "util.hpp"
 
-TEST(Ctor_Move, Value) {
-  // `v`
-  Cexa::Experimental::variant<int, const char *> v("hello");
-  EXPECT_EQ("hello", Cexa::Experimental::get<const char *>(v));
-  // `w`
-  Cexa::Experimental::variant<int, const char *> w(std::move(v));
-  EXPECT_EQ("hello", Cexa::Experimental::get<const char *>(w));
+struct Ctor_Move_Value {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    // `v`
+    Cexa::Experimental::variant<int, test_util::DeviceString> v("hello");
+    DEXPECT_EQ("hello", Cexa::Experimental::get<test_util::DeviceString>(v));
+    // `w`
+    Cexa::Experimental::variant<int, test_util::DeviceString> w(std::move(v));
+    DEXPECT_EQ("hello", Cexa::Experimental::get<test_util::DeviceString>(w));
 
-  /* constexpr */ {
-    // `cv`
-    constexpr Cexa::Experimental::variant<int, const char *> cv(42);
-    static_assert(42 == Cexa::Experimental::get<int>(cv), "");
-    // `cw`
-    constexpr Cexa::Experimental::variant<int, const char *> cw(std::move(cv));
-    static_assert(42 == Cexa::Experimental::get<int>(cw), "");
+    /* constexpr */ {
+      // `cv`
+      constexpr Cexa::Experimental::variant<int, const char *> cv(42);
+      static_assert(42 == Cexa::Experimental::get<int>(cv), "");
+      // `cw`
+      constexpr Cexa::Experimental::variant<int, const char *> cw(
+          std::move(cv));
+      static_assert(42 == Cexa::Experimental::get<int>(cw), "");
+    }
   }
-}
+};
+
+TEST(Ctor_Move, Value) { test_helper<Ctor_Move_Value>(); }
 
 #ifdef MPARK_EXCEPTIONS
 TEST(Ctor_Move, ValuelessByException) {
@@ -41,3 +46,5 @@ TEST(Ctor_Move, ValuelessByException) {
   EXPECT_TRUE(w.valueless_by_exception());
 }
 #endif
+
+TEST_MAIN

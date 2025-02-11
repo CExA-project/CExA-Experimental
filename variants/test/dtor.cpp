@@ -10,19 +10,27 @@
 
 #include <gtest/gtest.h>
 
+#include "util.hpp"
+
 struct Obj {
-  Obj(bool &dtor_called) : dtor_called_(dtor_called) {}
-  ~Obj() { dtor_called_ = true; }
+  KOKKOS_FUNCTION Obj(bool &dtor_called) : dtor_called_(dtor_called) {}
+  KOKKOS_FUNCTION ~Obj() { dtor_called_ = true; }
   bool &dtor_called_;
 }; // Obj
 
-TEST(Dtor, Value) {
-  bool dtor_called = false;
-  // Construct/Destruct `Obj`.
-  {
-    Cexa::Experimental::variant<Obj> v(
-        Cexa::Experimental::in_place_type_t<Obj>{}, dtor_called);
+struct Dtor_Value {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    bool dtor_called = false;
+    // Construct/Destruct `Obj`.
+    {
+      Cexa::Experimental::variant<Obj> v(
+          Cexa::Experimental::in_place_type_t<Obj>{}, dtor_called);
+    }
+    // Check that the destructor was called.
+    DEXPECT_TRUE(dtor_called);
   }
-  // Check that the destructor was called.
-  EXPECT_TRUE(dtor_called);
-}
+};
+
+TEST(Dtor, Value) { test_helper<Dtor_Value>(); }
+
+TEST_MAIN

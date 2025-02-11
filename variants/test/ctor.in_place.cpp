@@ -1,4 +1,4 @@
-// MPark.Variant
+// Cexa::Experimental.Variant
 //
 // Copyright Michael Park, 2015-2017
 //
@@ -6,74 +6,121 @@
 // (See accompanying file LICENSE.md or copy at
 // http://boost.org/LICENSE_1_0.txt)
 
-#include <mpark/variant.hpp>
-
-#include <string>
+#include <Kokkos_Variant.hpp>
 
 #include <gtest/gtest.h>
 
-TEST(Ctor_InPlace, IndexDirect) {
-  mpark::variant<int, std::string> v(mpark::in_place_index_t<0>{}, 42);
-  EXPECT_EQ(42, mpark::get<0>(v));
+#include "util.hpp"
 
-  /* constexpr */ {
-    constexpr mpark::variant<int, const char *> cv(mpark::in_place_index_t<0>{},
-                                                   42);
-    static_assert(42 == mpark::get<0>(cv), "");
+struct Ctor_InPlace_IndexDirect {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v(
+        Cexa::Experimental::in_place_index_t<0>{}, 42);
+    DEXPECT_EQ(42, Cexa::Experimental::get<0>(v));
+
+    /* constexpr */ {
+      constexpr Cexa::Experimental::variant<int, const char *> cv(
+          Cexa::Experimental::in_place_index_t<0>{}, 42);
+      static_assert(42 == Cexa::Experimental::get<0>(cv), "");
+    }
   }
-}
+};
+
+TEST(Ctor_InPlace, IndexDirect) { test_helper<Ctor_InPlace_IndexDirect>(); }
+
+struct Ctor_InPlace_IndexDirectDuplicate {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, int> v(
+        Cexa::Experimental::in_place_index_t<0>{}, 42);
+    DEXPECT_EQ(42, Cexa::Experimental::get<0>(v));
+
+    /* constexpr */ {
+      constexpr Cexa::Experimental::variant<int, int> cv(
+          Cexa::Experimental::in_place_index_t<0>{}, 42);
+      static_assert(42 == Cexa::Experimental::get<0>(cv), "");
+    }
+  }
+};
 
 TEST(Ctor_InPlace, IndexDirectDuplicate) {
-  mpark::variant<int, int> v(mpark::in_place_index_t<0>{}, 42);
-  EXPECT_EQ(42, mpark::get<0>(v));
-
-  /* constexpr */ {
-    constexpr mpark::variant<int, int> cv(mpark::in_place_index_t<0>{}, 42);
-    static_assert(42 == mpark::get<0>(cv), "");
-  }
+  test_helper<Ctor_InPlace_IndexDirectDuplicate>();
 }
+
+struct Ctor_InPlace_IndexConversion {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v(
+        Cexa::Experimental::in_place_index_t<1>{}, "42");
+    DEXPECT_EQ("42", Cexa::Experimental::get<1>(v));
+
+    /* constexpr */ {
+      constexpr Cexa::Experimental::variant<int, const char *> cv(
+          Cexa::Experimental::in_place_index_t<0>{}, 1.1);
+      static_assert(1 == Cexa::Experimental::get<0>(cv), "");
+    }
+  }
+};
 
 TEST(Ctor_InPlace, IndexConversion) {
-  mpark::variant<int, std::string> v(mpark::in_place_index_t<1>{}, "42");
-  EXPECT_EQ("42", mpark::get<1>(v));
-
-  /* constexpr */ {
-    constexpr mpark::variant<int, const char *> cv(mpark::in_place_index_t<0>{},
-                                                   1.1);
-    static_assert(1 == mpark::get<0>(cv), "");
-  }
+  test_helper<Ctor_InPlace_IndexConversion>();
 }
+
+struct Ctor_InPlace_IndexInitializerList {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v(
+        Cexa::Experimental::in_place_index_t<1>{}, {'4', '2'});
+    DEXPECT_EQ("42", Cexa::Experimental::get<1>(v));
+  }
+};
 
 TEST(Ctor_InPlace, IndexInitializerList) {
-  mpark::variant<int, std::string> v(mpark::in_place_index_t<1>{}, {'4', '2'});
-  EXPECT_EQ("42", mpark::get<1>(v));
+  test_helper<Ctor_InPlace_IndexInitializerList>();
 }
 
-TEST(Ctor_InPlace, TypeDirect) {
-  mpark::variant<int, std::string> v(mpark::in_place_type_t<std::string>{},
-                                     "42");
-  EXPECT_EQ("42", mpark::get<std::string>(v));
+struct Ctor_InPlace_TypeDirect {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v(
+        Cexa::Experimental::in_place_type_t<test_util::DeviceString>{}, "42");
+    DEXPECT_EQ("42", Cexa::Experimental::get<test_util::DeviceString>(v));
 
-  /* constexpr */ {
-    constexpr mpark::variant<int, const char *> cv(
-        mpark::in_place_type_t<int>{}, 42);
-    static_assert(42 == mpark::get<int>(cv), "");
+    /* constexpr */ {
+      constexpr Cexa::Experimental::variant<int, const char *> cv(
+          Cexa::Experimental::in_place_type_t<int>{}, 42);
+      static_assert(42 == Cexa::Experimental::get<int>(cv), "");
+    }
   }
-}
+};
+
+TEST(Ctor_InPlace, TypeDirect) { test_helper<Ctor_InPlace_TypeDirect>(); }
+
+struct Ctor_InPlace_TypeConversion {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v(
+        Cexa::Experimental::in_place_type_t<int>{}, 42.5);
+    DEXPECT_EQ(42, Cexa::Experimental::get<int>(v));
+
+    /* constexpr */ {
+      constexpr Cexa::Experimental::variant<int, const char *> cv(
+          Cexa::Experimental::in_place_type_t<int>{}, 42.5);
+      static_assert(42 == Cexa::Experimental::get<int>(cv), "");
+    }
+  }
+};
 
 TEST(Ctor_InPlace, TypeConversion) {
-  mpark::variant<int, std::string> v(mpark::in_place_type_t<int>{}, 42.5);
-  EXPECT_EQ(42, mpark::get<int>(v));
-
-  /* constexpr */ {
-    constexpr mpark::variant<int, const char *> cv(
-        mpark::in_place_type_t<int>{}, 42.5);
-    static_assert(42 == mpark::get<int>(cv), "");
-  }
+  test_helper<Ctor_InPlace_TypeConversion>();
 }
+
+struct Ctor_InPlace_TypeInitializerList {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v(
+        Cexa::Experimental::in_place_type_t<test_util::DeviceString>{},
+        {'4', '2'});
+    DEXPECT_EQ("42", Cexa::Experimental::get<test_util::DeviceString>(v));
+  }
+};
 
 TEST(Ctor_InPlace, TypeInitializerList) {
-  mpark::variant<int, std::string> v(mpark::in_place_type_t<std::string>{},
-                                     {'4', '2'});
-  EXPECT_EQ("42", mpark::get<std::string>(v));
+  test_helper<Ctor_InPlace_TypeInitializerList>();
 }
+
+TEST_MAIN

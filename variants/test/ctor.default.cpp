@@ -8,16 +8,22 @@
 
 #include <Kokkos_Variant.hpp>
 
-#include <string>
-
 #include <gtest/gtest.h>
 
-TEST(Ctor_Default, Variant) {
-  Cexa::Experimental::variant<int, std::string> v;
-  EXPECT_EQ(0, Cexa::Experimental::get<0>(v));
+#include "util.hpp"
 
-  /* constexpr */ {
-    constexpr Cexa::Experimental::variant<int> cv{};
-    static_assert(0 == Cexa::Experimental::get<0>(cv), "");
+struct Ctor_Default_Variant {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v;
+    DEXPECT_EQ(0, Cexa::Experimental::get<0>(v));
+
+    /* constexpr */ {
+      constexpr Cexa::Experimental::variant<int> cv{};
+      static_assert(0 == Cexa::Experimental::get<0>(cv), "");
+    }
   }
-}
+};
+
+TEST(Ctor_Default, Variant) { test_helper<Ctor_Default_Variant>(); }
+
+TEST_MAIN

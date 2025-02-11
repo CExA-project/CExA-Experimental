@@ -9,45 +9,61 @@
 #include <Kokkos_Variant.hpp>
 
 #include <sstream>
-#include <string>
 #include <type_traits>
 
 #include <gtest/gtest.h>
 
 #include "util.hpp"
 
-TEST(Assign_Fwd, SameType) {
-  Cexa::Experimental::variant<int, std::string> v(101);
-  EXPECT_EQ(101, Cexa::Experimental::get<int>(v));
-  v = 202;
-  EXPECT_EQ(202, Cexa::Experimental::get<int>(v));
-}
+struct Assign_Fwd_SameType {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v(101);
+    DEXPECT_EQ(101, Cexa::Experimental::get<int>(v))
+    v = 202;
+    DEXPECT_EQ(202, Cexa::Experimental::get<int>(v))
+  }
+};
 
-TEST(Assign_Fwd, DiffType) {
-  Cexa::Experimental::variant<int, std::string> v(42);
-  EXPECT_EQ(42, Cexa::Experimental::get<int>(v));
-  v = "42";
-  EXPECT_EQ("42", Cexa::Experimental::get<std::string>(v));
-}
+TEST(Assign_Fwd, SameType) { test_helper<Assign_Fwd_SameType>(); }
 
-TEST(Assign_Fwd, ExactMatch) {
-  Cexa::Experimental::variant<const char *, std::string> v;
-  v = std::string("hello");
-  EXPECT_EQ("hello", Cexa::Experimental::get<std::string>(v));
-}
+struct Assign_Fwd_DiffType {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v(42);
+    DEXPECT_EQ(42, Cexa::Experimental::get<int>(v))
+    v = "42";
+    DEXPECT_EQ("42", Cexa::Experimental::get<test_util::DeviceString>(v))
+  }
+};
 
-TEST(Assign_Fwd, BetterMatch) {
-  Cexa::Experimental::variant<int, double> v;
-  // `char` -> `int` is better than `char` -> `double`
-  v = 'x';
-  EXPECT_EQ(static_cast<int>('x'), Cexa::Experimental::get<int>(v));
-}
+TEST(Assign_Fwd, DiffType) { test_helper<Assign_Fwd_DiffType>(); }
+
+struct Assign_Fwd_ExactMatch {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<const char *, test_util::DeviceString> v;
+    v = test_util::DeviceString("hello");
+    DEXPECT_EQ("hello", Cexa::Experimental::get<test_util::DeviceString>(v));
+  }
+};
+
+TEST(Assign_Fwd, ExactMatch) { test_helper<Assign_Fwd_ExactMatch>(); }
+
+struct Assign_Fwd_BetterMatch {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, double> v;
+    // `char` -> `int` is better than `char` -> `double`
+    v = 'x';
+    DEXPECT_EQ(static_cast<int>('x'), Cexa::Experimental::get<int>(v));
+  }
+};
+
+TEST(Assign_Fwd, BetterMatch) { test_helper<Assign_Fwd_BetterMatch>(); }
 
 TEST(Assign_Fwd, NoMatch) {
   struct x {};
   static_assert(
-      !std::is_assignable<Cexa::Experimental::variant<int, std::string>, x>{},
-      "variant<int, std::string> v; v = x;");
+      !std::is_assignable<
+          Cexa::Experimental::variant<int, test_util::DeviceString>, x>{},
+      "variant<int, test_util::DeviceString> v; v = x;");
 }
 
 TEST(Assign_Fwd, WideningOrAmbiguous) {
@@ -62,21 +78,30 @@ TEST(Assign_Fwd, WideningOrAmbiguous) {
 #endif
 }
 
+struct Assign_Fwd_SameTypeOptimization {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    Cexa::Experimental::variant<int, test_util::DeviceString> v("hello world!");
+    // Check `v`.
+    const test_util::DeviceString &x =
+        Cexa::Experimental::get<test_util::DeviceString>(v);
+    DEXPECT_EQ("hello world!", x);
+    // Save the "hello world!"'s capacity.
+    auto capacity = x.capacity();
+    // Use `test_util::DeviceString::operator=(const char *)` to assign into
+    // `v`.
+    v = "hello";
+    // Check `v`.
+    const test_util::DeviceString &y =
+        Cexa::Experimental::get<test_util::DeviceString>(v);
+    DEXPECT_EQ("hello", y);
+    // Since "hello" is shorter than "hello world!", we should have preserved
+    // the existing capacity of the string!.
+    DEXPECT_EQ(capacity, y.capacity());
+  }
+};
+
 TEST(Assign_Fwd, SameTypeOptimization) {
-  Cexa::Experimental::variant<int, std::string> v("hello world!");
-  // Check `v`.
-  const std::string &x = Cexa::Experimental::get<std::string>(v);
-  EXPECT_EQ("hello world!", x);
-  // Save the "hello world!"'s capacity.
-  auto capacity = x.capacity();
-  // Use `std::string::operator=(const char *)` to assign into `v`.
-  v = "hello";
-  // Check `v`.
-  const std::string &y = Cexa::Experimental::get<std::string>(v);
-  EXPECT_EQ("hello", y);
-  // Since "hello" is shorter than "hello world!", we should have preserved the
-  // existing capacity of the string!.
-  EXPECT_EQ(capacity, y.capacity());
+  test_helper<Assign_Fwd_SameTypeOptimization>();
 }
 
 #ifdef MPARK_EXCEPTIONS
@@ -127,3 +152,5 @@ TEST(Assign_Fwd, ThrowOnVariantConstruction) {
   EXPECT_EQ(42, Cexa::Experimental::get<int>(v));
 }
 #endif
+
+TEST_MAIN

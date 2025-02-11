@@ -3,6 +3,25 @@
 
 #include <Kokkos_Core.hpp>
 
+// We need a function called "swap" (not kokkos_swap like the one in Kokkos)
+namespace Cexa::Experimental {
+
+template <class T>
+KOKKOS_FORCEINLINE_FUNCTION constexpr std::enable_if_t<
+    std::is_move_constructible_v<T> && std::is_move_assignable_v<T>>
+swap(T &a, T &b) noexcept(std::is_nothrow_move_constructible_v<T>
+                              &&std::is_nothrow_move_assignable_v<T>) {
+  Kokkos::kokkos_swap(a, b);
+}
+
+template <class T, std::size_t N>
+KOKKOS_FORCEINLINE_FUNCTION constexpr std::enable_if_t<
+    Kokkos::Impl::is_swappable<T>::value>
+swap(T (&a)[N], T (&b)[N]) noexcept(Kokkos::Impl::is_nothrow_swappable_v<T>) {
+  Kokkos::kokkos_swap(a, b);
+}
+} // namespace Cexa::Experimental
+
 #if defined(KOKKOS_ENABLE_CUDA)
 #include <cuda_runtime_api.h>
 

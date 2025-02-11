@@ -85,7 +85,7 @@ if(MPARK_VARIANT_INCLUDE_MPARK_TESTS)
     add_executable(${test} ${test}.cpp)
     set_target_properties(${test} PROPERTIES COMPILE_FLAGS "${compile_flags}")
     target_include_directories(${test} PRIVATE ..)
-    target_link_libraries(${test} gtest gtest_main Kokkos::kokkos)
+    target_link_libraries(${test} gtest Kokkos::kokkos)
     add_test(${test} ${test} --gtest_color=yes)
   endforeach()
 

@@ -15,6 +15,11 @@
 
 #include <gtest/gtest.h>
 
+#include "util.hpp"
+
+// No need to test interaction between Kokkos::Variant and std::vector on GPU
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) &&             \
+    !defined(KOKKOS_ENABLE_SYCL)
 struct JsonIsh {
   JsonIsh(bool b) : data(b) {}
   JsonIsh(int i) : data(i) {}
@@ -50,3 +55,6 @@ TEST(Variant, Array) {
   EXPECT_EQ(42, Cexa::Experimental::get<int>(array[1].data));
   EXPECT_EQ("world", Cexa::Experimental::get<std::string>(array[2].data));
 }
+#endif
+
+TEST_MAIN

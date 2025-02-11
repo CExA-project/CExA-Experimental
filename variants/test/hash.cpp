@@ -12,6 +12,11 @@
 
 #include <gtest/gtest.h>
 
+#include "util.hpp"
+
+// No need to test interaction between Kokkos::Variant and std::hash on GPU
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) &&             \
+    !defined(KOKKOS_ENABLE_SYCL)
 TEST(Hash, Monostate) {
   Cexa::Experimental::variant<int, Cexa::Experimental::monostate, std::string>
       v(Cexa::Experimental::monostate{});
@@ -33,3 +38,7 @@ TEST(Hash, String) {
   // Check the hash.
   EXPECT_NE(string_hash("hello"), variant_hash(v));
 }
+
+#endif
+
+TEST_MAIN

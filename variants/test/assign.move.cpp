@@ -14,39 +14,52 @@
 
 #include "util.hpp"
 
-TEST(Assign_Move, SameType) {
-  struct Obj {
-    constexpr Obj() {}
-    Obj(const Obj &) = delete;
-    Obj(Obj &&) noexcept { EXPECT_TRUE(false); }
-    Obj &operator=(const Obj &) = delete;
-    Obj &operator=(Obj &&) noexcept {
-      EXPECT_TRUE(true);
-      return *this;
-    }
-  };
-  // `v`, `w`.
-  Cexa::Experimental::variant<Obj, int> v, w;
-  // move assignment.
-  v = std::move(w);
-}
+struct FunctionCalled {
+  bool move_constructor_called;
+  bool operator_equal_called;
+};
 
-TEST(Assign_Move, DiffType) {
-  struct Obj {
-    constexpr Obj() {}
-    Obj(const Obj &) = delete;
-    Obj(Obj &&) noexcept { EXPECT_TRUE(true); }
-    Obj &operator=(const Obj &) = delete;
-    Obj &operator=(Obj &&) noexcept {
-      EXPECT_TRUE(false);
-      return *this;
-    }
-  };
-  // `v`, `w`.
-  Cexa::Experimental::variant<Obj, int> v(42), w;
-  // move assignment.
-  v = std::move(w);
-}
+struct Obj {
+  FunctionCalled &_f;
+  KOKKOS_FUNCTION constexpr Obj(FunctionCalled &f) : _f(f) {}
+  KOKKOS_FUNCTION Obj(const Obj &) = delete;
+  KOKKOS_FUNCTION Obj(Obj &&o) noexcept : _f(o._f) {
+    _f.move_constructor_called = true;
+  }
+  KOKKOS_FUNCTION Obj &operator=(const Obj &) = delete;
+  KOKKOS_FUNCTION Obj &operator=(Obj &&) noexcept {
+    _f.operator_equal_called = true;
+    return *this;
+  }
+};
+
+struct Assign_Move_SameType {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    // `v`, `w`.
+    FunctionCalled f{false, false};
+    Cexa::Experimental::variant<Obj, int> v(f), w(f);
+    // move assignment.
+    v = std::move(w);
+    DEXPECT_FALSE(f.move_constructor_called);
+    DEXPECT_TRUE(f.operator_equal_called);
+  }
+};
+
+TEST(Assign_Move, SameType) { test_helper<Assign_Move_SameType>(); }
+
+struct Assign_Move_DiffType {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    // `v`, `w`.
+    FunctionCalled f{false, false};
+    Cexa::Experimental::variant<Obj, int> v(42), w(f);
+    // move assignment.
+    v = std::move(w);
+    DEXPECT_TRUE(f.move_constructor_called);
+    DEXPECT_FALSE(f.operator_equal_called);
+  }
+};
+
+TEST(Assign_Move, DiffType) { test_helper<Assign_Move_DiffType>(); }
 
 #ifdef MPARK_EXCEPTIONS
 TEST(Assign_Move, ValuelessByException) {
@@ -58,3 +71,5 @@ TEST(Assign_Move, ValuelessByException) {
   EXPECT_TRUE(w.valueless_by_exception());
 }
 #endif
+
+TEST_MAIN

@@ -6,12 +6,17 @@
 // (See accompanying file LICENSE.md or copy at
 // http://boost.org/LICENSE_1_0.txt)
 
+#ifndef _UTIL_HPP
+#define _UTIL_HPP
+
 #include <Kokkos_Core.hpp>
 #include <mpark/config.hpp>
 
+#include <Kokkos_Variant.hpp>
+
 enum Qual { Ptr, ConstPtr, LRef, ConstLRef, RRef, ConstRRef };
 
-struct get_qual_t {
+struct get_qual {
   KOKKOS_FUNCTION constexpr Qual operator()(int *) const { return Ptr; }
   KOKKOS_FUNCTION constexpr Qual operator()(const int *) const {
     return ConstPtr;
@@ -25,8 +30,6 @@ struct get_qual_t {
     return ConstRRef;
   }
 };
-
-constexpr get_qual_t get_qual{};
 
 #ifdef MPARK_EXCEPTIONS
 struct CopyConstruction : std::exception {};
@@ -117,5 +120,233 @@ KOKKOS_INLINE_FUNCTION bool operator!=(const move_thrower_t &,
                                        const move_thrower_t &) noexcept {
   return false;
 }
+#endif
+
+namespace test_util {
+// We need an object with property similar to std::string but available on any
+// device, so we badly reimplement the features we need
+class DeviceString {
+  char *_data;
+  size_t _size;
+  size_t _capacity;
+
+  KOKKOS_FUNCTION void allocate_and_copy(const char *data, size_t size) {
+    _size = size;
+    _capacity = _size + 1;
+    _data = static_cast<char *>(malloc(_capacity * sizeof(char)));
+    Kokkos::Impl::strcpy(_data, data);
+  }
+
+  KOKKOS_FUNCTION void allocate_and_copy(const char *data) {
+    allocate_and_copy(data, Kokkos::Impl::strlen(data));
+  }
+
+  // Convert rhs to DeviceString in base 10
+  template <typename T> KOKKOS_FUNCTION void int_to_string(T rhs) {
+    // Find size of string
+    T remainder = rhs;
+    _size = 0;
+    do {
+      remainder /= 10;
+      ++_size;
+    } while (remainder != 0);
+
+    // Allocate
+    _capacity = _size + 1;
+    _data = static_cast<char *>(malloc(sizeof(char) * _capacity));
+
+    // Fill up the string
+    remainder = rhs;
+    int i = _size;
+    _data[i] = '\0';
+    do {
+      _data[--i] = '0' + (remainder % 10);
+      remainder /= 10;
+    } while (remainder != 0);
+  }
+
+public:
+  // Destructor
+  KOKKOS_FUNCTION ~DeviceString() { free(_data); }
+
+  // Constructors
+  KOKKOS_FUNCTION DeviceString() { allocate_and_copy(""); }
+
+  KOKKOS_FUNCTION DeviceString(const char *data) { allocate_and_copy(data); }
+
+  KOKKOS_FUNCTION DeviceString(const DeviceString &rhs) {
+    if (rhs._size == 0) {
+      allocate_and_copy("");
+    } else {
+      allocate_and_copy(rhs._data, rhs._size);
+    }
+  }
+
+  KOKKOS_FUNCTION DeviceString(const std::initializer_list<char> ilist) {
+    _size = ilist.size();
+    _capacity = _size + 1;
+    _data = static_cast<char *>(malloc(_capacity * sizeof(char)));
+    char *data = _data;
+    for (const auto &c : ilist) {
+      *(data++) = c;
+    }
+    *data = '\0';
+  }
+
+  KOKKOS_FUNCTION DeviceString(int rhs) { int_to_string<int>(rhs); }
+
+  KOKKOS_FUNCTION DeviceString(long rhs) { int_to_string<long>(rhs); }
+
+  KOKKOS_FUNCTION DeviceString(short rhs) { int_to_string<short>(rhs); }
+
+  KOKKOS_FUNCTION DeviceString(char rhs) {
+    char tmp[2] = {rhs, '\0'};
+    allocate_and_copy(tmp);
+  }
+
+  KOKKOS_FUNCTION DeviceString(double) {
+    // Needs to be defined for the tests to compile
+    Kokkos::abort("Not implemented");
+  }
+
+  KOKKOS_FUNCTION DeviceString(DeviceString &&other) noexcept {
+    _capacity = _size = 0;
+    _data = nullptr;
+    Kokkos::kokkos_swap(_capacity, other._capacity);
+    Kokkos::kokkos_swap(_data, other._data);
+    Kokkos::kokkos_swap(_size, other._size);
+  }
+
+  // Getter
+  KOKKOS_FUNCTION constexpr size_t capacity() const { return _capacity; }
+
+  // Affectation operators
+  KOKKOS_FUNCTION DeviceString &operator=(const char *rhs) {
+    _size = Kokkos::Impl::strlen(rhs);
+    if (_capacity > _size + 1) {
+      Kokkos::Impl::strcpy(_data, rhs);
+    } else {
+      free(_data);
+      allocate_and_copy(rhs, _size);
+    }
+
+    return *this;
+  }
+
+  KOKKOS_FUNCTION DeviceString &operator=(const DeviceString &other) {
+    if (this == &other) {
+      return *this;
+    }
+
+    DeviceString temp(other);
+    Kokkos::kokkos_swap(_data, temp._data);
+    Kokkos::kokkos_swap(_capacity, temp._capacity);
+    Kokkos::kokkos_swap(_size, temp._size);
+
+    return *this;
+  }
+
+  KOKKOS_FUNCTION DeviceString &operator=(DeviceString &&other) noexcept {
+    DeviceString temp(std::move(other));
+    Kokkos::kokkos_swap(_data, temp._data);
+    Kokkos::kokkos_swap(_capacity, temp._capacity);
+    Kokkos::kokkos_swap(_size, temp._size);
+    return *this;
+  }
+
+  // Comparison operators
+  KOKKOS_FUNCTION constexpr bool operator!=(const DeviceString &rhs) const {
+    if (rhs._size != 0 && _size != 0) {
+      return Kokkos::Impl::strcmp(rhs._data, this->_data);
+    } else {
+      return rhs._size != _size;
+    }
+  }
+
+  KOKKOS_FUNCTION constexpr bool operator==(const DeviceString &rhs) const {
+    return !(this->operator!=(rhs));
+  }
+
+  friend KOKKOS_FUNCTION constexpr bool operator!=(const char *lhs,
+                                                   const DeviceString &rhs);
+  friend KOKKOS_FUNCTION constexpr bool operator==(const char *lhs,
+                                                   const DeviceString &rhs);
+  friend KOKKOS_FUNCTION constexpr bool operator!=(const DeviceString &lhs,
+                                                   const char *rhs);
+  friend KOKKOS_FUNCTION constexpr bool operator==(const DeviceString &lhs,
+                                                   const char *rhs);
+
+  // Concatenation
+  KOKKOS_FUNCTION DeviceString &operator+=(const DeviceString &rhs) {
+    _capacity = _size + rhs._size + 1;
+    char *tmp_data = static_cast<char *>(malloc(sizeof(char) * _capacity));
+
+    Kokkos::Impl::strcpy(tmp_data, _data);
+    Kokkos::Impl::strcpy(tmp_data + _size, rhs._data);
+
+    free(_data);
+    _data = tmp_data;
+    _size += rhs._size;
+
+    return *this;
+  }
+};
+
+KOKKOS_FUNCTION constexpr bool operator!=(const char *lhs,
+                                          const DeviceString &rhs) {
+  return Kokkos::Impl::strcmp(lhs, rhs._data);
+}
+KOKKOS_FUNCTION constexpr bool operator==(const char *lhs,
+                                          const DeviceString &rhs) {
+  return !operator!=(lhs, rhs);
+}
+KOKKOS_FUNCTION constexpr bool operator!=(const DeviceString &lhs,
+                                          const char *rhs) {
+  return operator!=(rhs, lhs);
+}
+KOKKOS_FUNCTION constexpr bool operator==(const DeviceString &lhs,
+                                          const char *rhs) {
+  return operator==(rhs, lhs);
+}
+} // namespace test_util
+
+// Helper function for test
+template <typename T> void test_helper() {
+  int errors = 0.;
+  Kokkos::parallel_reduce(Kokkos::RangePolicy(0, 1), T{}, errors);
+  EXPECT_EQ(0, errors);
+}
+
+// Dumbed down version of gtest's EXPECT_ functions, usable on the device
+// (needs to reduce on an argument named `error`)
+#define DEXPECT_EQ(arg1, arg2)                                                 \
+  do {                                                                         \
+    error += !((arg1) == (arg2));                                              \
+  } while (false);
+
+#define DEXPECT_NE(arg1, arg2)                                                 \
+  do {                                                                         \
+    error += !((arg1) != (arg2));                                              \
+  } while (false);
+
+#define DEXPECT_TRUE(arg)                                                      \
+  do {                                                                         \
+    error += !(arg);                                                           \
+  } while (false);
+
+#define DEXPECT_FALSE(arg)                                                     \
+  do {                                                                         \
+    error += !!(arg);                                                          \
+  } while (false);
+
+// main function: init Kokkos, init GTest, lauch tests
+#define TEST_MAIN                                                              \
+  int main(int argc, char *argv[]) {                                           \
+    Kokkos::ScopeGuard kokkos(argc, argv);                                     \
+    ::testing::InitGoogleTest(&argc, argv);                                    \
+                                                                               \
+    int result = RUN_ALL_TESTS();                                              \
+    return result;                                                             \
+  }
 
 #endif
