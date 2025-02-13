@@ -56,9 +56,9 @@ struct Visit_ConstVarMutType {
       static_assert(42 == Cexa::Experimental::get<int>(cv), "");
       // Check qualifier.
       static_assert(ConstLRef == Cexa::Experimental::visit(get_qual{}, cv), "");
-      static_assert(ConstRRef ==
-                        Cexa::Experimental::visit(get_qual{}, std::move(cv)),
-                    "");
+      static_assert(
+          ConstRRef == Cexa::Experimental::visit(get_qual{}, std::move(cv)),
+          "");
     }
 #endif
   }
@@ -80,9 +80,9 @@ struct Visit_ConstVarConstType {
       static_assert(42 == Cexa::Experimental::get<const int>(cv), "");
       // Check qualifier.
       static_assert(ConstLRef == Cexa::Experimental::visit(get_qual{}, cv), "");
-      static_assert(ConstRRef ==
-                        Cexa::Experimental::visit(get_qual{}, std::move(cv)),
-                    "");
+      static_assert(
+          ConstRRef == Cexa::Experimental::visit(get_qual{}, std::move(cv)),
+          "");
     }
 #endif
   }
@@ -92,8 +92,8 @@ TEST(Visit, ConstVarConstType) { test_helper<Visit_ConstVarConstType>(); }
 
 struct concat {
   template <typename... Args>
-  KOKKOS_FUNCTION test_util::DeviceString
-  operator()(const Args &...args) const {
+  KOKKOS_FUNCTION test_util::DeviceString operator()(
+      const Args &...args) const {
     test_util::DeviceString ret;
     std::initializer_list<int>({(ret += args, 0)...});
     return std::move(ret);
@@ -131,7 +131,7 @@ struct Visit_Homogeneous_Double {
         KOKKOS_FUNCTION constexpr int operator()(double, double) const {
           return 0;
         }
-      }; // add
+      };  // add
       static_assert(303 == Cexa::Experimental::visit(add_ints{}, cv, cw), "");
       static_assert(202 == Cexa::Experimental::visit(add_ints{}, cw, cx), "");
       static_assert(101 == Cexa::Experimental::visit(add_ints{}, cx, cv), "");

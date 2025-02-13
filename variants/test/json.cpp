@@ -18,7 +18,7 @@
 #include "util.hpp"
 
 // No need to test interaction between Kokkos::Variant and std::vector on GPU
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) &&             \
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
     !defined(KOKKOS_ENABLE_SYCL)
 struct JsonIsh {
   JsonIsh(bool b) : data(b) {}

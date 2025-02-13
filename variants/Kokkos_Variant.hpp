@@ -20,7 +20,7 @@ KOKKOS_FORCEINLINE_FUNCTION constexpr std::enable_if_t<
 swap(T (&a)[N], T (&b)[N]) noexcept(Kokkos::Impl::is_nothrow_swappable_v<T>) {
   Kokkos::kokkos_swap(a, b);
 }
-} // namespace Cexa::Experimental
+}  // namespace Cexa::Experimental
 
 #if defined(KOKKOS_ENABLE_CUDA)
 #include <cuda_runtime_api.h>
@@ -42,7 +42,7 @@ swap(T (&a)[N], T (&b)[N]) noexcept(Kokkos::Impl::is_nothrow_swappable_v<T>) {
 
 namespace Cexa::Experimental {
 template <class... types>
-using variant = KOKKOS_VARIANT_PREFIX::variant<types...>;
+using variant   = KOKKOS_VARIANT_PREFIX::variant<types...>;
 using monostate = KOKKOS_VARIANT_PREFIX::monostate;
 
 template <typename... Args>
@@ -52,8 +52,8 @@ KOKKOS_FORCEINLINE_FUNCTION constexpr auto visit(Args &&...args)
 }
 
 template <typename T, typename... Ts>
-KOKKOS_FORCEINLINE_FUNCTION constexpr bool
-holds_alternative(const variant<Ts...> &v) noexcept {
+KOKKOS_FORCEINLINE_FUNCTION constexpr bool holds_alternative(
+    const variant<Ts...> &v) noexcept {
   return KOKKOS_VARIANT_PREFIX::holds_alternative<T>(v);
 }
 
@@ -97,14 +97,14 @@ KOKKOS_FORCEINLINE_FUNCTION constexpr T &&get(variant<Args...> &&arg) {
 }
 
 template <typename T, typename... Args>
-KOKKOS_FORCEINLINE_FUNCTION constexpr const T &
-get(const variant<Args...> &arg) {
+KOKKOS_FORCEINLINE_FUNCTION constexpr const T &get(
+    const variant<Args...> &arg) {
   return KOKKOS_VARIANT_PREFIX::get<T, Args...>(arg);
 }
 
 template <typename T, typename... Args>
-KOKKOS_FORCEINLINE_FUNCTION constexpr const T &&
-get(const variant<Args...> &&arg) {
+KOKKOS_FORCEINLINE_FUNCTION constexpr const T &&get(
+    const variant<Args...> &&arg) {
   return KOKKOS_VARIANT_PREFIX::get<T>(
       std::forward<const variant<Args...>>(arg));
 }
@@ -116,8 +116,8 @@ KOKKOS_FORCEINLINE_FUNCTION constexpr auto get_if(variant<Ts...> *v) noexcept {
 }
 
 template <std::size_t I, typename... Ts>
-KOKKOS_FORCEINLINE_FUNCTION constexpr auto
-get_if(const variant<Ts...> *v) noexcept {
+KOKKOS_FORCEINLINE_FUNCTION constexpr auto get_if(
+    const variant<Ts...> *v) noexcept {
   return KOKKOS_VARIANT_PREFIX::get_if<I>(v);
 }
 
@@ -127,8 +127,8 @@ KOKKOS_FORCEINLINE_FUNCTION constexpr auto get_if(variant<Ts...> *v) noexcept {
 }
 
 template <typename T, typename... Ts>
-KOKKOS_FORCEINLINE_FUNCTION constexpr auto
-get_if(const variant<Ts...> *v) noexcept {
+KOKKOS_FORCEINLINE_FUNCTION constexpr auto get_if(
+    const variant<Ts...> *v) noexcept {
   return KOKKOS_VARIANT_PREFIX::get_if<T>(v);
 }
 
@@ -141,7 +141,7 @@ using in_place_type_t = KOKKOS_VARIANT_PREFIX::in_place_type_t<T>;
 
 // bad_variant_access
 using bad_variant_access = KOKKOS_VARIANT_PREFIX::bad_variant_access;
-} // namespace Cexa::Experimental
+}  // namespace Cexa::Experimental
 
 #undef KOKKOS_VARIANT_PREFIX
 #undef KOKKOS_ALIAS_FUNCTION

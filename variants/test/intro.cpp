@@ -41,11 +41,11 @@ struct Variant_Intro {
 
     struct unary {
       KOKKOS_FUNCTION int operator()(int) const noexcept { return 0; }
-      KOKKOS_FUNCTION int
-      operator()(const test_util::DeviceString &) const noexcept {
+      KOKKOS_FUNCTION int operator()(
+          const test_util::DeviceString &) const noexcept {
         return 1;
       }
-    }; // unary
+    };  // unary
 
     // single visitation.
     DEXPECT_EQ(0, Cexa::Experimental::visit(unary{}, v));
@@ -62,20 +62,20 @@ struct Variant_Intro {
 
     struct binary {
       KOKKOS_FUNCTION int operator()(int, int) const noexcept { return 0; }
-      KOKKOS_FUNCTION int
-      operator()(int, const test_util::DeviceString &) const noexcept {
+      KOKKOS_FUNCTION int operator()(
+          int, const test_util::DeviceString &) const noexcept {
         return 1;
       }
       KOKKOS_FUNCTION int operator()(const test_util::DeviceString &,
                                      int) const noexcept {
         return 2;
       }
-      KOKKOS_FUNCTION int
-      operator()(const test_util::DeviceString &,
-                 const test_util::DeviceString &) const noexcept {
+      KOKKOS_FUNCTION int operator()(
+          const test_util::DeviceString &,
+          const test_util::DeviceString &) const noexcept {
         return 3;
       }
-    }; // binary
+    };  // binary
 
     // binary visitation.
     DEXPECT_EQ(0, Cexa::Experimental::visit(binary{}, v, w));

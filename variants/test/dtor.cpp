@@ -16,7 +16,7 @@ struct Obj {
   KOKKOS_FUNCTION Obj(bool &dtor_called) : dtor_called_(dtor_called) {}
   KOKKOS_FUNCTION ~Obj() { dtor_called_ = true; }
   bool &dtor_called_;
-}; // Obj
+};  // Obj
 
 struct Dtor_Value {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {

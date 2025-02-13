@@ -86,12 +86,12 @@ struct Swap_DtorsSame {
     struct Obj {
       KOKKOS_FUNCTION Obj(size_t *dtor_count) : dtor_count_(dtor_count) {}
       Obj(const Obj &) = default;
-      Obj(Obj &&) = default;
+      Obj(Obj &&)      = default;
       KOKKOS_FUNCTION ~Obj() { ++(*dtor_count_); }
       Obj &operator=(const Obj &) = default;
-      Obj &operator=(Obj &&) = default;
+      Obj &operator=(Obj &&)      = default;
       size_t *dtor_count_;
-    }; // Obj
+    };  // Obj
     size_t v_count = 0;
     size_t w_count = 0;
     {
@@ -121,18 +121,18 @@ namespace detail {
 struct Obj {
   KOKKOS_FUNCTION Obj(size_t *dtor_count) : dtor_count_(dtor_count) {}
   Obj(const Obj &) = default;
-  Obj(Obj &&) = default;
+  Obj(Obj &&)      = default;
   KOKKOS_FUNCTION ~Obj() { ++(*dtor_count_); }
   Obj &operator=(const Obj &) = default;
-  Obj &operator=(Obj &&) = default;
+  Obj &operator=(Obj &&)      = default;
   size_t *dtor_count_;
-}; // Obj
+};  // Obj
 
 KOKKOS_FUNCTION static void swap(Obj &lhs, Obj &rhs) noexcept {
   Cexa::Experimental::swap(lhs.dtor_count_, rhs.dtor_count_);
 }
 
-} // namespace detail
+}  // namespace detail
 
 struct Swap_DtorsSameWithSwap {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
@@ -159,21 +159,21 @@ struct Swap_DtorsDifferent {
     struct V {
       KOKKOS_FUNCTION V(size_t *dtor_count) : dtor_count_(dtor_count) {}
       V(const V &) = default;
-      V(V &&) = default;
+      V(V &&)      = default;
       KOKKOS_FUNCTION ~V() { ++(*dtor_count_); }
       V &operator=(const V &) = default;
-      V &operator=(V &&) = default;
+      V &operator=(V &&)      = default;
       size_t *dtor_count_;
-    }; // V
+    };  // V
     struct W {
       KOKKOS_FUNCTION W(size_t *dtor_count) : dtor_count_(dtor_count) {}
       W(const W &) = default;
-      W(W &&) = default;
+      W(W &&)      = default;
       KOKKOS_FUNCTION ~W() { ++(*dtor_count_); }
       W &operator=(const W &) = default;
-      W &operator=(W &&) = default;
+      W &operator=(W &&)      = default;
       size_t *dtor_count_;
-    }; // W
+    };  // W
     size_t v_count = 0;
     size_t w_count = 0;
     {

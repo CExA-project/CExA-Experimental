@@ -18,17 +18,17 @@
 
 // This issues are specific to host specific function so no need to test them on
 // GPU
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) &&             \
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
     !defined(KOKKOS_ENABLE_SYCL)
 
 #ifdef MPARK_INCOMPLETE_TYPE_TRAITS
 // https://github.com/mpark/variant/issues/34
 TEST(Issue, 34) {
   struct S {
-    S(const S &) = default;
-    S(S &&) = default;
+    S(const S &)            = default;
+    S(S &&)                 = default;
     S &operator=(const S &) = default;
-    S &operator=(S &&) = default;
+    S &operator=(S &&)      = default;
 
     Cexa::Experimental::variant<std::map<test_util::DeviceString, S>> value;
   };

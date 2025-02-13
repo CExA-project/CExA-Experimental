@@ -131,9 +131,9 @@ class DeviceString {
   size_t _capacity;
 
   KOKKOS_FUNCTION void allocate_and_copy(const char *data, size_t size) {
-    _size = size;
+    _size     = size;
     _capacity = _size + 1;
-    _data = static_cast<char *>(malloc(_capacity * sizeof(char)));
+    _data     = static_cast<char *>(malloc(_capacity * sizeof(char)));
     Kokkos::Impl::strcpy(_data, data);
   }
 
@@ -142,10 +142,11 @@ class DeviceString {
   }
 
   // Convert rhs to DeviceString in base 10
-  template <typename T> KOKKOS_FUNCTION void int_to_string(T rhs) {
+  template <typename T>
+  KOKKOS_FUNCTION void int_to_string(T rhs) {
     // Find size of string
     T remainder = rhs;
-    _size = 0;
+    _size       = 0;
     do {
       remainder /= 10;
       ++_size;
@@ -153,19 +154,19 @@ class DeviceString {
 
     // Allocate
     _capacity = _size + 1;
-    _data = static_cast<char *>(malloc(sizeof(char) * _capacity));
+    _data     = static_cast<char *>(malloc(sizeof(char) * _capacity));
 
     // Fill up the string
     remainder = rhs;
-    int i = _size;
-    _data[i] = '\0';
+    int i     = _size;
+    _data[i]  = '\0';
     do {
       _data[--i] = '0' + (remainder % 10);
       remainder /= 10;
     } while (remainder != 0);
   }
 
-public:
+ public:
   // Destructor
   KOKKOS_FUNCTION ~DeviceString() { free(_data); }
 
@@ -183,9 +184,9 @@ public:
   }
 
   KOKKOS_FUNCTION DeviceString(const std::initializer_list<char> ilist) {
-    _size = ilist.size();
-    _capacity = _size + 1;
-    _data = static_cast<char *>(malloc(_capacity * sizeof(char)));
+    _size      = ilist.size();
+    _capacity  = _size + 1;
+    _data      = static_cast<char *>(malloc(_capacity * sizeof(char)));
     char *data = _data;
     for (const auto &c : ilist) {
       *(data++) = c;
@@ -211,7 +212,7 @@ public:
 
   KOKKOS_FUNCTION DeviceString(DeviceString &&other) noexcept {
     _capacity = _size = 0;
-    _data = nullptr;
+    _data             = nullptr;
     Kokkos::kokkos_swap(_capacity, other._capacity);
     Kokkos::kokkos_swap(_data, other._data);
     Kokkos::kokkos_swap(_size, other._size);
@@ -278,7 +279,7 @@ public:
 
   // Concatenation
   KOKKOS_FUNCTION DeviceString &operator+=(const DeviceString &rhs) {
-    _capacity = _size + rhs._size + 1;
+    _capacity      = _size + rhs._size + 1;
     char *tmp_data = static_cast<char *>(malloc(sizeof(char) * _capacity));
 
     Kokkos::Impl::strcpy(tmp_data, _data);
@@ -308,10 +309,11 @@ KOKKOS_FUNCTION constexpr bool operator==(const DeviceString &lhs,
                                           const char *rhs) {
   return operator==(rhs, lhs);
 }
-} // namespace test_util
+}  // namespace test_util
 
 // Helper function for test
-template <typename T> void test_helper() {
+template <typename T>
+void test_helper() {
   int errors = 0;
   Kokkos::parallel_reduce(Kokkos::RangePolicy(0, 1), T{}, errors);
   EXPECT_EQ(0, errors);
@@ -319,34 +321,34 @@ template <typename T> void test_helper() {
 
 // Dumbed down version of gtest's EXPECT_ functions, usable on the device
 // (needs to reduce on an argument named `error`)
-#define DEXPECT_EQ(arg1, arg2)                                                 \
-  do {                                                                         \
-    error += !((arg1) == (arg2));                                              \
+#define DEXPECT_EQ(arg1, arg2)    \
+  do {                            \
+    error += !((arg1) == (arg2)); \
   } while (false);
 
-#define DEXPECT_NE(arg1, arg2)                                                 \
-  do {                                                                         \
-    error += !((arg1) != (arg2));                                              \
+#define DEXPECT_NE(arg1, arg2)    \
+  do {                            \
+    error += !((arg1) != (arg2)); \
   } while (false);
 
-#define DEXPECT_TRUE(arg)                                                      \
-  do {                                                                         \
-    error += !(arg);                                                           \
+#define DEXPECT_TRUE(arg) \
+  do {                    \
+    error += !(arg);      \
   } while (false);
 
-#define DEXPECT_FALSE(arg)                                                     \
-  do {                                                                         \
-    error += !!(arg);                                                          \
+#define DEXPECT_FALSE(arg) \
+  do {                     \
+    error += !!(arg);      \
   } while (false);
 
 // main function: init Kokkos, init GTest, lauch tests
-#define TEST_MAIN                                                              \
-  int main(int argc, char *argv[]) {                                           \
-    Kokkos::ScopeGuard kokkos(argc, argv);                                     \
-    ::testing::InitGoogleTest(&argc, argv);                                    \
-                                                                               \
-    int result = RUN_ALL_TESTS();                                              \
-    return result;                                                             \
+#define TEST_MAIN                           \
+  int main(int argc, char *argv[]) {        \
+    Kokkos::ScopeGuard kokkos(argc, argv);  \
+    ::testing::InitGoogleTest(&argc, argv); \
+                                            \
+    int result = RUN_ALL_TESTS();           \
+    return result;                          \
   }
 
 #endif

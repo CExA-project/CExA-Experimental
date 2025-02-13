@@ -72,9 +72,9 @@ struct Get_ConstVarMutType {
       // Check qualifier.
       static_assert(ConstLRef == get_qual{}(Cexa::Experimental::get<int>(cv)),
                     "");
-      static_assert(ConstRRef ==
-                        get_qual{}(Cexa::Experimental::get<int>(std::move(cv))),
-                    "");
+      static_assert(
+          ConstRRef == get_qual{}(Cexa::Experimental::get<int>(std::move(cv))),
+          "");
     }
   }
 };
@@ -169,9 +169,9 @@ struct GetIf_ConstVarConstType {
       static constexpr Cexa::Experimental::variant<const int> cv(42);
       static_assert(42 == *Cexa::Experimental::get_if<const int>(&cv), "");
       // Check qualifier.
-      static_assert(ConstPtr ==
-                        get_qual{}(Cexa::Experimental::get_if<const int>(&cv)),
-                    "");
+      static_assert(
+          ConstPtr == get_qual{}(Cexa::Experimental::get_if<const int>(&cv)),
+          "");
     }
   }
 };
