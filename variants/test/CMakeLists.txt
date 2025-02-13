@@ -71,6 +71,7 @@ if(MPARK_VARIANT_INCLUDE_MPARK_TESTS)
     ctor.in_place
     ctor.move
     dtor
+    fct.ptr
     get
     hash
     intro

@@ -42,11 +42,11 @@ struct copy_thrower_t {
   KOKKOS_FUNCTION [[noreturn]] copy_thrower_t(const copy_thrower_t &) {
     throw CopyConstruction{};
   }
-  KOKKOS_FUNCTION copy_thrower_t(copy_thrower_t &&) = default;
+  copy_thrower_t(copy_thrower_t &&) = default;
   KOKKOS_FUNCTION copy_thrower_t &operator=(const copy_thrower_t &) {
     throw CopyAssignment{};
   }
-  KOKKOS_FUNCTION copy_thrower_t &operator=(copy_thrower_t &&) = default;
+  copy_thrower_t &operator=(copy_thrower_t &&) = default;
 };
 
 KOKKOS_INLINE_FUNCTION bool operator<(const copy_thrower_t &,
@@ -81,11 +81,11 @@ KOKKOS_INLINE_FUNCTION bool operator!=(const copy_thrower_t &,
 
 struct move_thrower_t {
   KOKKOS_FUNCTION constexpr move_thrower_t() {}
-  KOKKOS_FUNCTION move_thrower_t(const move_thrower_t &) = default;
+  move_thrower_t(const move_thrower_t &) = default;
   KOKKOS_FUNCTION [[noreturn]] move_thrower_t(move_thrower_t &&) {
     throw MoveConstruction{};
   }
-  KOKKOS_FUNCTION move_thrower_t &operator=(const move_thrower_t &) = default;
+  move_thrower_t &operator=(const move_thrower_t &) = default;
   KOKKOS_FUNCTION move_thrower_t &operator=(move_thrower_t &&) {
     throw MoveAssignment{};
   }
@@ -312,7 +312,7 @@ KOKKOS_FUNCTION constexpr bool operator==(const DeviceString &lhs,
 
 // Helper function for test
 template <typename T> void test_helper() {
-  int errors = 0.;
+  int errors = 0;
   Kokkos::parallel_reduce(Kokkos::RangePolicy(0, 1), T{}, errors);
   EXPECT_EQ(0, errors);
 }
