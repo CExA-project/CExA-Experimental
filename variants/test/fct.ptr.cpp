@@ -65,7 +65,6 @@ void test_helper_Function_Ptr() {
         DEXPECT_EQ(res, a + a);
       },
       errors);
-
   EXPECT_EQ(0, errors);
 
   Kokkos::parallel_reduce(

@@ -171,16 +171,12 @@ class DeviceString {
   KOKKOS_FUNCTION ~DeviceString() { free(_data); }
 
   // Constructors
-  KOKKOS_FUNCTION DeviceString() { allocate_and_copy(""); }
+  KOKKOS_FUNCTION DeviceString() { allocate_and_copy("", 0); }
 
   KOKKOS_FUNCTION DeviceString(const char *data) { allocate_and_copy(data); }
 
   KOKKOS_FUNCTION DeviceString(const DeviceString &rhs) {
-    if (rhs._size == 0) {
-      allocate_and_copy("");
-    } else {
-      allocate_and_copy(rhs._data, rhs._size);
-    }
+    allocate_and_copy(rhs._data, rhs._size);
   }
 
   KOKKOS_FUNCTION DeviceString(const std::initializer_list<char> ilist) {
@@ -202,12 +198,13 @@ class DeviceString {
 
   KOKKOS_FUNCTION DeviceString(char rhs) {
     char tmp[2] = {rhs, '\0'};
-    allocate_and_copy(tmp);
+    allocate_and_copy(tmp, 1);
   }
 
   KOKKOS_FUNCTION DeviceString(double) {
     // Needs to be defined for the tests to compile
-    Kokkos::abort("Not implemented");
+    Kokkos::abort(
+        "Conversion from double/float to DeviceString is not implemented");
   }
 
   KOKKOS_FUNCTION DeviceString(DeviceString &&other) noexcept {
@@ -224,7 +221,7 @@ class DeviceString {
   // Affectation operators
   KOKKOS_FUNCTION DeviceString &operator=(const char *rhs) {
     _size = Kokkos::Impl::strlen(rhs);
-    if (_capacity > _size + 1) {
+    if (_capacity >= _size + 1) {
       Kokkos::Impl::strcpy(_data, rhs);
     } else {
       free(_data);
@@ -237,12 +234,15 @@ class DeviceString {
   KOKKOS_FUNCTION DeviceString &operator=(const DeviceString &other) {
     if (this == &other) {
       return *this;
+    } else if (_capacity >= other._size + 1) {
+      Kokkos::Impl::strcpy(_data, other._data);
+      _size = other._size;
+    } else {
+      DeviceString temp(other);
+      Kokkos::kokkos_swap(_data, temp._data);
+      Kokkos::kokkos_swap(_capacity, temp._capacity);
+      Kokkos::kokkos_swap(_size, temp._size);
     }
-
-    DeviceString temp(other);
-    Kokkos::kokkos_swap(_data, temp._data);
-    Kokkos::kokkos_swap(_capacity, temp._capacity);
-    Kokkos::kokkos_swap(_size, temp._size);
 
     return *this;
   }
@@ -256,16 +256,16 @@ class DeviceString {
   }
 
   // Comparison operators
-  KOKKOS_FUNCTION constexpr bool operator!=(const DeviceString &rhs) const {
-    if (rhs._size != 0 && _size != 0) {
-      return Kokkos::Impl::strcmp(rhs._data, this->_data);
+  KOKKOS_FUNCTION constexpr bool operator==(const DeviceString &rhs) const {
+    if (rhs._size == _size) {
+      return !Kokkos::Impl::strcmp(rhs._data, this->_data);
     } else {
-      return rhs._size != _size;
+      return false;
     }
   }
 
-  KOKKOS_FUNCTION constexpr bool operator==(const DeviceString &rhs) const {
-    return !(this->operator!=(rhs));
+  KOKKOS_FUNCTION constexpr bool operator!=(const DeviceString &rhs) const {
+    return !(this->operator==(rhs));
   }
 
   friend KOKKOS_FUNCTION constexpr bool operator!=(const char *lhs,
@@ -290,6 +290,12 @@ class DeviceString {
     _size += rhs._size;
 
     return *this;
+  }
+
+  KOKKOS_FUNCTION DeviceString operator+(const DeviceString &rhs) const {
+    DeviceString tmp(*this);
+    tmp += rhs;
+    return tmp;
   }
 };
 

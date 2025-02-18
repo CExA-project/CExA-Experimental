@@ -80,6 +80,7 @@ if(MPARK_VARIANT_INCLUDE_MPARK_TESTS)
     mod
     relops
     swap
+    virtual
     visit)
 
   foreach(test ${MPARK_TESTS})
