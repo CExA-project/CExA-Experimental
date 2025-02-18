@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 CExA-project
+# SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 #Official Tool: clang-format version 16.0.0
 BasedOnStyle: google
 SortIncludes: false
