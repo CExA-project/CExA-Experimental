@@ -30,14 +30,14 @@ TEST(Issue, 34) {
     S &operator=(const S &) = default;
     S &operator=(S &&)      = default;
 
-    Cexa::Experimental::variant<std::map<test_util::DeviceString, S>> value;
+    cexa::experimental::variant<std::map<test_util::DeviceString, S>> value;
   };
 }
 #endif
 
 // https://github.com/mpark/variant/pull/57
 TEST(Issue, 57) {
-  std::vector<Cexa::Experimental::variant<int, std::unique_ptr<int>>> vec;
+  std::vector<cexa::experimental::variant<int, std::unique_ptr<int>>> vec;
   vec.emplace_back(0);
 }
 

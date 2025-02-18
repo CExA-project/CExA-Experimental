@@ -1468,7 +1468,7 @@ namespace mpark {
           visitation::alt::visit_alt_at(this->index(),
 #ifdef MPARK_GENERIC_LAMBDAS
                                         [] (auto &this_alt, auto &that_alt) {
-                                          using Cexa::Experimental::swap;
+                                          using cexa::experimental::swap;
                                           swap(this_alt.value, that_alt.value);
                                         }
 #else
@@ -1481,7 +1481,7 @@ namespace mpark {
           impl *lhs = this;
           impl *rhs = lib::addressof(that);
           if (lhs->move_nothrow() && !rhs->move_nothrow()) {
-            Cexa::Experimental::swap(lhs, rhs);
+            cexa::experimental::swap(lhs, rhs);
           }
           impl tmp(lib::move(*rhs));
 #if defined(MPARK_EXCEPTIONS) &&    \
@@ -1511,7 +1511,7 @@ namespace mpark {
       struct swapper {
         template <typename ThisAlt, typename ThatAlt>
         KOKKOS_INLINE_FUNCTION constexpr void operator()(ThisAlt &this_alt, ThatAlt &that_alt) const {
-          using Cexa::Experimental::swap;
+          using cexa::experimental::swap;
           swap(this_alt.value, that_alt.value);
         }
       };

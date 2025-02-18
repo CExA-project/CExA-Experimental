@@ -14,12 +14,12 @@
 
 struct Ctor_Default_Variant {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
-    Cexa::Experimental::variant<int, test_util::DeviceString> v;
-    DEXPECT_EQ(0, Cexa::Experimental::get<0>(v));
+    cexa::experimental::variant<int, test_util::DeviceString> v;
+    DEXPECT_EQ(0, cexa::experimental::get<0>(v));
 
     /* constexpr */ {
-      constexpr Cexa::Experimental::variant<int> cv{};
-      static_assert(0 == Cexa::Experimental::get<0>(cv), "");
+      constexpr cexa::experimental::variant<int> cv{};
+      static_assert(0 == cexa::experimental::get<0>(cv), "");
     }
   }
 };

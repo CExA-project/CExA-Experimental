@@ -37,7 +37,7 @@ struct Assign_Move_SameType {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
     // `v`, `w`.
     FunctionCalled f{false, false};
-    Cexa::Experimental::variant<Obj, int> v(f), w(f);
+    cexa::experimental::variant<Obj, int> v(f), w(f);
     // move assignment.
     v = std::move(w);
     DEXPECT_FALSE(f.move_constructor_called);
@@ -51,7 +51,7 @@ struct Assign_Move_DiffType {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
     // `v`, `w`.
     FunctionCalled f{false, false};
-    Cexa::Experimental::variant<Obj, int> v(42), w(f);
+    cexa::experimental::variant<Obj, int> v(42), w(f);
     // move assignment.
     v = std::move(w);
     DEXPECT_TRUE(f.move_constructor_called);
@@ -63,10 +63,10 @@ TEST(Assign_Move, DiffType) { test_helper<Assign_Move_DiffType>(); }
 
 #ifdef MPARK_EXCEPTIONS
 TEST(Assign_Move, ValuelessByException) {
-  Cexa::Experimental::variant<int, move_thrower_t> v(42);
+  cexa::experimental::variant<int, move_thrower_t> v(42);
   EXPECT_THROW(v = move_thrower_t{}, MoveConstruction);
   EXPECT_TRUE(v.valueless_by_exception());
-  Cexa::Experimental::variant<int, move_thrower_t> w(42);
+  cexa::experimental::variant<int, move_thrower_t> w(42);
   w = std::move(v);
   EXPECT_TRUE(w.valueless_by_exception());
 }

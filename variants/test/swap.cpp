@@ -16,18 +16,18 @@
 
 struct Swap_Same {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
-    Cexa::Experimental::variant<int, test_util::DeviceString> v("hello");
-    Cexa::Experimental::variant<int, test_util::DeviceString> w("world");
+    cexa::experimental::variant<int, test_util::DeviceString> v("hello");
+    cexa::experimental::variant<int, test_util::DeviceString> w("world");
     // Check `v`.
-    DEXPECT_EQ("hello", Cexa::Experimental::get<test_util::DeviceString>(v));
+    DEXPECT_EQ("hello", cexa::experimental::get<test_util::DeviceString>(v));
     // Check `w`.
-    DEXPECT_EQ("world", Cexa::Experimental::get<test_util::DeviceString>(w));
+    DEXPECT_EQ("world", cexa::experimental::get<test_util::DeviceString>(w));
     // Swap.
-    Cexa::Experimental::swap(v, w);
+    cexa::experimental::swap(v, w);
     // Check `v`.
-    DEXPECT_EQ("world", Cexa::Experimental::get<test_util::DeviceString>(v));
+    DEXPECT_EQ("world", cexa::experimental::get<test_util::DeviceString>(v));
     // Check `w`.
-    DEXPECT_EQ("hello", Cexa::Experimental::get<test_util::DeviceString>(w));
+    DEXPECT_EQ("hello", cexa::experimental::get<test_util::DeviceString>(w));
   }
 };
 
@@ -35,18 +35,18 @@ TEST(Swap, Same) { test_helper<Swap_Same>(); }
 
 struct Swap_Different {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
-    Cexa::Experimental::variant<int, test_util::DeviceString> v(42);
-    Cexa::Experimental::variant<int, test_util::DeviceString> w("hello");
+    cexa::experimental::variant<int, test_util::DeviceString> v(42);
+    cexa::experimental::variant<int, test_util::DeviceString> w("hello");
     // Check `v`.
-    DEXPECT_EQ(42, Cexa::Experimental::get<int>(v));
+    DEXPECT_EQ(42, cexa::experimental::get<int>(v));
     // Check `w`.
-    DEXPECT_EQ("hello", Cexa::Experimental::get<test_util::DeviceString>(w));
+    DEXPECT_EQ("hello", cexa::experimental::get<test_util::DeviceString>(w));
     // Swap.
-    Cexa::Experimental::swap(v, w);
+    cexa::experimental::swap(v, w);
     // Check `v`.
-    DEXPECT_EQ("hello", Cexa::Experimental::get<test_util::DeviceString>(v));
+    DEXPECT_EQ("hello", cexa::experimental::get<test_util::DeviceString>(v));
     // Check `w`.
-    DEXPECT_EQ(42, Cexa::Experimental::get<int>(w));
+    DEXPECT_EQ(42, cexa::experimental::get<int>(w));
   }
 };
 
@@ -55,26 +55,26 @@ TEST(Swap, Different) { test_helper<Swap_Different>(); }
 #ifdef MPARK_EXCEPTIONS
 TEST(Swap, OneValuelessByException) {
   // `v` normal, `w` corrupted.
-  Cexa::Experimental::variant<int, move_thrower_t> v(42), w(42);
+  cexa::experimental::variant<int, move_thrower_t> v(42), w(42);
   EXPECT_THROW(w = move_thrower_t{}, MoveConstruction);
-  EXPECT_EQ(42, Cexa::Experimental::get<int>(v));
+  EXPECT_EQ(42, cexa::experimental::get<int>(v));
   EXPECT_TRUE(w.valueless_by_exception());
   // Swap.
-  Cexa::Experimental::swap(v, w);
+  cexa::experimental::swap(v, w);
   // Check `v`, `w`.
   EXPECT_TRUE(v.valueless_by_exception());
-  EXPECT_EQ(42, Cexa::Experimental::get<int>(w));
+  EXPECT_EQ(42, cexa::experimental::get<int>(w));
 }
 
 TEST(Swap, BothValuelessByException) {
   // `v`, `w` both corrupted.
-  Cexa::Experimental::variant<int, move_thrower_t> v(42);
+  cexa::experimental::variant<int, move_thrower_t> v(42);
   EXPECT_THROW(v = move_thrower_t{}, MoveConstruction);
-  Cexa::Experimental::variant<int, move_thrower_t> w(v);
+  cexa::experimental::variant<int, move_thrower_t> w(v);
   EXPECT_TRUE(v.valueless_by_exception());
   EXPECT_TRUE(w.valueless_by_exception());
   // Swap.
-  Cexa::Experimental::swap(v, w);
+  cexa::experimental::swap(v, w);
   // Check `v`, `w`.
   EXPECT_TRUE(v.valueless_by_exception());
   EXPECT_TRUE(w.valueless_by_exception());
@@ -95,9 +95,9 @@ struct Swap_DtorsSame {
     size_t v_count = 0;
     size_t w_count = 0;
     {
-      Cexa::Experimental::variant<Obj> v{&v_count}, w{&w_count};
-      Cexa::Experimental::swap(v, w);
-      // Calls `Cexa::Experimental::swap(Obj &lhs, Obj &rhs)`, with which we
+      cexa::experimental::variant<Obj> v{&v_count}, w{&w_count};
+      cexa::experimental::swap(v, w);
+      // Calls `cexa::experimental::swap(Obj &lhs, Obj &rhs)`, with which we
       // perform:
       // ```
       // {
@@ -129,7 +129,7 @@ struct Obj {
 };  // Obj
 
 KOKKOS_FUNCTION static void swap(Obj &lhs, Obj &rhs) noexcept {
-  Cexa::Experimental::swap(lhs.dtor_count_, rhs.dtor_count_);
+  cexa::experimental::swap(lhs.dtor_count_, rhs.dtor_count_);
 }
 
 }  // namespace detail
@@ -139,8 +139,8 @@ struct Swap_DtorsSameWithSwap {
     size_t v_count = 0;
     size_t w_count = 0;
     {
-      Cexa::Experimental::variant<detail::Obj> v{&v_count}, w{&w_count};
-      using Cexa::Experimental::swap;
+      cexa::experimental::variant<detail::Obj> v{&v_count}, w{&w_count};
+      using cexa::experimental::swap;
       swap(v, w);
       // Calls `detail::swap(Obj &lhs, Obj &rhs)`, with which doesn't call any
       // destructors.
@@ -177,11 +177,11 @@ struct Swap_DtorsDifferent {
     size_t v_count = 0;
     size_t w_count = 0;
     {
-      Cexa::Experimental::variant<V, W> v{
-          Cexa::Experimental::in_place_type_t<V>{}, &v_count};
-      Cexa::Experimental::variant<V, W> w{
-          Cexa::Experimental::in_place_type_t<W>{}, &w_count};
-      using Cexa::Experimental::swap;
+      cexa::experimental::variant<V, W> v{
+          cexa::experimental::in_place_type_t<V>{}, &v_count};
+      cexa::experimental::variant<V, W> w{
+          cexa::experimental::in_place_type_t<W>{}, &w_count};
+      using cexa::experimental::swap;
       swap(v, w);
       DEXPECT_EQ(1u, v_count);
       DEXPECT_EQ(2u, w_count);

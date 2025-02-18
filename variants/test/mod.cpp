@@ -14,9 +14,9 @@
 
 struct Assign_Emplace_IndexDirect {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
-    Cexa::Experimental::variant<int, test_util::DeviceString> v;
+    cexa::experimental::variant<int, test_util::DeviceString> v;
     v.emplace<1>("42");
-    DEXPECT_EQ("42", Cexa::Experimental::get<1>(v));
+    DEXPECT_EQ("42", cexa::experimental::get<1>(v));
   }
 };
 
@@ -24,9 +24,9 @@ TEST(Assign_Emplace, IndexDirect) { test_helper<Assign_Emplace_IndexDirect>(); }
 
 struct Assign_Emplace_IndexDirectDuplicate {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
-    Cexa::Experimental::variant<int, int> v;
+    cexa::experimental::variant<int, int> v;
     v.emplace<1>(42);
-    DEXPECT_EQ(42, Cexa::Experimental::get<1>(v));
+    DEXPECT_EQ(42, cexa::experimental::get<1>(v));
   }
 };
 
@@ -36,9 +36,9 @@ TEST(Assign_Emplace, IndexDirectDuplicate) {
 
 struct Assign_Emplace_IndexConversion {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
-    Cexa::Experimental::variant<int, test_util::DeviceString> v;
+    cexa::experimental::variant<int, test_util::DeviceString> v;
     v.emplace<1>("42");
-    DEXPECT_EQ("42", Cexa::Experimental::get<1>(v));
+    DEXPECT_EQ("42", cexa::experimental::get<1>(v));
   }
 };
 
@@ -48,9 +48,9 @@ TEST(Assign_Emplace, IndexConversion) {
 
 struct Assign_Emplace_IndexConversionDuplicate {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
-    Cexa::Experimental::variant<int, int> v;
+    cexa::experimental::variant<int, int> v;
     v.emplace<1>(1.1);
-    DEXPECT_EQ(1, Cexa::Experimental::get<1>(v));
+    DEXPECT_EQ(1, cexa::experimental::get<1>(v));
   }
 };
 
@@ -60,9 +60,9 @@ TEST(Assign_Emplace, IndexConversionDuplicate) {
 
 struct Assign_Emplace_IndexInitializerList {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
-    Cexa::Experimental::variant<int, test_util::DeviceString> v;
+    cexa::experimental::variant<int, test_util::DeviceString> v;
     v.emplace<1>({'4', '2'});
-    DEXPECT_EQ("42", Cexa::Experimental::get<1>(v));
+    DEXPECT_EQ("42", cexa::experimental::get<1>(v));
   }
 };
 
@@ -72,9 +72,9 @@ TEST(Assign_Emplace, IndexInitializerList) {
 
 struct Assign_Emplace_TypeDirect {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
-    Cexa::Experimental::variant<int, test_util::DeviceString> v;
+    cexa::experimental::variant<int, test_util::DeviceString> v;
     v.emplace<test_util::DeviceString>("42");
-    DEXPECT_EQ("42", Cexa::Experimental::get<test_util::DeviceString>(v));
+    DEXPECT_EQ("42", cexa::experimental::get<test_util::DeviceString>(v));
   }
 };
 
@@ -82,9 +82,9 @@ TEST(Assign_Emplace, TypeDirect) { test_helper<Assign_Emplace_TypeDirect>(); }
 
 struct Assign_Emplace_TypeConversion {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
-    Cexa::Experimental::variant<int, test_util::DeviceString> v;
+    cexa::experimental::variant<int, test_util::DeviceString> v;
     v.emplace<int>(1.1);
-    DEXPECT_EQ(1, Cexa::Experimental::get<int>(v));
+    DEXPECT_EQ(1, cexa::experimental::get<int>(v));
   }
 };
 
@@ -94,9 +94,9 @@ TEST(Assign_Emplace, TypeConversion) {
 
 struct Assign_Emplace_TypeInitializerList {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
-    Cexa::Experimental::variant<int, test_util::DeviceString> v;
+    cexa::experimental::variant<int, test_util::DeviceString> v;
     v.emplace<test_util::DeviceString>({'4', '2'});
-    DEXPECT_EQ("42", Cexa::Experimental::get<test_util::DeviceString>(v));
+    DEXPECT_EQ("42", cexa::experimental::get<test_util::DeviceString>(v));
   }
 };
 

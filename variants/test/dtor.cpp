@@ -23,8 +23,8 @@ struct Dtor_Value {
     bool dtor_called = false;
     // Construct/Destruct `Obj`.
     {
-      Cexa::Experimental::variant<Obj> v(
-          Cexa::Experimental::in_place_type_t<Obj>{}, dtor_called);
+      cexa::experimental::variant<Obj> v(
+          cexa::experimental::in_place_type_t<Obj>{}, dtor_called);
     }
     // Check that the destructor was called.
     DEXPECT_TRUE(dtor_called);

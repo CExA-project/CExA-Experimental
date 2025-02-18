@@ -23,10 +23,10 @@ struct C : public A {
   }
 };
 
-using FunctionVariant = Cexa::Experimental::variant<A, B, C>;
+using FunctionVariant = cexa::experimental::variant<A, B, C>;
 
 KOKKOS_FUNCTION auto call_func(const FunctionVariant &variant, int in) {
-  return Cexa::Experimental::visit([in](auto a) { return a.func(in); },
+  return cexa::experimental::visit([in](auto a) { return a.func(in); },
                                    variant);
 }
 

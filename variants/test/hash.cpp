@@ -18,23 +18,23 @@
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
     !defined(KOKKOS_ENABLE_SYCL)
 TEST(Hash, Monostate) {
-  Cexa::Experimental::variant<int, Cexa::Experimental::monostate, std::string>
-      v(Cexa::Experimental::monostate{});
+  cexa::experimental::variant<int, cexa::experimental::monostate, std::string>
+      v(cexa::experimental::monostate{});
   // Construct hash function objects.
-  std::hash<Cexa::Experimental::monostate> monostate_hash;
-  std::hash<Cexa::Experimental::variant<int, Cexa::Experimental::monostate,
+  std::hash<cexa::experimental::monostate> monostate_hash;
+  std::hash<cexa::experimental::variant<int, cexa::experimental::monostate,
                                         std::string>>
       variant_hash;
   // Check the hash.
-  EXPECT_NE(monostate_hash(Cexa::Experimental::monostate{}), variant_hash(v));
+  EXPECT_NE(monostate_hash(cexa::experimental::monostate{}), variant_hash(v));
 }
 
 TEST(Hash, String) {
-  Cexa::Experimental::variant<int, std::string> v("hello");
-  EXPECT_EQ("hello", Cexa::Experimental::get<std::string>(v));
+  cexa::experimental::variant<int, std::string> v("hello");
+  EXPECT_EQ("hello", cexa::experimental::get<std::string>(v));
   // Construct hash function objects.
   std::hash<std::string> string_hash;
-  std::hash<Cexa::Experimental::variant<int, std::string>> variant_hash;
+  std::hash<cexa::experimental::variant<int, std::string>> variant_hash;
   // Check the hash.
   EXPECT_NE(string_hash("hello"), variant_hash(v));
 }

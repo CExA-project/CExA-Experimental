@@ -4,7 +4,7 @@
 #include <Kokkos_Core.hpp>
 
 // We need a function called "swap" (not kokkos_swap like the one in Kokkos)
-namespace Cexa::Experimental {
+namespace cexa::experimental {
 
 template <class T>
 KOKKOS_FORCEINLINE_FUNCTION constexpr std::enable_if_t<
@@ -20,7 +20,7 @@ KOKKOS_FORCEINLINE_FUNCTION constexpr std::enable_if_t<
 swap(T (&a)[N], T (&b)[N]) noexcept(Kokkos::Impl::is_nothrow_swappable_v<T>) {
   Kokkos::kokkos_swap(a, b);
 }
-}  // namespace Cexa::Experimental
+}  // namespace cexa::experimental
 
 #if defined(KOKKOS_ENABLE_CUDA)
 #include <cuda_runtime_api.h>
@@ -40,7 +40,7 @@ swap(T (&a)[N], T (&b)[N]) noexcept(Kokkos::Impl::is_nothrow_swappable_v<T>) {
 #define KOKKOS_VARIANT_PREFIX std
 #endif
 
-namespace Cexa::Experimental {
+namespace cexa::experimental {
 template <class... types>
 using variant   = KOKKOS_VARIANT_PREFIX::variant<types...>;
 using monostate = KOKKOS_VARIANT_PREFIX::monostate;
@@ -141,7 +141,7 @@ using in_place_type_t = KOKKOS_VARIANT_PREFIX::in_place_type_t<T>;
 
 // bad_variant_access
 using bad_variant_access = KOKKOS_VARIANT_PREFIX::bad_variant_access;
-}  // namespace Cexa::Experimental
+}  // namespace cexa::experimental
 
 #undef KOKKOS_VARIANT_PREFIX
 #undef KOKKOS_ALIAS_FUNCTION

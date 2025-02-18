@@ -42,11 +42,11 @@ struct Function_Pow {
 };
 
 using FunctionVariant =
-    Cexa::Experimental::variant<Function_Add, Function_Mul, Function_Pow>;
+    cexa::experimental::variant<Function_Add, Function_Mul, Function_Pow>;
 
 template <typename Variant, typename... Args>
 KOKKOS_FUNCTION auto call_variant(const Variant &variant, const Args &...args) {
-  return Cexa::Experimental::visit([args...](auto f) { return f(args...); },
+  return cexa::experimental::visit([args...](auto f) { return f(args...); },
                                    variant);
 }
 

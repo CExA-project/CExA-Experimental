@@ -35,7 +35,7 @@ struct Assign_Copy_SameType {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
     // `v`, `w`.
     FunctionCalled f{false, false};
-    Cexa::Experimental::variant<Obj, int> v(f), w(f);
+    cexa::experimental::variant<Obj, int> v(f), w(f);
     // copy assignment.
     v = w;
     DEXPECT_FALSE(f.copy_constructor_called);
@@ -49,7 +49,7 @@ struct Assign_Copy_DiffType {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
     // `v`, `w`.
     FunctionCalled f{false, false};
-    Cexa::Experimental::variant<Obj, int> v(42), w(f);
+    cexa::experimental::variant<Obj, int> v(42), w(f);
     // copy assignment.
     v = w;
     DEXPECT_TRUE(f.copy_constructor_called);
@@ -61,10 +61,10 @@ TEST(Assign_Copy, DiffType) { test_helper<Assign_Copy_DiffType>(); }
 
 #ifdef MPARK_EXCEPTIONS
 TEST(Assign_Copy, ValuelessByException) {
-  Cexa::Experimental::variant<int, move_thrower_t> v(42);
+  cexa::experimental::variant<int, move_thrower_t> v(42);
   EXPECT_THROW(v = move_thrower_t{}, MoveConstruction);
   EXPECT_TRUE(v.valueless_by_exception());
-  Cexa::Experimental::variant<int, move_thrower_t> w(42);
+  cexa::experimental::variant<int, move_thrower_t> w(42);
   w = v;
   EXPECT_TRUE(w.valueless_by_exception());
 }

@@ -17,24 +17,24 @@
 struct Variant_Intro {
   KOKKOS_FUNCTION void operator()(const int i, int &error) const {
     // direct initialization.
-    Cexa::Experimental::variant<int, test_util::DeviceString> v("hello world!");
+    cexa::experimental::variant<int, test_util::DeviceString> v("hello world!");
 
     // direct access via reference.
     DEXPECT_EQ("hello world!",
-               Cexa::Experimental::get<test_util::DeviceString>(v));
+               cexa::experimental::get<test_util::DeviceString>(v));
 
     // bad access.
 #ifdef MPARK_EXCEPTIONS
-    EXPECT_THROW(Cexa::Experimental::get<int>(v),
-                 Cexa::Experimental::bad_variant_access);
+    EXPECT_THROW(cexa::experimental::get<int>(v),
+                 cexa::experimental::bad_variant_access);
 #endif
 
     // copy construction.
-    Cexa::Experimental::variant<int, test_util::DeviceString> w(v);
+    cexa::experimental::variant<int, test_util::DeviceString> w(v);
 
     // direct access via pointer.
-    DEXPECT_FALSE(Cexa::Experimental::get_if<int>(&w));
-    DEXPECT_TRUE(Cexa::Experimental::get_if<test_util::DeviceString>(&w));
+    DEXPECT_FALSE(cexa::experimental::get_if<int>(&w));
+    DEXPECT_TRUE(cexa::experimental::get_if<test_util::DeviceString>(&w));
 
     // diff-type assignment.
     v = 42;
@@ -48,7 +48,7 @@ struct Variant_Intro {
     };  // unary
 
     // single visitation.
-    DEXPECT_EQ(0, Cexa::Experimental::visit(unary{}, v));
+    DEXPECT_EQ(0, cexa::experimental::visit(unary{}, v));
 
     // same-type assignment.
     w = "hello";
@@ -78,7 +78,7 @@ struct Variant_Intro {
     };  // binary
 
     // binary visitation.
-    DEXPECT_EQ(0, Cexa::Experimental::visit(binary{}, v, w));
+    DEXPECT_EQ(0, cexa::experimental::visit(binary{}, v, w));
   }
 };
 
