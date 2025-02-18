@@ -5,6 +5,8 @@
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.md or copy at
 // http://boost.org/LICENSE_1_0.txt)
+// SPDX-FileCopyrightText: Michael Park
+// SPDX-License-Identifier: BSL-1.0
 
 #ifndef _UTIL_HPP
 #define _UTIL_HPP
