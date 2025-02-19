@@ -9,19 +9,17 @@
 #include <cstdint>
 #include <Kokkos_BitManipulation.hpp>
 
-namespace Cexa::Experimental::simd::constants
-{
+namespace Cexa::Experimental::simd::constants {
 
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION float hex_to_float(std::uint32_t i) {
-    return Kokkos::bit_cast<float>(i);
+  return Kokkos::bit_cast<float>(i);
 }
 
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION double hex_to_double(std::uint64_t i) {
-    return Kokkos::bit_cast<double>(i);
+  return Kokkos::bit_cast<double>(i);
 }
 
-namespace simple_precision
-{
+namespace simple_precision {
 // Bias for the exponent of a simple-precision floating point number
 inline const std::int32_t BIAS = 127;
 // Staring position of the exponent in the binary representation of a float
@@ -32,43 +30,51 @@ inline const float THRESHOLD_1 = hex_to_float(0x435C6BBA);
 inline const float THRESHOLD_2 = hex_to_float(0x33000000);
 
 inline const float INV_L = hex_to_float(0x4238AA3B);
-inline const float L1 = hex_to_float(0x3CB17200);
-inline const float L2 = hex_to_float(0x333FBE8E);
+inline const float L1    = hex_to_float(0x3CB17200);
+inline const float L2    = hex_to_float(0x333FBE8E);
 
 inline const float A1 = hex_to_float(0x3F000044);
 inline const float A2 = hex_to_float(0x3E2AAAEC);
 
 inline const std::array<float, 32> S_lead = {
-    hex_to_float(0x3F800000), hex_to_float(0x3F82CD80), hex_to_float(0x3F85AAC0),
-    hex_to_float(0x3F889800), hex_to_float(0x3F8B95C0), hex_to_float(0x3F8EA400),
-    hex_to_float(0x3F91C3C0), hex_to_float(0x3F94F4C0), hex_to_float(0x3F9837C0),
-    hex_to_float(0x3F9B8D00), hex_to_float(0x3F9EF500), hex_to_float(0x3FA27040),
-    hex_to_float(0x3FA5FEC0), hex_to_float(0x3FA9A140), hex_to_float(0x3FAD5800),
-    hex_to_float(0x3FB123C0), hex_to_float(0x3FB504C0), hex_to_float(0x3FB8FB80),
-    hex_to_float(0x3FBD0880), hex_to_float(0x3FC12C40), hex_to_float(0x3FC56700),
-    hex_to_float(0x3FC9B980), hex_to_float(0x3FCE2480), hex_to_float(0x3FD2A800),
-    hex_to_float(0x3FD744C0), hex_to_float(0x3FDBFB80), hex_to_float(0x3FE0CCC0),
-    hex_to_float(0x3FE5B900), hex_to_float(0x3FEAC0C0), hex_to_float(0x3FEFE480),
+    hex_to_float(0x3F800000), hex_to_float(0x3F82CD80),
+    hex_to_float(0x3F85AAC0), hex_to_float(0x3F889800),
+    hex_to_float(0x3F8B95C0), hex_to_float(0x3F8EA400),
+    hex_to_float(0x3F91C3C0), hex_to_float(0x3F94F4C0),
+    hex_to_float(0x3F9837C0), hex_to_float(0x3F9B8D00),
+    hex_to_float(0x3F9EF500), hex_to_float(0x3FA27040),
+    hex_to_float(0x3FA5FEC0), hex_to_float(0x3FA9A140),
+    hex_to_float(0x3FAD5800), hex_to_float(0x3FB123C0),
+    hex_to_float(0x3FB504C0), hex_to_float(0x3FB8FB80),
+    hex_to_float(0x3FBD0880), hex_to_float(0x3FC12C40),
+    hex_to_float(0x3FC56700), hex_to_float(0x3FC9B980),
+    hex_to_float(0x3FCE2480), hex_to_float(0x3FD2A800),
+    hex_to_float(0x3FD744C0), hex_to_float(0x3FDBFB80),
+    hex_to_float(0x3FE0CCC0), hex_to_float(0x3FE5B900),
+    hex_to_float(0x3FEAC0C0), hex_to_float(0x3FEFE480),
     hex_to_float(0x3FF52540), hex_to_float(0x3FFA8380),
 };
 
 inline const std::array<float, 32> S_trail = {
-    hex_to_float(0x00000000), hex_to_float(0x35531585), hex_to_float(0x34D9F312),
-    hex_to_float(0x35E8092E), hex_to_float(0x3471F546), hex_to_float(0x36E62D17),
-    hex_to_float(0x361B9D59), hex_to_float(0x36BEA3FC), hex_to_float(0x36C14637),
-    hex_to_float(0x36E6E755), hex_to_float(0x36C98247), hex_to_float(0x34C0C312),
-    hex_to_float(0x36354D8B), hex_to_float(0x3655A754), hex_to_float(0x36FBA90B),
-    hex_to_float(0x36D6074B), hex_to_float(0x36CCCFE7), hex_to_float(0x36BD1D8C),
-    hex_to_float(0x368E7D60), hex_to_float(0x35CCA667), hex_to_float(0x36A84554),
-    hex_to_float(0x36F619B9), hex_to_float(0x35C151F8), hex_to_float(0x366C8F89),
-    hex_to_float(0x36F32B5A), hex_to_float(0x36DE5F6C), hex_to_float(0x36776155),
-    hex_to_float(0x355CEF90), hex_to_float(0x355CFBA5), hex_to_float(0x36E66F73),
-    hex_to_float(0x36F45492), hex_to_float(0x36CB6DC9)
-};
+    hex_to_float(0x00000000), hex_to_float(0x35531585),
+    hex_to_float(0x34D9F312), hex_to_float(0x35E8092E),
+    hex_to_float(0x3471F546), hex_to_float(0x36E62D17),
+    hex_to_float(0x361B9D59), hex_to_float(0x36BEA3FC),
+    hex_to_float(0x36C14637), hex_to_float(0x36E6E755),
+    hex_to_float(0x36C98247), hex_to_float(0x34C0C312),
+    hex_to_float(0x36354D8B), hex_to_float(0x3655A754),
+    hex_to_float(0x36FBA90B), hex_to_float(0x36D6074B),
+    hex_to_float(0x36CCCFE7), hex_to_float(0x36BD1D8C),
+    hex_to_float(0x368E7D60), hex_to_float(0x35CCA667),
+    hex_to_float(0x36A84554), hex_to_float(0x36F619B9),
+    hex_to_float(0x35C151F8), hex_to_float(0x366C8F89),
+    hex_to_float(0x36F32B5A), hex_to_float(0x36DE5F6C),
+    hex_to_float(0x36776155), hex_to_float(0x355CEF90),
+    hex_to_float(0x355CFBA5), hex_to_float(0x36E66F73),
+    hex_to_float(0x36F45492), hex_to_float(0x36CB6DC9)};
 }  // namespace simple_precision
 
-namespace double_precision
-{
+namespace double_precision {
 // Bias for the exponent of a double-precision floating point number
 inline const std::int64_t BIAS = 1023;
 // Staring position of the exponent in the binary representation of a double
@@ -79,8 +85,8 @@ inline const double THRESHOLD_1 = hex_to_double(0x409C4474E1726455);
 inline const double THRESHOLD_2 = hex_to_double(0x3C90000000000000);
 
 inline const double INV_L = hex_to_double(0x40471547652B82FE);
-inline const double L1 = hex_to_double(0x3F962E42FEF00000);
-inline const double L2 = hex_to_double(0x3D8473DE6AF278ED);
+inline const double L1    = hex_to_double(0x3F962E42FEF00000);
+inline const double L2    = hex_to_double(0x3D8473DE6AF278ED);
 
 inline const double A1 = hex_to_double(0x3FE0000000000000);
 inline const double A2 = hex_to_double(0x3FC5555555548F7C);

@@ -44,6 +44,6 @@ and benchmarks can be built using cmake, the relevant options are:
 - `SIMD_BUILD_BENCHMARKS`: Build the benchmarks (default: `ON`)
 - `SIMD_USE_INTEL_FP_PRECISE`: Use the flag `-fp-model=precise` when compiling
   with an Intel compiler, its default value is `fast=1` which enables
-  floating point math optimizations which might hurt accuracy (default: `OFF`) 
+  floating point math optimizations which might hurt accuracy (default: `OFF`)
 - `SIMD_BUILD_ACCURACY_BENCHMARK`: Build the accuracy benchmark, requires mpfr
   to be installed (default: `ON`)
