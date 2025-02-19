@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 CExA-project
+#
+# SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
+
 CPMAddPackage(
   googletest
   GITHUB_REPOSITORY google/googletest

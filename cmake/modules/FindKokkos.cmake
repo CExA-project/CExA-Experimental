@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 CExA-project
+#
+# SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
+
 # set CMAKE_BUILD_TYPE if not defined
 if(NOT CMAKE_BUILD_TYPE)
     set(default_build_type "RelWithDebInfo")

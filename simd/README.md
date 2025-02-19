@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2025 CExA-project
+
+SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
+-->
+
 # SIMD
 
 Implementation of the `exp` function for AVX2 and AVX512.

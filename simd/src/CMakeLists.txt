@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 CExA-project
+#
+# SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
+
 set(
   SIMD_MATH_SOURCES
   Constants.hpp

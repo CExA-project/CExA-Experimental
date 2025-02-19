@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 CExA-project
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
+
 #ifndef CEXA_EXPERIMENTAL_KOKKOS_SIMD_AVX_MATH_HPP
 #define CEXA_EXPERIMENTAL_KOKKOS_SIMD_AVX_MATH_HPP
 

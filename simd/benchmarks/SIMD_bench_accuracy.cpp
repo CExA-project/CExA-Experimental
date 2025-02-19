@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 CExA-project
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
+
 #include <AVX2_Math.hpp>
 #include <cmath>
 #include <cstdint>

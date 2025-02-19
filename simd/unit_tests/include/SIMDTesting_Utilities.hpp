@@ -14,6 +14,9 @@
 //
 //@HEADER
 
+// NOTE
+// This version was modified from the orginal found in the Kokkos source code
+
 #ifndef KOKKOS_SIMD_TESTING_UTILITIES_HPP
 #define KOKKOS_SIMD_TESTING_UTILITIES_HPP
 
