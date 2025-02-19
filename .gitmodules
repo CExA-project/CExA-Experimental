@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2025 CExA-project
+# SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
+
+[submodule "variants/test/3rdparty/googletest"]
+	path = variants/test/3rdparty/googletest
+	url = https://github.com/google/googletest.git
