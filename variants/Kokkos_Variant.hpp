@@ -27,9 +27,7 @@ swap(T (&a)[N], T (&b)[N]) noexcept(Kokkos::Impl::is_nothrow_swappable_v<T>) {
 #if defined(KOKKOS_ENABLE_CUDA)
 #include <cuda_runtime_api.h>
 
-// cuda/std/variant should be available from cuda12.4 but is not due to a bug
-// (see issue: https://github.com/NVIDIA/cccl/issues/3858)
-#if KOKKOS_COMPILER_NVCC >= 1251
+#if KOKKOS_COMPILER_NVCC >= 1250
 #include <cuda/std/variant>
 #define KOKKOS_VARIANT_PREFIX cuda::std
 #else
