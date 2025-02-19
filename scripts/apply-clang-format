@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: 2025 CExA-project
+# SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 
 # If CLANG_FORMAT_EXE exists in the environment,
 # it is used instead of 'clang-format'.
