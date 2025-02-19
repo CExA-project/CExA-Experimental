@@ -107,7 +107,7 @@ struct Get_ConstVarConstType {
 
 TEST(Get, ConstVarConstType) { test_helper<Get_ConstVarConstType>(); }
 
-#ifdef MPARK_EXCEPTIONS
+#ifdef EXCEPTIONS_AVAILABLE
 TEST(Get, ValuelessByException) {
   cexa::experimental::variant<int, move_thrower_t> v(42);
   EXPECT_THROW(v = move_thrower_t{}, MoveConstruction);

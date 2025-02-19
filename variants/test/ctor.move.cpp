@@ -39,7 +39,7 @@ struct Ctor_Move_Value {
 
 TEST(Ctor_Move, Value) { test_helper<Ctor_Move_Value>(); }
 
-#ifdef MPARK_EXCEPTIONS
+#ifdef EXCEPTIONS_AVAILABLE
 TEST(Ctor_Move, ValuelessByException) {
   cexa::experimental::variant<int, move_thrower_t> v(42);
   EXPECT_THROW(v = move_thrower_t{}, MoveConstruction);

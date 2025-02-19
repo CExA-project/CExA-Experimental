@@ -11,6 +11,18 @@
 #ifndef _UTIL_HPP
 #define _UTIL_HPP
 
+#ifndef __has_feature
+#define __has_feature(x) 0
+#endif
+
+#if (__has_feature(cxx_exceptions) || defined(__cpp_exceptions) ||             \
+     (defined(_MSC_VER) && defined(_CPPUNWIND)) || defined(__EXCEPTIONS)) &&   \
+    !(defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP) ||             \
+      defined(KOKKOS_ENABLE_CUDA))
+
+#define EXCEPTIONS_AVAILABLE
+#endif
+
 #include <Kokkos_Core.hpp>
 #include <mpark/config.hpp>
 
@@ -33,7 +45,7 @@ struct get_qual {
   }
 };
 
-#ifdef MPARK_EXCEPTIONS
+#ifdef EXCEPTIONS_AVAILABLE
 struct CopyConstruction : std::exception {};
 struct CopyAssignment : std::exception {};
 struct MoveConstruction : std::exception {};

@@ -106,7 +106,7 @@ TEST(Assign_Fwd, SameTypeOptimization) {
   test_helper<Assign_Fwd_SameTypeOptimization>();
 }
 
-#ifdef MPARK_EXCEPTIONS
+#ifdef EXCEPTIONS_AVAILABLE
 TEST(Assign_Fwd, ThrowOnAssignment) {
   cexa::experimental::variant<int, move_thrower_t> v(
       cexa::experimental::in_place_type_t<move_thrower_t>{});

@@ -62,7 +62,7 @@ void test_helper_VirtualFct() {
 
   var = C{};
   Kokkos::parallel_reduce(
-      "Test_B", Kokkos::RangePolicy(0, ntests),
+      "Test_C", Kokkos::RangePolicy(0, ntests),
       KOKKOS_LAMBDA(int i, int &error) {
         test_util::DeviceString res      = call_func(var, i);
         test_util::DeviceString expected = test_util::DeviceString("C") + i;

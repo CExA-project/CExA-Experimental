@@ -63,7 +63,7 @@ struct Assign_Move_DiffType {
 
 TEST(Assign_Move, DiffType) { test_helper<Assign_Move_DiffType>(); }
 
-#ifdef MPARK_EXCEPTIONS
+#ifdef EXCEPTIONS_AVAILABLE
 TEST(Assign_Move, ValuelessByException) {
   cexa::experimental::variant<int, move_thrower_t> v(42);
   EXPECT_THROW(v = move_thrower_t{}, MoveConstruction);

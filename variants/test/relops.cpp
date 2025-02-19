@@ -184,7 +184,7 @@ struct Rel_DiffTypeDiffValue {
 
 TEST(Rel, DiffTypeDiffValue) { test_helper<Rel_DiffTypeDiffValue>(); }
 
-#ifdef MPARK_EXCEPTIONS
+#ifdef EXCEPTIONS_AVAILABLE
 TEST(Rel, OneValuelessByException) {
   // `v` normal, `w` corrupted.
   cexa::experimental::variant<int, move_thrower_t> v(42), w(42);

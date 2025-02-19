@@ -54,7 +54,7 @@ struct Swap_Different {
 
 TEST(Swap, Different) { test_helper<Swap_Different>(); }
 
-#ifdef MPARK_EXCEPTIONS
+#ifdef EXCEPTIONS_AVAILABLE
 TEST(Swap, OneValuelessByException) {
   // `v` normal, `w` corrupted.
   cexa::experimental::variant<int, move_thrower_t> v(42), w(42);

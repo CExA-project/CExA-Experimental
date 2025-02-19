@@ -61,7 +61,7 @@ struct Assign_Copy_DiffType {
 
 TEST(Assign_Copy, DiffType) { test_helper<Assign_Copy_DiffType>(); }
 
-#ifdef MPARK_EXCEPTIONS
+#ifdef EXCEPTIONS_AVAILABLE
 TEST(Assign_Copy, ValuelessByException) {
   cexa::experimental::variant<int, move_thrower_t> v(42);
   EXPECT_THROW(v = move_thrower_t{}, MoveConstruction);

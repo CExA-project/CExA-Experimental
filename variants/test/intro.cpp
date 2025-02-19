@@ -26,7 +26,7 @@ struct Variant_Intro {
                cexa::experimental::get<test_util::DeviceString>(v));
 
     // bad access.
-#ifdef MPARK_EXCEPTIONS
+#ifdef EXCEPTIONS_AVAILABLE
     EXPECT_THROW(cexa::experimental::get<int>(v),
                  cexa::experimental::bad_variant_access);
 #endif
