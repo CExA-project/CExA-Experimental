@@ -29,11 +29,17 @@ TEST(TestMemInfo, testHost) {
 TEST(TestMemInfo, testCuda) {
   testMemInfo<Kokkos::CudaSpace>();
 }
+TEST(TestMemInfo, testCudaUVM) {
+  testMemInfo<Kokkos::SharedSpace>();
+}
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
 TEST(TestMemInfo, testHip) {
   testMemInfo<Kokkos::HIPSpace>();
+}
+TEST(TestMemInfo, testHipManaged) {
+  testMemInfo<Kokkos::SharedSpace>();
 }
 #endif
 

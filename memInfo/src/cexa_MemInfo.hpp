@@ -40,12 +40,20 @@ template <>
 void MemGetInfo<Kokkos::CudaSpace>(size_t* free, size_t* total) {
   KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemGetInfo(free, total));
 }
+template <>
+void MemGetInfo<Kokkos::CudaUVMSpace>(size_t* free, size_t* total) {
+  MemGetInfo<Kokkos::HostSpace>(free, total);
+}
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
 template <>
 void MemGetInfo<Kokkos::HIPSpace>(size_t* free, size_t* total) {
   KOKKOS_IMPL_HIP_SAFE_CALL(hipMemGetInfo(free, total));
+}
+template <>
+void MemGetInfo<Kokkos::HIPManagedSpace>(size_t* free, size_t* total) {
+  MemGetInfo<Kokkos::HostSpace>(free, total);
 }
 #endif
 
