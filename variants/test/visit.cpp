@@ -185,4 +185,18 @@ TEST(Visit_Heterogenous, Quintuple) {
   test_helper<Visit_Heterogenous_Quintuple>();
 }
 
+// Only there to test DeviceString, not directly relevant to variant
+struct Visit_Negative_Numbers {
+  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+    cexa::experimental::variant<int, double> v(-101);
+    DEXPECT_EQ("-101", cexa::experimental::visit(concat{}, v));
+    cexa::experimental::variant<short, double> w((short)-202);
+    DEXPECT_EQ("-202", cexa::experimental::visit(concat{}, w));
+    cexa::experimental::variant<long, double> x(-303L);
+    DEXPECT_EQ("-303", cexa::experimental::visit(concat{}, x));
+  }
+};
+
+TEST(Visit_Negative, Numbers) { test_helper<Visit_Negative_Numbers>(); }
+
 TEST_MAIN

@@ -15,9 +15,9 @@
 #define __has_feature(x) 0
 #endif
 
-#if (__has_feature(cxx_exceptions) || defined(__cpp_exceptions) ||             \
-     (defined(_MSC_VER) && defined(_CPPUNWIND)) || defined(__EXCEPTIONS)) &&   \
-    !(defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP) ||             \
+#if (__has_feature(cxx_exceptions) || defined(__cpp_exceptions) ||           \
+     (defined(_MSC_VER) && defined(_CPPUNWIND)) || defined(__EXCEPTIONS)) && \
+    !(defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP) ||           \
       defined(KOKKOS_ENABLE_CUDA))
 
 #define EXCEPTIONS_AVAILABLE
@@ -161,6 +161,10 @@ class DeviceString {
     // Find size of string
     T remainder = rhs;
     _size       = 0;
+    if (rhs < 0) {
+      // Extra space to store the '-'
+      ++_size;
+    }
     do {
       remainder /= 10;
       ++_size;
@@ -174,6 +178,10 @@ class DeviceString {
     remainder = rhs;
     int i     = _size;
     _data[i]  = '\0';
+    if (rhs < 0) {
+      _data[0]  = '-';
+      remainder = -rhs;
+    }
     do {
       _data[--i] = '0' + (remainder % 10);
       remainder /= 10;
