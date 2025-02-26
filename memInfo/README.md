@@ -3,7 +3,7 @@ This is a wrapper for the device _memGetInfo_ function, but it's also available 
 
 ### Usage 
 ```
-Kokkos::Experimental::memInfo<MemorySpace>(&free, &total);
+Kokkos::Experimental::memInfo(&free, &total);
 ```
 - `total`: Amount of RAM on the system (HBM/DRAM)
 - `free`: Available memory

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(cexa-experimental-meminfo LANGUAGES CXX)
-set(CMAKE_BUILD_TYPE "RelwithDebInfo")
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 
 if (NOT ${Kokkos_DIR} STREQUAL "")
     add_subdirectory(${Kokkos_DIR})
