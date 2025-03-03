@@ -15,7 +15,6 @@ void testMemInfo() {
   } else {
     Kokkos::Experimental::MemGetInfo<MemorySpace>(&step1_free, &step1_total);
   }
-  volatile double k = 0.0;
   {
     // Allocate 128 MiB of memory
     Kokkos::View<double**, MemorySpace> data("data test", 128, 1024*1024);

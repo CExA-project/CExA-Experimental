@@ -21,7 +21,6 @@ bool is_overcommit_limit_set() {
 
   if (overcommit_file.is_open()) {
     overcommit_file >> overcommit_value;
-    overcommit_file.close();
   } else {
     return false;
   }
@@ -31,20 +30,18 @@ bool is_overcommit_limit_set() {
 size_t get_committed_as() {
   std::ifstream meminfo("/proc/meminfo");
   size_t committed_as = 0;
-  char line[256];
+  std::string line;
 
   if (meminfo.is_open()) {
-    while (meminfo.getline(line, 256)) {
-      if (strncmp(line, "Committed_AS:", 13) == 0) {
+    while (std::getline(meminfo, line)) {
+      if (line.find("Committed_AS:") != std::string::npos ){
         std::istringstream iss(line);
         iss.ignore(256, ':');
         iss >> committed_as;
         committed_as = (iss.fail()) ? 0 : committed_as * 1024;
-        meminfo.close();
         break;
       }
     }
-    meminfo.close();
   }
   return committed_as;
 }
@@ -52,20 +49,18 @@ size_t get_committed_as() {
 size_t get_commitLimit() {
   std::ifstream meminfo("/proc/meminfo");
   size_t commitLimit = 0;
-  char line[256];
+  std::string line;
 
   if (meminfo.is_open()) {
-    while (meminfo.getline(line, 256)) {
-      if (strncmp(line, "CommitLimit:", 12) == 0) {
+    while (std::getline(meminfo, line)) {
+      if (line.find("CommitLimit:") != std::string::npos ){
         std::istringstream iss(line);
         iss.ignore(256, ':');
         iss >> commitLimit;
         commitLimit = (iss.fail()) ? 0 : commitLimit * 1024;
-        meminfo.close();
         break;
       }
     }
-    meminfo.close();
   }
   return commitLimit;
 }
