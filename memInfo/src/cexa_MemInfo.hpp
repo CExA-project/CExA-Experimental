@@ -12,11 +12,20 @@
 namespace Kokkos {
 namespace Experimental {
 
-// On some systems, overcommit is disabled, and the kernel will not allow memory
-// allocation beyond the commit limit. This means that allocations that only touch
-// a small amount of memory will be accounted for at their full allocation size.
+namespace {
+  constexpr int OVERCOMMIT_DISABLED = 2;
+  constexpr char COMMITTED_AS_KEY[] = "Committed_AS:";
+  constexpr char COMMIT_LIMIT_KEY[] = "CommitLimit:";
+  constexpr char MEMINFO_PATH[]     = "/proc/meminfo";
+  constexpr char OVERCOMMIT_PATH[]  = "/proc/sys/vm/overcommit_memory";
+}
+
+// On some systems, overcommit is disabled, and the kernel does not allow
+// memory allocation beyond the commit limit. This means that allocations
+// that touch only a small amount of memory are still counted at their full size.
+// man proc_sys_vm
 bool is_overcommit_limit_set() {
-  std::ifstream overcommit_file("/proc/sys/vm/overcommit_memory");
+  std::ifstream overcommit_file(OVERCOMMIT_PATH);
   int overcommit_value = 0;
 
   if (overcommit_file.is_open()) {
@@ -24,48 +33,29 @@ bool is_overcommit_limit_set() {
   } else {
     return false;
   }
-  return (overcommit_value == 2);
+  return (overcommit_value == OVERCOMMIT_DISABLED);
 }
 
-size_t get_committed_as() {
-  std::ifstream meminfo("/proc/meminfo");
-  size_t committed_as = 0;
+size_t get_meminfo_value(const char* key) {
+  std::ifstream meminfo(MEMINFO_PATH);
+  size_t value = 0;
   std::string line;
 
   if (meminfo.is_open()) {
     while (std::getline(meminfo, line)) {
-      if (line.find("Committed_AS:") != std::string::npos ){
+      if (line.find(key) != std::string::npos) {
         std::istringstream iss(line);
         iss.ignore(256, ':');
-        iss >> committed_as;
-        committed_as = (iss.fail()) ? 0 : committed_as * 1024;
+        iss >> value;
+        value = (iss.fail()) ? 0 : value * 1024;
         break;
       }
     }
   }
-  return committed_as;
+  return value;
 }
 
-size_t get_commitLimit() {
-  std::ifstream meminfo("/proc/meminfo");
-  size_t commitLimit = 0;
-  std::string line;
-
-  if (meminfo.is_open()) {
-    while (std::getline(meminfo, line)) {
-      if (line.find("CommitLimit:") != std::string::npos ){
-        std::istringstream iss(line);
-        iss.ignore(256, ':');
-        iss >> commitLimit;
-        commitLimit = (iss.fail()) ? 0 : commitLimit * 1024;
-        break;
-      }
-    }
-  }
-  return commitLimit;
-}
-
-template <typename Space = Kokkos::DefaultExecutionSpace::memory_space>
+template <typename Space = Kokkos::DefaultExecutionSpace>
 void MemGetInfo(size_t* free, size_t* total) {
   using MemorySpace = typename Space::memory_space;
   MemGetInfo<MemorySpace>(free, total);
@@ -83,12 +73,12 @@ void MemGetInfo<Kokkos::HostSpace>(size_t* free, size_t* total) {
   }
 #else
   static bool overcommit_limit = is_overcommit_limit_set();
-  struct sysinfo info;
   if (overcommit_limit) {
-    *total = get_commitLimit();
-    *free = *total - get_committed_as();
+    *total = get_meminfo_value(COMMIT_LIMIT_KEY);
+    *free = *total - get_meminfo_value(COMMITTED_AS_KEY);
     return;
   }
+  struct sysinfo info;
   if (sysinfo(&info) == 0) {
     *free  = info.freeram * info.mem_unit;
     *total = info.totalram * info.mem_unit;
