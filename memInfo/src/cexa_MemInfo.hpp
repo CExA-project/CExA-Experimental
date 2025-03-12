@@ -1,30 +1,34 @@
+#ifndef KOKKOS_MEMINFO_HPP
+#define KOKKOS_MEMINFO_HPP
+
 #include <cstddef>
-#include <Kokkos_Core.hpp>
 #include <sstream>
 #include <fstream>
 
 #ifdef _WIN32
 #include <windows.h>
-#else
-#include <sys/sysinfo.h>
 #endif
+
+#include <Kokkos_Core.hpp>
 
 namespace Kokkos {
 namespace Experimental {
 
 namespace {
   constexpr int OVERCOMMIT_DISABLED = 2;
-  constexpr char COMMITTED_AS_KEY[] = "Committed_AS:";
-  constexpr char COMMIT_LIMIT_KEY[] = "CommitLimit:";
-  constexpr char MEMINFO_PATH[]     = "/proc/meminfo";
-  constexpr char OVERCOMMIT_PATH[]  = "/proc/sys/vm/overcommit_memory";
+  constexpr char MEM_FREE_KEY[]      = "MemFree:";
+  constexpr char MEM_TOTAL_KEY[]     = "MemTotal:";
+  constexpr char COMMITTED_AS_KEY[]  = "Committed_AS:";
+  constexpr char COMMIT_LIMIT_KEY[]  = "CommitLimit:";
+  constexpr char MEMINFO_PATH[]      = "/proc/meminfo";
+  constexpr char OVERCOMMIT_PATH[]   = "/proc/sys/vm/overcommit_memory";
 }
 
 // On some systems, overcommit is disabled, and the kernel does not allow
 // memory allocation beyond the commit limit. This means that allocations
 // that touch only a small amount of memory are still counted at their full size.
 // man proc_sys_vm
-bool is_overcommit_limit_set() {
+bool is_overcommit_disabled() {
   std::ifstream overcommit_file(OVERCOMMIT_PATH);
   int overcommit_value = 0;
 
@@ -72,17 +76,13 @@ void MemGetInfo<Kokkos::HostSpace>(size_t* free, size_t* total) {
     *total = statex.ullTotalPhys;
   }
 #else
-  static bool overcommit_limit = is_overcommit_limit_set();
-  if (overcommit_limit) {
+  static bool overcommit_disabled = is_overcommit_disabled();
+  if (overcommit_disabled) {
     *total = get_meminfo_value(COMMIT_LIMIT_KEY);
     *free = *total - get_meminfo_value(COMMITTED_AS_KEY);
-    return;
-  }
-  struct sysinfo info;
-  if (sysinfo(&info) == 0) {
-    *free  = info.freeram * info.mem_unit;
-    *total = info.totalram * info.mem_unit;
-    return;
+  } else {
+    *total = get_meminfo_value(MEM_TOTAL_KEY);
+    *free = get_meminfo_value(MEM_FREE_KEY);
   }
 #endif
 }
@@ -127,3 +127,5 @@ void MemGetInfo<Kokkos::SYCLDeviceUSMSpace>(size_t* free, size_t* total) {
 
 }  // namespace Experimental
 }  // namespace Kokkos
+
+#endif  // KOKKOS_MEMINFO_HPP

@@ -3,9 +3,10 @@ include(FetchContent)
 
 FetchContent_Declare(
   googletest
-  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-  DOWNLOAD_EXTRACT_TIMESTAMP true
-  )
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG 6910c9d9165801d8827d628cb72eb7ea9dd538c5
+  DOWNLOAD_EXTRACT_TIMESTAMP true)
+
 FetchContent_MakeAvailable(googletest)
 
 enable_testing()
