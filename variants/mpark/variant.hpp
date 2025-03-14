@@ -212,46 +212,13 @@ namespace std {
 
 namespace mpark {
 
-#ifdef MPARK_RETURN_TYPE_DEDUCTION
-
-#define AUTO auto
-#define AUTO_RETURN(...) { return __VA_ARGS__; }
-
-#define AUTO_REFREF auto &&
-#define AUTO_REFREF_RETURN(...) { return __VA_ARGS__; }
-
-#define DECLTYPE_AUTO decltype(auto)
-#define DECLTYPE_AUTO_RETURN(...) { return __VA_ARGS__; }
-
-#else
-
-#define AUTO auto
-#define AUTO_RETURN(...) \
-  -> lib::decay_t<decltype(__VA_ARGS__)> { return __VA_ARGS__; }
-
-#define AUTO_REFREF auto
-#define AUTO_REFREF_RETURN(...)                                           \
-  -> decltype((__VA_ARGS__)) {                                            \
-    static_assert(std::is_reference<decltype((__VA_ARGS__))>::value, ""); \
-    return __VA_ARGS__;                                                   \
-  }
-
-#define DECLTYPE_AUTO auto
-#define DECLTYPE_AUTO_RETURN(...) \
-  -> decltype(__VA_ARGS__) { return __VA_ARGS__; }
-
-#endif
-
   class bad_variant_access : public std::exception {
     public:
     virtual const char *what() const noexcept override { return "bad_variant_access"; }
   };
 
   [[noreturn]] KOKKOS_INLINE_FUNCTION void throw_bad_variant_access() {
-#if defined(MPARK_EXCEPTIONS) &&    \
-    !defined(KOKKOS_ENABLE_CUDA) && \
-    !defined(KOKKOS_ENABLE_HIP) &&  \
-    !defined(KOKKOS_ENABLE_SYCL)
+#if defined(MPARK_EXCEPTIONS)
     throw bad_variant_access{};
 #elif  defined(__CUDA_ARCH__) ||       \
     defined(__HIP_DEVICE_COMPILE__) || \
@@ -259,8 +226,8 @@ namespace mpark {
     __assert_fail(nullptr, nullptr, 0, nullptr);
 #else
     std::terminate();
-    MPARK_BUILTIN_UNREACHABLE;
 #endif
+    MPARK_BUILTIN_UNREACHABLE;
   }
 
   template <typename... Ts>
@@ -269,10 +236,8 @@ namespace mpark {
   template <typename T>
   struct variant_size;
 
-#ifdef MPARK_VARIABLE_TEMPLATES
   template <typename T>
   constexpr std::size_t variant_size_v = variant_size<T>::value;
-#endif
 
   template <typename T>
   struct variant_size<const T> : variant_size<T> {};
@@ -318,7 +283,6 @@ namespace mpark {
     constexpr std::size_t not_found = static_cast<std::size_t>(-1);
     constexpr std::size_t ambiguous = static_cast<std::size_t>(-2);
 
-#ifdef MPARK_CPP14_CONSTEXPR
     template <typename T, typename... Ts>
     KOKKOS_INLINE_FUNCTION constexpr std::size_t find_index() {
       constexpr lib::array<bool, sizeof...(Ts)> matches = {
@@ -335,27 +299,6 @@ namespace mpark {
       }
       return result;
     }
-#else
-    KOKKOS_INLINE_FUNCTION constexpr std::size_t find_index_impl(std::size_t result,
-                                                 std::size_t) {
-      return result;
-    }
-
-    template <typename... Bs>
-    KOKKOS_INLINE_FUNCTION constexpr std::size_t find_index_impl(std::size_t result,
-                                                 std::size_t idx,
-                                                 bool b,
-                                                 Bs... bs) {
-      return b ? (result != not_found ? ambiguous
-                                      : find_index_impl(idx, idx + 1, bs...))
-               : find_index_impl(result, idx + 1, bs...);
-    }
-
-    template <typename T, typename... Ts>
-    KOKKOS_INLINE_FUNCTION constexpr std::size_t find_index() {
-      return find_index_impl(not_found, 0, std::is_same<T, Ts>::value...);
-    }
-#endif
 
     template <std::size_t I>
     using find_index_sfinae_impl =
@@ -388,7 +331,6 @@ namespace mpark {
                                          : Trait::Unavailable;
     }
 
-#ifdef MPARK_CPP14_CONSTEXPR
     template <typename... Traits>
     KOKKOS_INLINE_FUNCTION constexpr Trait common_trait(Traits... traits_) {
       Trait result = Trait::TriviallyAvailable;
@@ -401,23 +343,6 @@ namespace mpark {
       }
       return result;
     }
-#else
-    KOKKOS_INLINE_FUNCTION constexpr Trait common_trait_impl(Trait result) { return result; }
-
-    template <typename... Traits>
-    KOKKOS_INLINE_FUNCTION constexpr Trait common_trait_impl(Trait result,
-                                             Trait t,
-                                             Traits... ts) {
-      return static_cast<int>(t) > static_cast<int>(result)
-                 ? common_trait_impl(t, ts...)
-                 : common_trait_impl(result, ts...);
-    }
-
-    template <typename... Traits>
-    KOKKOS_INLINE_FUNCTION constexpr Trait common_trait(Traits... ts) {
-      return common_trait_impl(Trait::TriviallyAvailable, ts...);
-    }
-#endif
 
     template <typename... Ts>
     struct traits {
@@ -452,7 +377,6 @@ namespace mpark {
     namespace access {
 
       struct recursive_union {
-#ifdef MPARK_RETURN_TYPE_DEDUCTION
         template <typename V>
         KOKKOS_INLINE_FUNCTION static constexpr auto &&get_alt(V &&v, in_place_index_t<0>) {
           return lib::forward<V>(v).head_;
@@ -462,50 +386,31 @@ namespace mpark {
         KOKKOS_INLINE_FUNCTION static constexpr auto &&get_alt(V &&v, in_place_index_t<I>) {
           return get_alt(lib::forward<V>(v).tail_, in_place_index_t<I - 1>{});
         }
-#else
-        template <std::size_t I, bool Dummy = true>
-        struct get_alt_impl {
-          template <typename V>
-          KOKKOS_INLINE_FUNCTION constexpr AUTO_REFREF operator()(V &&v) const
-            AUTO_REFREF_RETURN(get_alt_impl<I - 1>{}(lib::forward<V>(v).tail_))
-        };
-
-        template <bool Dummy>
-        struct get_alt_impl<0, Dummy> {
-          template <typename V>
-          KOKKOS_INLINE_FUNCTION constexpr AUTO_REFREF operator()(V &&v) const
-            AUTO_REFREF_RETURN(lib::forward<V>(v).head_)
-        };
-
-        template <typename V, std::size_t I>
-        KOKKOS_INLINE_FUNCTION static constexpr AUTO_REFREF get_alt(V &&v, in_place_index_t<I>)
-          AUTO_REFREF_RETURN(get_alt_impl<I>{}(lib::forward<V>(v)))
-#endif
       };
 
       struct base {
         template <std::size_t I, typename V>
-        KOKKOS_INLINE_FUNCTION static constexpr AUTO_REFREF get_alt(V &&v)
+        KOKKOS_INLINE_FUNCTION static constexpr auto&&get_alt(V &&v) {
 #ifdef _MSC_VER
-          AUTO_REFREF_RETURN(recursive_union::get_alt(
-              lib::forward<V>(v).data_, in_place_index_t<I>{}))
+		return recursive_union::get_alt(lib::forward<V>(v).data_, in_place_index_t<I>{});
 #else
-          AUTO_REFREF_RETURN(recursive_union::get_alt(
-              data(lib::forward<V>(v)), in_place_index_t<I>{}))
+		return recursive_union::get_alt(data(lib::forward<V>(v)), in_place_index_t<I>{});
 #endif
+	}
       };
 
       struct variant {
         template <std::size_t I, typename V>
-        KOKKOS_INLINE_FUNCTION static constexpr AUTO_REFREF get_alt(V &&v)
-          AUTO_REFREF_RETURN(base::get_alt<I>(lib::forward<V>(v).impl_))
+        KOKKOS_INLINE_FUNCTION static constexpr auto&& get_alt(V &&v) {
+		return base::get_alt<I>(lib::forward<V>(v).impl_);
+	}
       };
 
     }  // namespace access
 
     namespace visitation {
 
-#if defined(MPARK_CPP14_CONSTEXPR) && !defined(_MSC_VER)
+#ifndef _MSC_VER
 #define MPARK_VARIANT_SWITCH_VISIT
 #endif
 
@@ -530,10 +435,10 @@ namespace mpark {
               "`visit` requires the visitor to have a single return type");
 
           template <typename Visitor, typename... Alts>
-          KOKKOS_INLINE_FUNCTION static constexpr DECLTYPE_AUTO invoke(Visitor &&visitor,
+          KOKKOS_INLINE_FUNCTION static constexpr decltype(auto) invoke(Visitor &&visitor,
                                                        Alts &&... alts)
-            DECLTYPE_AUTO_RETURN(lib::invoke(lib::forward<Visitor>(visitor),
-                                             lib::forward<Alts>(alts)...))
+	  {return lib::invoke(lib::forward<Visitor>(visitor),
+			  lib::forward<Alts>(alts)...);}
         };
 
 #ifdef MPARK_VARIANT_SWITCH_VISIT
@@ -738,7 +643,6 @@ namespace mpark {
                 access::base::get_alt<Is>(lib::forward<Vs>(vs))...);
           }
 
-#ifdef MPARK_RETURN_TYPE_DEDUCTION
           template <std::size_t... Is>
           KOKKOS_INLINE_FUNCTION static constexpr auto impl(lib::index_sequence<Is...>) {
             return &dispatch<Is...>;
@@ -750,40 +654,14 @@ namespace mpark {
                                             Ls... ls) {
             return make_farray(impl(lib::push_back_t<Is, Js>{}, ls...)...);
           }
-#else
-          template <typename...>
-          struct impl;
-
-          template <std::size_t... Is>
-          struct impl<lib::index_sequence<Is...>> {
-            KOKKOS_INLINE_FUNCTION constexpr AUTO operator()() const
-              AUTO_RETURN(&dispatch<Is...>)
-          };
-
-          template <typename Is, std::size_t... Js, typename... Ls>
-          struct impl<Is, lib::index_sequence<Js...>, Ls...> {
-            KOKKOS_INLINE_FUNCTION constexpr AUTO operator()() const
-              AUTO_RETURN(
-                  make_farray(impl<lib::push_back_t<Is, Js>, Ls...>{}()...))
-          };
-#endif
         };
 
-#ifdef MPARK_RETURN_TYPE_DEDUCTION
         template <typename F, typename... Vs>
         KOKKOS_INLINE_FUNCTION static constexpr auto make_fmatrix() {
           return make_fmatrix_impl<F, Vs...>::impl(
               lib::index_sequence<>{},
               lib::make_index_sequence<lib::decay_t<Vs>::size()>{}...);
         }
-#else
-        template <typename F, typename... Vs>
-        KOKKOS_INLINE_FUNCTION static constexpr AUTO make_fmatrix()
-          AUTO_RETURN(
-              typename make_fmatrix_impl<F, Vs...>::template impl<
-                  lib::index_sequence<>,
-                  lib::make_index_sequence<lib::decay_t<Vs>::size()>...>{}())
-#endif
 
         template <typename F, typename... Vs>
         struct make_fdiagonal_impl {
@@ -800,8 +678,8 @@ namespace mpark {
           }
 
           template <std::size_t... Is>
-          KOKKOS_INLINE_FUNCTION static constexpr AUTO impl(lib::index_sequence<Is...>)
-            AUTO_RETURN(make_farray(&dispatch<Is>...))
+          KOKKOS_INLINE_FUNCTION static constexpr auto impl(lib::index_sequence<Is...>)
+	  {return make_farray(&dispatch<Is>...);}
         };
 
         template <typename F, typename V, typename... Vs>
@@ -817,8 +695,7 @@ namespace mpark {
 #endif
       };
 
-#if !defined(MPARK_VARIANT_SWITCH_VISIT) && \
-    (!defined(_MSC_VER) || _MSC_VER >= 1910)
+#if _MSC_VER >= 1910
       template <typename F, typename... Vs>
       using fmatrix_t = decltype(base::make_fmatrix<F, Vs...>());
 
@@ -846,37 +723,37 @@ namespace mpark {
 
       struct alt {
         template <typename Visitor, typename... Vs>
-        KOKKOS_INLINE_FUNCTION static constexpr DECLTYPE_AUTO visit_alt(Visitor &&visitor,
-                                                        Vs &&... vs)
+        KOKKOS_INLINE_FUNCTION static constexpr decltype(auto) visit_alt(Visitor &&visitor,
+                                                        Vs &&... vs) {
 #ifdef MPARK_VARIANT_SWITCH_VISIT
-          DECLTYPE_AUTO_RETURN(
-              base::dispatcher<
+	return base::dispatcher<
                   true,
                   base::dispatch_result_t<Visitor,
                                           decltype(as_base(
                                               lib::forward<Vs>(vs)))...>>::
                   template dispatch<0>(lib::forward<Visitor>(visitor),
-                                       as_base(lib::forward<Vs>(vs))...))
-#elif !defined(_MSC_VER) || _MSC_VER >= 1910
-          DECLTYPE_AUTO_RETURN(base::at(
+                                       as_base(lib::forward<Vs>(vs))...);
+#elif _MSC_VER >= 1910
+	      return base::at(
               fmatrix<Visitor &&,
                       decltype(as_base(lib::forward<Vs>(vs)))...>::value,
               vs.index()...)(lib::forward<Visitor>(visitor),
-                             as_base(lib::forward<Vs>(vs))...))
+                             as_base(lib::forward<Vs>(vs))...);
 #else
-          DECLTYPE_AUTO_RETURN(base::at(
+	      return base::at(
               base::make_fmatrix<Visitor &&,
                       decltype(as_base(lib::forward<Vs>(vs)))...>(),
               vs.index()...)(lib::forward<Visitor>(visitor),
-                             as_base(lib::forward<Vs>(vs))...))
+                             as_base(lib::forward<Vs>(vs))...);
 #endif
+      }
 
         template <typename Visitor, typename... Vs>
-        KOKKOS_INLINE_FUNCTION static constexpr DECLTYPE_AUTO visit_alt_at(std::size_t index,
+        KOKKOS_INLINE_FUNCTION static constexpr decltype(auto) visit_alt_at(std::size_t index,
                                                            Visitor &&visitor,
-                                                           Vs &&... vs)
+                                                           Vs &&... vs) {
 #ifdef MPARK_VARIANT_SWITCH_VISIT
-          DECLTYPE_AUTO_RETURN(
+		return
               base::dispatcher<
                   true,
                   base::dispatch_result_t<Visitor,
@@ -884,20 +761,21 @@ namespace mpark {
                                               lib::forward<Vs>(vs)))...>>::
                   template dispatch_at<0>(index,
                                           lib::forward<Visitor>(visitor),
-                                          as_base(lib::forward<Vs>(vs))...))
-#elif !defined(_MSC_VER) || _MSC_VER >= 1910
-          DECLTYPE_AUTO_RETURN(base::at(
+                                          as_base(lib::forward<Vs>(vs))...);
+#elif _MSC_VER >= 1910
+	      return base::at(
               fdiagonal<Visitor &&,
                         decltype(as_base(lib::forward<Vs>(vs)))...>::value,
               index)(lib::forward<Visitor>(visitor),
-                     as_base(lib::forward<Vs>(vs))...))
+                     as_base(lib::forward<Vs>(vs))...);
 #else
-          DECLTYPE_AUTO_RETURN(base::at(
+	      return base::at(
               base::make_fdiagonal<Visitor &&,
                         decltype(as_base(lib::forward<Vs>(vs)))...>(),
               index)(lib::forward<Visitor>(visitor),
-                     as_base(lib::forward<Vs>(vs))...))
+                     as_base(lib::forward<Vs>(vs))...);
 #endif
+	}
       };
 
       struct variant {
@@ -915,10 +793,10 @@ namespace mpark {
           static_assert(visitor<Visitor>::template does_not_handle<Values...>(),
                         "`visit` requires the visitor to be exhaustive.");
 
-          KOKKOS_INLINE_FUNCTION static constexpr DECLTYPE_AUTO invoke(Visitor &&visitor,
+          KOKKOS_INLINE_FUNCTION static constexpr decltype(auto) invoke(Visitor &&visitor,
                                                        Values &&... values)
-            DECLTYPE_AUTO_RETURN(lib::invoke(lib::forward<Visitor>(visitor),
-                                             lib::forward<Values>(values)...))
+	  {return lib::invoke(lib::forward<Visitor>(visitor),
+                                             lib::forward<Values>(values)...);}
         };
 
         template <typename Visitor>
@@ -926,50 +804,51 @@ namespace mpark {
           Visitor &&visitor_;
 
           template <typename... Alts>
-          KOKKOS_INLINE_FUNCTION constexpr DECLTYPE_AUTO operator()(Alts &&... alts) const
-            DECLTYPE_AUTO_RETURN(
-                visit_exhaustiveness_check<
+          KOKKOS_INLINE_FUNCTION constexpr decltype(auto) operator()(Alts &&... alts) const {
+		  return visit_exhaustiveness_check<
                     Visitor,
                     decltype((lib::forward<Alts>(alts).value))...>::
                     invoke(lib::forward<Visitor>(visitor_),
-                           lib::forward<Alts>(alts).value...))
+                           lib::forward<Alts>(alts).value...);}
         };
 
         template <typename Visitor>
-        KOKKOS_INLINE_FUNCTION static constexpr AUTO make_value_visitor(Visitor &&visitor)
-          AUTO_RETURN(value_visitor<Visitor>{lib::forward<Visitor>(visitor)})
+        KOKKOS_INLINE_FUNCTION static constexpr auto make_value_visitor(Visitor &&visitor) {
+		return value_visitor<Visitor>{lib::forward<Visitor>(visitor)};
+	}
 
         public:
         template <typename Visitor, typename... Vs>
-        KOKKOS_INLINE_FUNCTION static constexpr DECLTYPE_AUTO visit_alt(Visitor &&visitor,
-                                                        Vs &&... vs)
-          DECLTYPE_AUTO_RETURN(alt::visit_alt(lib::forward<Visitor>(visitor),
-                                              lib::forward<Vs>(vs).impl_...))
+        KOKKOS_INLINE_FUNCTION static constexpr decltype(auto) visit_alt(Visitor &&visitor,
+                                                        Vs &&... vs) {
+		return alt::visit_alt(lib::forward<Visitor>(visitor),
+                                              lib::forward<Vs>(vs).impl_...);
+	}
 
         template <typename Visitor, typename... Vs>
-        KOKKOS_INLINE_FUNCTION static constexpr DECLTYPE_AUTO visit_alt_at(std::size_t index,
+        KOKKOS_INLINE_FUNCTION static constexpr decltype(auto) visit_alt_at(std::size_t index,
                                                            Visitor &&visitor,
-                                                           Vs &&... vs)
-          DECLTYPE_AUTO_RETURN(
-              alt::visit_alt_at(index,
+                                                           Vs &&... vs) {
+		return alt::visit_alt_at(index,
                                 lib::forward<Visitor>(visitor),
-                                lib::forward<Vs>(vs).impl_...))
+                                lib::forward<Vs>(vs).impl_...);
+	}
 
         template <typename Visitor, typename... Vs>
-        KOKKOS_INLINE_FUNCTION static constexpr DECLTYPE_AUTO visit_value(Visitor &&visitor,
-                                                          Vs &&... vs)
-          DECLTYPE_AUTO_RETURN(
-              visit_alt(make_value_visitor(lib::forward<Visitor>(visitor)),
-                        lib::forward<Vs>(vs)...))
+        KOKKOS_INLINE_FUNCTION static constexpr decltype(auto) visit_value(Visitor &&visitor,
+                                                          Vs &&... vs) {
+		return visit_alt(make_value_visitor(lib::forward<Visitor>(visitor)),
+                        lib::forward<Vs>(vs)...);
+	}
 
         template <typename Visitor, typename... Vs>
-        KOKKOS_INLINE_FUNCTION static constexpr DECLTYPE_AUTO visit_value_at(std::size_t index,
+        KOKKOS_INLINE_FUNCTION static constexpr decltype(auto) visit_value_at(std::size_t index,
                                                              Visitor &&visitor,
-                                                             Vs &&... vs)
-          DECLTYPE_AUTO_RETURN(
-              visit_alt_at(index,
+                                                             Vs &&... vs) {
+		return visit_alt_at(index,
                            make_value_visitor(lib::forward<Visitor>(visitor)),
-                           lib::forward<Vs>(vs)...))
+                           lib::forward<Vs>(vs)...);
+	}
       };
 
     }  // namespace visitation
@@ -1126,11 +1005,11 @@ namespace mpark {
     MPARK_INHERITING_CTOR(destructor, super)                              \
     using super::operator=;                                               \
                                                                           \
-     destructor(const destructor &) = default;                            \
-     destructor(destructor &&) = default;                                 \
-     definition                                                           \
-     destructor &operator=(const destructor &) = default;                 \
-     destructor &operator=(destructor &&) = default;                      \
+    destructor(const destructor &) = default;                             \
+    destructor(destructor &&) = default;                                  \
+    definition                                                            \
+    destructor &operator=(const destructor &) = default;                  \
+    destructor &operator=(destructor &&) = default;                       \
                                                                           \
     protected:                                                            \
     destroy                                                               \
@@ -1169,15 +1048,6 @@ namespace mpark {
       using super::operator=;
 
       protected:
-#ifndef MPARK_GENERIC_LAMBDAS
-      struct ctor {
-        template <typename LhsAlt, typename RhsAlt>
-        KOKKOS_INLINE_FUNCTION void operator()(LhsAlt &lhs_alt, RhsAlt &&rhs_alt) const {
-          constructor::construct_alt(lhs_alt,
-                                     lib::forward<RhsAlt>(rhs_alt).value);
-        }
-      };
-#endif
 
       template <std::size_t I, typename T, typename... Args>
       KOKKOS_INLINE_FUNCTION constexpr static T &construct_alt(alt<I, T> &a, Args &&... args) {
@@ -1192,15 +1062,10 @@ namespace mpark {
         if (!rhs.valueless_by_exception()) {
           visitation::alt::visit_alt_at(
               rhs.index(),
-#ifdef MPARK_GENERIC_LAMBDAS
               [](auto &lhs_alt, auto &&rhs_alt) {
                 constructor::construct_alt(
                     lhs_alt, lib::forward<decltype(rhs_alt)>(rhs_alt).value);
-              }
-#else
-              ctor{}
-#endif
-              ,
+              },
               lhs,
               lib::forward<Rhs>(rhs));
           lhs.index_ = rhs.index_;
@@ -1303,16 +1168,6 @@ namespace mpark {
       }
 
       protected:
-#ifndef MPARK_GENERIC_LAMBDAS
-      template <typename That>
-      struct assigner {
-        template <typename ThisAlt, typename ThatAlt>
-        KOKKOS_INLINE_FUNCTION void operator()(ThisAlt &this_alt, ThatAlt &&that_alt) const {
-          self->assign_alt(this_alt, lib::forward<ThatAlt>(that_alt).value);
-        }
-        assignment *self;
-      };
-#endif
 
       template <std::size_t I, typename T, typename Arg>
       KOKKOS_INLINE_FUNCTION constexpr void assign_alt(alt<I, T> &a, Arg &&arg) {
@@ -1351,14 +1206,10 @@ namespace mpark {
         } else {
           visitation::alt::visit_alt_at(
               that.index(),
-#ifdef MPARK_GENERIC_LAMBDAS
               [this](auto &this_alt, auto &&that_alt) {
                 this->assign_alt(
                     this_alt, lib::forward<decltype(that_alt)>(that_alt).value);
               }
-#else
-              assigner<That>{this}
-#endif
               ,
               *this,
               lib::forward<That>(that));
@@ -1468,14 +1319,10 @@ namespace mpark {
           // do nothing.
         } else if (this->index() == that.index()) {
           visitation::alt::visit_alt_at(this->index(),
-#ifdef MPARK_GENERIC_LAMBDAS
                                         [] (auto &this_alt, auto &that_alt) {
                                           using cexa::experimental::swap;
                                           swap(this_alt.value, that_alt.value);
                                         }
-#else
-                                        swapper{}
-#endif
                                         ,
                                         *this,
                                         that);
@@ -1486,10 +1333,7 @@ namespace mpark {
             cexa::experimental::swap(lhs, rhs);
           }
           impl tmp(lib::move(*rhs));
-#if defined(MPARK_EXCEPTIONS) &&    \
-    !defined(KOKKOS_ENABLE_CUDA) && \
-    !defined(KOKKOS_ENABLE_HIP) &&  \
-    !defined(KOKKOS_ENABLE_SYCL)
+#if defined(MPARK_EXCEPTIONS)
           // EXTENSION: When the move construction of `lhs` into `rhs` throws
           // and `tmp` is nothrow move constructible then we move `tmp` back
           // into `rhs` and provide the strong exception safety guarantee.
@@ -1509,16 +1353,6 @@ namespace mpark {
       }
 
       private:
-#ifndef MPARK_GENERIC_LAMBDAS
-      struct swapper {
-        template <typename ThisAlt, typename ThatAlt>
-        KOKKOS_INLINE_FUNCTION constexpr void operator()(ThisAlt &this_alt, ThatAlt &that_alt) const {
-          using cexa::experimental::swap;
-          swap(this_alt.value, that_alt.value);
-        }
-      };
-#endif
-
       KOKKOS_INLINE_FUNCTION constexpr bool move_nothrow() const {
         return this->valueless_by_exception() ||
                lib::array<bool, sizeof...(Ts)>{
@@ -1813,16 +1647,17 @@ namespace mpark {
     struct generic_get_impl {
       KOKKOS_FUNCTION constexpr generic_get_impl(int) noexcept {}
 
-      KOKKOS_FUNCTION constexpr AUTO_REFREF operator()(V &&v) const
-        AUTO_REFREF_RETURN(
-            access::variant::get_alt<I>(lib::forward<V>(v)).value)
+      KOKKOS_FUNCTION constexpr auto && operator()(V &&v) const
+      {
+	      return access::variant::get_alt<I>(lib::forward<V>(v)).value;
+      }
     };
 
     template <std::size_t I, typename V>
-    KOKKOS_INLINE_FUNCTION constexpr AUTO_REFREF generic_get(V &&v)
-      AUTO_REFREF_RETURN(generic_get_impl<I, V>(
+    KOKKOS_INLINE_FUNCTION constexpr auto && generic_get(V &&v)
+    {return generic_get_impl<I, V>(
           holds_alternative<I>(v) ? 0 : (throw_bad_variant_access(), 0))(
-          lib::forward<V>(v)))
+          lib::forward<V>(v));}
   }  // namespace detail
 
   template <std::size_t I, typename... Ts>
@@ -1872,10 +1707,10 @@ namespace mpark {
   namespace detail {
 
     template <std::size_t I, typename V>
-    KOKKOS_INLINE_FUNCTION constexpr /* auto * */ AUTO generic_get_if(V *v) noexcept
-      AUTO_RETURN(v && holds_alternative<I>(*v)
+    KOKKOS_INLINE_FUNCTION constexpr /* auto * */ auto generic_get_if(V *v) noexcept
+    {return v && holds_alternative<I>(*v)
                       ? lib::addressof(access::variant::get_alt<I>(*v).value)
-                      : nullptr)
+                      : nullptr; }
 
   }  // namespace detail
 
@@ -1924,15 +1759,9 @@ namespace mpark {
                                    const variant<Ts...> &rhs) {
     using detail::visitation::variant;
     using equal_to = detail::convert_to_bool<lib::equal_to>;
-#ifdef MPARK_CPP14_CONSTEXPR
     if (lhs.index() != rhs.index()) return false;
     if (lhs.valueless_by_exception()) return true;
     return variant::visit_value_at(lhs.index(), equal_to{}, lhs, rhs);
-#else
-    return lhs.index() == rhs.index() &&
-           (lhs.valueless_by_exception() ||
-            variant::visit_value_at(lhs.index(), equal_to{}, lhs, rhs));
-#endif
   }
 
   template <typename... Ts>
@@ -1940,15 +1769,9 @@ namespace mpark {
                                    const variant<Ts...> &rhs) {
     using detail::visitation::variant;
     using not_equal_to = detail::convert_to_bool<lib::not_equal_to>;
-#ifdef MPARK_CPP14_CONSTEXPR
     if (lhs.index() != rhs.index()) return true;
     if (lhs.valueless_by_exception()) return false;
     return variant::visit_value_at(lhs.index(), not_equal_to{}, lhs, rhs);
-#else
-    return lhs.index() != rhs.index() ||
-           (!lhs.valueless_by_exception() &&
-            variant::visit_value_at(lhs.index(), not_equal_to{}, lhs, rhs));
-#endif
   }
 
   template <typename... Ts>
@@ -1956,18 +1779,11 @@ namespace mpark {
                                   const variant<Ts...> &rhs) {
     using detail::visitation::variant;
     using less = detail::convert_to_bool<lib::less>;
-#ifdef MPARK_CPP14_CONSTEXPR
     if (rhs.valueless_by_exception()) return false;
     if (lhs.valueless_by_exception()) return true;
     if (lhs.index() < rhs.index()) return true;
     if (lhs.index() > rhs.index()) return false;
     return variant::visit_value_at(lhs.index(), less{}, lhs, rhs);
-#else
-    return !rhs.valueless_by_exception() &&
-           (lhs.valueless_by_exception() || lhs.index() < rhs.index() ||
-            (lhs.index() == rhs.index() &&
-             variant::visit_value_at(lhs.index(), less{}, lhs, rhs)));
-#endif
   }
 
   template <typename... Ts>
@@ -1975,18 +1791,11 @@ namespace mpark {
                                   const variant<Ts...> &rhs) {
     using detail::visitation::variant;
     using greater = detail::convert_to_bool<lib::greater>;
-#ifdef MPARK_CPP14_CONSTEXPR
     if (lhs.valueless_by_exception()) return false;
     if (rhs.valueless_by_exception()) return true;
     if (lhs.index() > rhs.index()) return true;
     if (lhs.index() < rhs.index()) return false;
     return variant::visit_value_at(lhs.index(), greater{}, lhs, rhs);
-#else
-    return !lhs.valueless_by_exception() &&
-           (rhs.valueless_by_exception() || lhs.index() > rhs.index() ||
-            (lhs.index() == rhs.index() &&
-             variant::visit_value_at(lhs.index(), greater{}, lhs, rhs)));
-#endif
   }
 
   template <typename... Ts>
@@ -1994,19 +1803,11 @@ namespace mpark {
                                    const variant<Ts...> &rhs) {
     using detail::visitation::variant;
     using less_equal = detail::convert_to_bool<lib::less_equal>;
-#ifdef MPARK_CPP14_CONSTEXPR
     if (lhs.valueless_by_exception()) return true;
     if (rhs.valueless_by_exception()) return false;
     if (lhs.index() < rhs.index()) return true;
     if (lhs.index() > rhs.index()) return false;
     return variant::visit_value_at(lhs.index(), less_equal{}, lhs, rhs);
-#else
-    return lhs.valueless_by_exception() ||
-           (!rhs.valueless_by_exception() &&
-            (lhs.index() < rhs.index() ||
-             (lhs.index() == rhs.index() &&
-              variant::visit_value_at(lhs.index(), less_equal{}, lhs, rhs))));
-#endif
   }
 
   template <typename... Ts>
@@ -2014,20 +1815,11 @@ namespace mpark {
                                    const variant<Ts...> &rhs) {
     using detail::visitation::variant;
     using greater_equal = detail::convert_to_bool<lib::greater_equal>;
-#ifdef MPARK_CPP14_CONSTEXPR
     if (rhs.valueless_by_exception()) return true;
     if (lhs.valueless_by_exception()) return false;
     if (lhs.index() > rhs.index()) return true;
     if (lhs.index() < rhs.index()) return false;
     return variant::visit_value_at(lhs.index(), greater_equal{}, lhs, rhs);
-#else
-    return rhs.valueless_by_exception() ||
-           (!lhs.valueless_by_exception() &&
-            (lhs.index() > rhs.index() ||
-             (lhs.index() == rhs.index() &&
-              variant::visit_value_at(
-                  lhs.index(), greater_equal{}, lhs, rhs))));
-#endif
   }
 
   struct monostate {};
@@ -2056,7 +1848,6 @@ namespace mpark {
     return false;
   }
 
-#ifdef MPARK_CPP14_CONSTEXPR
   namespace detail {
 
     KOKKOS_INLINE_FUNCTION constexpr bool any(std::initializer_list<bool> bs) {
@@ -2078,32 +1869,6 @@ namespace mpark {
            detail::visitation::variant::visit_value(
                lib::forward<Visitor>(visitor), lib::forward<Vs>(vs)...);
   }
-#else
-  namespace detail {
-
-    template <std::size_t N>
-    KOKKOS_INLINE_FUNCTION constexpr bool all_impl(const lib::array<bool, N> &bs,
-                                   std::size_t idx) {
-      return idx >= N || (bs[idx] && all_impl(bs, idx + 1));
-    }
-
-    template <std::size_t N>
-    KOKKOS_INLINE_FUNCTION constexpr bool all(const lib::array<bool, N> &bs) {
-      return all_impl(bs, 0);
-    }
-
-  }  // namespace detail
-
-  template <typename Visitor, typename... Vs>
-  KOKKOS_INLINE_FUNCTION constexpr DECLTYPE_AUTO visit(Visitor &&visitor, Vs &&... vs)
-    DECLTYPE_AUTO_RETURN(
-        (detail::all(
-             lib::array<bool, sizeof...(Vs)>{{!vs.valueless_by_exception()...}})
-             ? (void)0
-             : throw_bad_variant_access()),
-        detail::visitation::variant::visit_value(lib::forward<Visitor>(visitor),
-                                                 lib::forward<Vs>(vs)...))
-#endif
 
   template <typename... Ts>
   KOKKOS_INLINE_FUNCTION constexpr auto swap(variant<Ts...> &lhs,
@@ -2139,15 +1904,6 @@ namespace mpark {
 
   }  // namespace detail
 
-#undef AUTO
-#undef AUTO_RETURN
-
-#undef AUTO_REFREF
-#undef AUTO_REFREF_RETURN
-
-#undef DECLTYPE_AUTO
-#undef DECLTYPE_AUTO_RETURN
-
 }  // namespace mpark
 
 namespace std {
@@ -2166,34 +1922,18 @@ namespace std {
           v.valueless_by_exception()
               ? 299792458  // Random value chosen by the universe upon creation
               : variant::visit_alt(
-#ifdef MPARK_GENERIC_LAMBDAS
                     [](const auto &alt) {
                       using alt_type = mpark::lib::decay_t<decltype(alt)>;
                       using value_type = mpark::lib::remove_const_t<
                           typename alt_type::value_type>;
                       return hash<value_type>{}(alt.value);
                     }
-#else
-                    hasher{}
-#endif
                     ,
                     v);
       return hash_combine(result, hash<std::size_t>{}(v.index()));
     }
 
     private:
-#ifndef MPARK_GENERIC_LAMBDAS
-    struct hasher {
-      template <typename Alt>
-      KOKKOS_INLINE_FUNCTION std::size_t operator()(const Alt &alt) const {
-        using alt_type = mpark::lib::decay_t<Alt>;
-        using value_type =
-            mpark::lib::remove_const_t<typename alt_type::value_type>;
-        return hash<value_type>{}(alt.value);
-      }
-    };
-#endif
-
     KOKKOS_FUNCTION static std::size_t hash_combine(std::size_t lhs, std::size_t rhs) {
       return lhs ^= rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2);
     }

@@ -52,7 +52,6 @@ struct Visit_ConstVarMutType {
     DEXPECT_EQ(ConstLRef, cexa::experimental::visit(get_qual{}, v));
     DEXPECT_EQ(ConstRRef, cexa::experimental::visit(get_qual{}, std::move(v)));
 
-#ifdef MPARK_CPP11_CONSTEXPR
     /* constexpr */ {
       constexpr cexa::experimental::variant<int> cv(42);
       static_assert(42 == cexa::experimental::get<int>(cv), "");
@@ -62,7 +61,6 @@ struct Visit_ConstVarMutType {
           ConstRRef == cexa::experimental::visit(get_qual{}, std::move(cv)),
           "");
     }
-#endif
   }
 };
 
@@ -76,7 +74,6 @@ struct Visit_ConstVarConstType {
     DEXPECT_EQ(ConstLRef, cexa::experimental::visit(get_qual{}, v));
     DEXPECT_EQ(ConstRRef, cexa::experimental::visit(get_qual{}, std::move(v)));
 
-#ifdef MPARK_CPP11_CONSTEXPR
     /* constexpr */ {
       constexpr cexa::experimental::variant<const int> cv(42);
       static_assert(42 == cexa::experimental::get<const int>(cv), "");
@@ -86,7 +83,6 @@ struct Visit_ConstVarConstType {
           ConstRRef == cexa::experimental::visit(get_qual{}, std::move(cv)),
           "");
     }
-#endif
   }
 };
 
@@ -116,7 +112,6 @@ struct Visit_Homogeneous_Double {
         w("world!");
     DEXPECT_EQ("helloworld!", cexa::experimental::visit(concat{}, v, w));
 
-#ifdef MPARK_CPP11_CONSTEXPR
     /* constexpr */ {
       constexpr cexa::experimental::variant<int, double> cv(101), cw(202),
           cx(3.3);
@@ -139,7 +134,6 @@ struct Visit_Homogeneous_Double {
       static_assert(101 == cexa::experimental::visit(add_ints{}, cx, cv), "");
       static_assert(0 == cexa::experimental::visit(add_ints{}, cx, cx), "");
     }
-#endif
   }
 };
 

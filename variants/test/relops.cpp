@@ -34,7 +34,6 @@ struct Rel_SameTypeSameValue {
     DEXPECT_TRUE(w <= v);
     DEXPECT_TRUE(w >= v);
 
-#ifdef MPARK_CPP11_CONSTEXPR
     /* constexpr */ {
       constexpr cexa::experimental::variant<int, const char *> cv(0), cw(0);
       // `cv` op `cw`
@@ -52,7 +51,6 @@ struct Rel_SameTypeSameValue {
       static_assert(cw <= cv, "");
       static_assert(cw >= cv, "");
     }
-#endif
   }
 };
 
@@ -76,7 +74,6 @@ struct Rel_SameTypeDiffValue {
     DEXPECT_FALSE(w <= v);
     DEXPECT_TRUE(w >= v);
 
-#ifdef MPARK_CPP11_CONSTEXPR
     /* constexpr */ {
       constexpr cexa::experimental::variant<int, const char *> cv(0), cw(1);
       // `cv` op `cw`
@@ -94,7 +91,6 @@ struct Rel_SameTypeDiffValue {
       static_assert(!(cw <= cv), "");
       static_assert(cw >= cv, "");
     }
-#endif
   }
 };
 
@@ -118,7 +114,6 @@ struct Rel_DiffTypeSameValue {
     DEXPECT_FALSE(w <= v);
     DEXPECT_TRUE(w >= v);
 
-#ifdef MPARK_CPP11_CONSTEXPR
     /* constexpr */ {
       constexpr cexa::experimental::variant<int, unsigned int> cv(0), cw(0u);
       // `cv` op `cw`
@@ -136,7 +131,6 @@ struct Rel_DiffTypeSameValue {
       static_assert(!(cw <= cv), "");
       static_assert(cw >= cv, "");
     }
-#endif
   }
 };
 
@@ -160,7 +154,6 @@ struct Rel_DiffTypeDiffValue {
     DEXPECT_FALSE(w <= v);
     DEXPECT_TRUE(w >= v);
 
-#ifdef MPARK_CPP11_CONSTEXPR
     /* constexpr */ {
       constexpr cexa::experimental::variant<int, unsigned int> cv(0), cw(1u);
       // `cv` op `cw`
@@ -178,7 +171,6 @@ struct Rel_DiffTypeDiffValue {
       static_assert(!(cw <= cv), "");
       static_assert(cw >= cv, "");
     }
-#endif
   }
 };
 

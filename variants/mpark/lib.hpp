@@ -75,110 +75,17 @@ namespace mpark {
         return static_cast<remove_reference_t<T> &&>(t);
       }
 
-#ifdef MPARK_INTEGER_SEQUENCE
       using std::integer_sequence;
       using std::index_sequence;
       using std::make_index_sequence;
       using std::index_sequence_for;
-#else
-      template <typename T, T... Is>
-      struct integer_sequence {
-        using value_type = T;
-        KOKKOS_FUNCTION static constexpr std::size_t size() noexcept { return sizeof...(Is); }
-      };
 
-      template <std::size_t... Is>
-      using index_sequence = integer_sequence<std::size_t, Is...>;
-
-      template <typename Lhs, typename Rhs>
-      struct make_index_sequence_concat;
-
-      template <std::size_t... Lhs, std::size_t... Rhs>
-      struct make_index_sequence_concat<index_sequence<Lhs...>,
-                                        index_sequence<Rhs...>>
-          : identity<index_sequence<Lhs..., (sizeof...(Lhs) + Rhs)...>> {};
-
-      template <std::size_t N>
-      struct make_index_sequence_impl;
-
-      template <std::size_t N>
-      using make_index_sequence = typename make_index_sequence_impl<N>::type;
-
-      template <std::size_t N>
-      struct make_index_sequence_impl
-          : make_index_sequence_concat<make_index_sequence<N / 2>,
-                                       make_index_sequence<N - (N / 2)>> {};
-
-      template <>
-      struct make_index_sequence_impl<0> : identity<index_sequence<>> {};
-
-      template <>
-      struct make_index_sequence_impl<1> : identity<index_sequence<0>> {};
-
-      template <typename... Ts>
-      using index_sequence_for = make_index_sequence<sizeof...(Ts)>;
-#endif
-
-      // <functional>
-#ifdef MPARK_TRANSPARENT_OPERATORS
       using equal_to = std::equal_to<>;
-#else
-      struct equal_to {
-        template <typename Lhs, typename Rhs>
-        KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
-          MPARK_RETURN(lib::forward<Lhs>(lhs) == lib::forward<Rhs>(rhs))
-      };
-#endif
-
-#ifdef MPARK_TRANSPARENT_OPERATORS
       using not_equal_to = std::not_equal_to<>;
-#else
-      struct not_equal_to {
-        template <typename Lhs, typename Rhs>
-        KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
-          MPARK_RETURN(lib::forward<Lhs>(lhs) != lib::forward<Rhs>(rhs))
-      };
-#endif
-
-#ifdef MPARK_TRANSPARENT_OPERATORS
       using less = std::less<>;
-#else
-      struct less {
-        template <typename Lhs, typename Rhs>
-        KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
-          MPARK_RETURN(lib::forward<Lhs>(lhs) < lib::forward<Rhs>(rhs))
-      };
-#endif
-
-#ifdef MPARK_TRANSPARENT_OPERATORS
       using greater = std::greater<>;
-#else
-      struct greater {
-        template <typename Lhs, typename Rhs>
-        KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
-          MPARK_RETURN(lib::forward<Lhs>(lhs) > lib::forward<Rhs>(rhs))
-      };
-#endif
-
-#ifdef MPARK_TRANSPARENT_OPERATORS
       using less_equal = std::less_equal<>;
-#else
-      struct less_equal {
-        template <typename Lhs, typename Rhs>
-        KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
-          MPARK_RETURN(lib::forward<Lhs>(lhs) <= lib::forward<Rhs>(rhs))
-      };
-#endif
-
-#ifdef MPARK_TRANSPARENT_OPERATORS
       using greater_equal = std::greater_equal<>;
-#else
-      struct greater_equal {
-        template <typename Lhs, typename Rhs>
-        KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
-          MPARK_RETURN(lib::forward<Lhs>(lhs) >= lib::forward<Rhs>(rhs))
-      };
-#endif
     }  // namespace cpp14
 
     inline namespace cpp17 {
