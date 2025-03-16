@@ -1,63 +1,20 @@
 #ifndef KOKKOS_MEMINFO_HPP
 #define KOKKOS_MEMINFO_HPP
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unixMemInfo.hpp>
+#endif
+
 #include <cstddef>
 #include <sstream>
 #include <fstream>
-
-#ifdef _WIN32
-#include <windows.h>
-#endif
 
 #include <Kokkos_Core.hpp>
 
 namespace Kokkos {
 namespace Experimental {
-
-namespace {
-  constexpr int OVERCOMMIT_DISABLED = 2;
-  constexpr char MEM_FREE_KEY[]      = "MemFree:";
-  constexpr char MEM_TOTAL_KEY[]     = "MemTotal:";
-  constexpr char COMMITTED_AS_KEY[]  = "Committed_AS:";
-  constexpr char COMMIT_LIMIT_KEY[]  = "CommitLimit:";
-  constexpr char MEMINFO_PATH[]      = "/proc/meminfo";
-  constexpr char OVERCOMMIT_PATH[]   = "/proc/sys/vm/overcommit_memory";
-}
-
-// On some systems, overcommit is disabled, and the kernel does not allow
-// memory allocation beyond the commit limit. This means that allocations
-// that touch only a small amount of memory are still counted at their full size.
-// man proc_sys_vm
-bool is_overcommit_disabled() {
-  std::ifstream overcommit_file(OVERCOMMIT_PATH);
-  int overcommit_value = 0;
-
-  if (overcommit_file.is_open()) {
-    overcommit_file >> overcommit_value;
-  } else {
-    return false;
-  }
-  return (overcommit_value == OVERCOMMIT_DISABLED);
-}
-
-size_t get_meminfo_value(const char* key) {
-  std::ifstream meminfo(MEMINFO_PATH);
-  size_t value = 0;
-  std::string line;
-
-  if (meminfo.is_open()) {
-    while (std::getline(meminfo, line)) {
-      if (line.find(key) != std::string::npos) {
-        std::istringstream iss(line);
-        iss.ignore(256, ':');
-        iss >> value;
-        value = (iss.fail()) ? 0 : value * 1024;
-        break;
-      }
-    }
-  }
-  return value;
-}
 
 template <typename Space = Kokkos::DefaultExecutionSpace>
 void MemGetInfo(size_t* free, size_t* total) {
@@ -66,26 +23,18 @@ void MemGetInfo(size_t* free, size_t* total) {
 }
 
 // Single node memory info
+#ifdef _WIN32
 template <>
 void MemGetInfo<Kokkos::HostSpace>(size_t* free, size_t* total) {
-#ifdef _WIN32
   MEMORYSTATUSEX statex;
   statex.dwLength = sizeof(statex);
   if (GlobalMemoryStatusEx(&statex) != 0) {
     *free  = statex.ullAvailPhys;
     *total = statex.ullTotalPhys;
   }
-#else
-  static bool overcommit_disabled = is_overcommit_disabled();
-  if (overcommit_disabled) {
-    *total = get_meminfo_value(COMMIT_LIMIT_KEY);
-    *free = *total - get_meminfo_value(COMMITTED_AS_KEY);
-  } else {
-    *total = get_meminfo_value(MEM_TOTAL_KEY);
-    *free = get_meminfo_value(MEM_FREE_KEY);
-  }
-#endif
+  return;
 }
+#endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
 template <>
@@ -94,6 +43,10 @@ void MemGetInfo<Kokkos::CudaSpace>(size_t* free, size_t* total) {
 }
 template <>
 void MemGetInfo<Kokkos::CudaUVMSpace>(size_t* free, size_t* total) {
+  MemGetInfo<Kokkos::HostSpace>(free, total);
+}
+template <>
+void MemGetInfo<Kokkos::CudaHostPinnedSpace>(size_t* free, size_t* total) {
   MemGetInfo<Kokkos::HostSpace>(free, total);
 }
 #endif
@@ -105,6 +58,10 @@ void MemGetInfo<Kokkos::HIPSpace>(size_t* free, size_t* total) {
 }
 template <>
 void MemGetInfo<Kokkos::HIPManagedSpace>(size_t* free, size_t* total) {
+  MemGetInfo<Kokkos::HostSpace>(free, total);
+}
+template <>
+void MemGetInfo<Kokkos::HIPHostPinnedSpace>(size_t* free, size_t* total) {
   MemGetInfo<Kokkos::HostSpace>(free, total);
 }
 #endif
