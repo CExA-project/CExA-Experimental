@@ -137,9 +137,27 @@ KOKKOS_INLINE_FUNCTION bool operator!=(const move_thrower_t &,
 #endif
 
 namespace test_util {
+// We need a way to allocate memory from the device, other backends are fine
+// but SYCL needs its own solution, it is only an emulation of memory
+// management.
+struct MemPool {
+#ifdef KOKKOS_ENABLE_SYCL
+  static const uint8_t poolsize = 50;
+  uint8_t mempool[poolsize];
+
+  KOKKOS_FUNCTION void *malloc(size_t size) { return mempool; }
+  KOKKOS_FUNCTION void free(void *ptr) {}
+#else
+  KOKKOS_FUNCTION void *malloc(size_t size) { return ::malloc(size); }
+  KOKKOS_FUNCTION void free(void *ptr) { ::free(ptr); }
+#endif
+};
+
 // We need an object with property similar to std::string but available on any
 // device, so we badly reimplement the features we need
 class DeviceString {
+  MemPool _mempool;
+
   char *_data;
   size_t _size;
   size_t _capacity;
@@ -147,7 +165,7 @@ class DeviceString {
   KOKKOS_FUNCTION void allocate_and_copy(const char *data, size_t size) {
     _size     = size;
     _capacity = _size + 1;
-    _data     = static_cast<char *>(malloc(_capacity * sizeof(char)));
+    _data     = static_cast<char *>(_mempool.malloc(_capacity * sizeof(char)));
     Kokkos::Impl::strcpy(_data, data);
   }
 
@@ -172,7 +190,7 @@ class DeviceString {
 
     // Allocate
     _capacity = _size + 1;
-    _data     = static_cast<char *>(malloc(sizeof(char) * _capacity));
+    _data     = static_cast<char *>(_mempool.malloc(sizeof(char) * _capacity));
 
     // Fill up the string
     remainder = rhs;
@@ -190,7 +208,7 @@ class DeviceString {
 
  public:
   // Destructor
-  KOKKOS_FUNCTION ~DeviceString() { free(_data); }
+  KOKKOS_FUNCTION ~DeviceString() { _mempool.free(_data); }
 
   // Constructors
   KOKKOS_FUNCTION DeviceString() { allocate_and_copy("", 0); }
@@ -204,7 +222,7 @@ class DeviceString {
   KOKKOS_FUNCTION DeviceString(const std::initializer_list<char> ilist) {
     _size      = ilist.size();
     _capacity  = _size + 1;
-    _data      = static_cast<char *>(malloc(_capacity * sizeof(char)));
+    _data      = static_cast<char *>(_mempool.malloc(_capacity * sizeof(char)));
     char *data = _data;
     for (const auto &c : ilist) {
       *(data++) = c;
@@ -231,9 +249,15 @@ class DeviceString {
 
   KOKKOS_FUNCTION DeviceString(DeviceString &&other) noexcept {
     _capacity = _size = 0;
-    _data             = nullptr;
-    Kokkos::kokkos_swap(_capacity, other._capacity);
+#ifdef KOKKOS_ENABLE_SYCL
+    _data =
+        static_cast<char *>(_mempool.malloc(other._capacity * sizeof(char)));
+    Kokkos::Impl::strcpy(_data, other._data);
+#else
+    _data = nullptr;
     Kokkos::kokkos_swap(_data, other._data);
+#endif
+    Kokkos::kokkos_swap(_capacity, other._capacity);
     Kokkos::kokkos_swap(_size, other._size);
   }
 
@@ -246,7 +270,7 @@ class DeviceString {
     if (_capacity >= _size + 1) {
       Kokkos::Impl::strcpy(_data, rhs);
     } else {
-      free(_data);
+      _mempool.free(_data);
       allocate_and_copy(rhs, _size);
     }
 
@@ -261,7 +285,11 @@ class DeviceString {
       _size = other._size;
     } else {
       DeviceString temp(other);
+#ifdef KOKKOS_ENABLE_SYCL
+      Kokkos::Impl::strcpy(_data, temp._data);
+#else
       Kokkos::kokkos_swap(_data, temp._data);
+#endif
       Kokkos::kokkos_swap(_capacity, temp._capacity);
       Kokkos::kokkos_swap(_size, temp._size);
     }
@@ -271,7 +299,11 @@ class DeviceString {
 
   KOKKOS_FUNCTION DeviceString &operator=(DeviceString &&other) noexcept {
     DeviceString temp(std::move(other));
+#ifdef KOKKOS_ENABLE_SYCL
+    Kokkos::Impl::strcpy(_data, temp._data);
+#else
     Kokkos::kokkos_swap(_data, temp._data);
+#endif
     Kokkos::kokkos_swap(_capacity, temp._capacity);
     Kokkos::kokkos_swap(_size, temp._size);
     return *this;
@@ -301,13 +333,15 @@ class DeviceString {
 
   // Concatenation
   KOKKOS_FUNCTION DeviceString &operator+=(const DeviceString &rhs) {
-    _capacity      = _size + rhs._size + 1;
-    char *tmp_data = static_cast<char *>(malloc(sizeof(char) * _capacity));
+    _capacity = _size + rhs._size + 1;
+    // It still works on Sycl despite tmp_data == _data
+    char *tmp_data =
+        static_cast<char *>(_mempool.malloc(sizeof(char) * _capacity));
 
     Kokkos::Impl::strcpy(tmp_data, _data);
     Kokkos::Impl::strcpy(tmp_data + _size, rhs._data);
 
-    free(_data);
+    _mempool.free(_data);
     _data = tmp_data;
     _size += rhs._size;
 
@@ -339,7 +373,7 @@ KOKKOS_FUNCTION constexpr bool operator==(const DeviceString &lhs,
 }
 }  // namespace test_util
 
-// Helper function for test
+// Helper function for test: launch the test on the device
 template <typename T>
 void test_helper() {
   int errors = 0;

@@ -8,7 +8,12 @@
 #include "util.hpp"
 
 struct A {
+#ifndef KOKKOS_ENABLE_SYCL
   KOKKOS_FUNCTION virtual test_util::DeviceString func(int in) {
+#else
+  // For SYCL, we need to remove the `virtual` keyword
+  KOKKOS_FUNCTION test_util::DeviceString func(int in) {
+#endif
     return test_util::DeviceString("A") + in;
   }
 };
