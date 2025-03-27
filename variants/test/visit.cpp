@@ -90,7 +90,7 @@ TEST(Visit, ConstVarConstType) { test_helper<Visit_ConstVarConstType>(); }
 
 struct concat {
   template <typename... Args>
-  KOKKOS_FUNCTION test_util::DeviceString operator()(
+  KOKKOS_FUNCTION KOKKOS_HIP_NO_INLINE test_util::DeviceString operator()(
       const Args &...args) const {
     test_util::DeviceString ret;
     std::initializer_list<int>({(ret += args, 0)...});

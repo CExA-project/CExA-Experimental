@@ -32,7 +32,7 @@ struct C : public A {
 
 using FunctionVariant = cexa::experimental::variant<A, B, C>;
 
-KOKKOS_FUNCTION auto call_func(const FunctionVariant &variant, int in) {
+KOKKOS_FUNCTION KOKKOS_HIP_NO_INLINE auto call_func(const FunctionVariant &variant, int in) {
   return cexa::experimental::visit([in](auto a) { return a.func(in); },
                                    variant);
 }

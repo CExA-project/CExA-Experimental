@@ -136,6 +136,14 @@ KOKKOS_INLINE_FUNCTION bool operator!=(const move_thrower_t &,
 }
 #endif
 
+// By default, HIP compiler tries to inline every function, which makes
+// compilation of some tests extremly slow.
+#ifdef KOKKOS_ENABLE_HIP
+#define KOKKOS_HIP_NO_INLINE __attribute__((noinline))
+#else
+#define KOKKOS_HIP_NO_INLINE
+#endif
+
 namespace test_util {
 // We need a way to allocate memory from the device, other backends are fine
 // but SYCL needs its own solution, it is only an emulation of memory
