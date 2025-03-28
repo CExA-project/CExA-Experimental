@@ -9,14 +9,15 @@
 
 struct A {
 #ifndef KOKKOS_ENABLE_SYCL
-  KOKKOS_FUNCTION virtual test_util::DeviceString func(int in) {
+  KOKKOS_FUNCTION virtual test_util::DeviceString func(int in){
 #else
   // For SYCL, we need to remove the `virtual` keyword
   KOKKOS_FUNCTION test_util::DeviceString func(int in) {
 #endif
-    return test_util::DeviceString("A") + in;
-  }
-};
+      return test_util::DeviceString("A") + in;
+}
+}
+;
 
 struct B : public A {
   KOKKOS_FUNCTION test_util::DeviceString func(int in) {
@@ -32,7 +33,8 @@ struct C : public A {
 
 using FunctionVariant = cexa::experimental::variant<A, B, C>;
 
-KOKKOS_FUNCTION KOKKOS_HIP_NO_INLINE auto call_func(const FunctionVariant &variant, int in) {
+KOKKOS_FUNCTION KOKKOS_HIP_NO_INLINE auto call_func(
+    const FunctionVariant &variant, int in) {
   return cexa::experimental::visit([in](auto a) { return a.func(in); },
                                    variant);
 }

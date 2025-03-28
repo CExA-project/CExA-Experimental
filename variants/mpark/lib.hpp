@@ -26,7 +26,6 @@ namespace mpark {
     template <typename T>
     struct identity { using type = T; };
 
-    inline namespace cpp14 {
       template <typename T, std::size_t N>
       struct array {
         KOKKOS_FUNCTION constexpr const T &operator[](std::size_t index) const {
@@ -80,15 +79,36 @@ namespace mpark {
       using std::make_index_sequence;
       using std::index_sequence_for;
 
-      using equal_to = std::equal_to<>;
-      using not_equal_to = std::not_equal_to<>;
-      using less = std::less<>;
-      using greater = std::greater<>;
-      using less_equal = std::less_equal<>;
-      using greater_equal = std::greater_equal<>;
-    }  // namespace cpp14
-
-    inline namespace cpp17 {
+      struct equal_to {
+        template <typename Lhs, typename Rhs>
+          KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+          MPARK_RETURN(lib::forward<Lhs>(lhs) == lib::forward<Rhs>(rhs))
+      };
+      struct not_equal_to {
+        template <typename Lhs, typename Rhs>
+          KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+          MPARK_RETURN(lib::forward<Lhs>(lhs) != lib::forward<Rhs>(rhs))
+      };
+      struct less {
+        template <typename Lhs, typename Rhs>
+          KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+          MPARK_RETURN(lib::forward<Lhs>(lhs) < lib::forward<Rhs>(rhs))
+      };
+      struct greater {
+        template <typename Lhs, typename Rhs>
+          KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+          MPARK_RETURN(lib::forward<Lhs>(lhs) > lib::forward<Rhs>(rhs))
+      };
+      struct less_equal {
+        template <typename Lhs, typename Rhs>
+          KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+          MPARK_RETURN(lib::forward<Lhs>(lhs) <= lib::forward<Rhs>(rhs))
+      };
+      struct greater_equal {
+        template <typename Lhs, typename Rhs>
+          KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+          MPARK_RETURN(lib::forward<Lhs>(lhs) >= lib::forward<Rhs>(rhs))
+      };
 
       // <type_traits>
       template <bool B>
@@ -317,8 +337,6 @@ namespace mpark {
 
       template <typename T>
       KOKKOS_INLINE_FUNCTION constexpr T *addressof(const T &&) = delete;
-
-    }  // namespace cpp17
 
     template <typename T>
     struct remove_all_extents : identity<T> {};
