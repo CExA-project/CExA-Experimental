@@ -1,0 +1,10 @@
+include(CMakeFindDependencyMacro)
+
+find_dependency(Kokkos 4.5 REQUIRED CONFIG)
+
+set(USING_USER_SLEEF @USING_USER_SLEEF@)
+if(USING_USER_SLEEF)
+  find_dependency(sleef 3.6 REQUIRED CONFIG)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/KokkosSimdBackendsTargets.cmake")
