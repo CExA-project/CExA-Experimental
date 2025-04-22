@@ -17,7 +17,7 @@
 #include "util.hpp"
 
 struct Swap_Same {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v("hello");
     cexa::experimental::variant<int, test_util::DeviceString> w("world");
     // Check `v`.
@@ -33,10 +33,10 @@ struct Swap_Same {
   }
 };
 
-TEST(Swap, Same) { test_helper<Swap_Same>(); }
+TEST(Swap, Same) { test_util::test_helper<Swap_Same>(); }
 
 struct Swap_Different {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v(42);
     cexa::experimental::variant<int, test_util::DeviceString> w("hello");
     // Check `v`.
@@ -52,7 +52,7 @@ struct Swap_Different {
   }
 };
 
-TEST(Swap, Different) { test_helper<Swap_Different>(); }
+TEST(Swap, Different) { test_util::test_helper<Swap_Different>(); }
 
 #ifdef EXCEPTIONS_AVAILABLE
 TEST(Swap, OneValuelessByException) {
@@ -84,7 +84,7 @@ TEST(Swap, BothValuelessByException) {
 #endif
 
 struct Swap_DtorsSame {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     struct Obj {
       KOKKOS_FUNCTION Obj(size_t *dtor_count) : dtor_count_(dtor_count) {}
       Obj(const Obj &) = default;
@@ -116,7 +116,7 @@ struct Swap_DtorsSame {
   }
 };
 
-TEST(Swap, DtorsSame) { test_helper<Swap_DtorsSame>(); }
+TEST(Swap, DtorsSame) { test_util::test_helper<Swap_DtorsSame>(); }
 
 namespace detail {
 
@@ -137,7 +137,7 @@ KOKKOS_FUNCTION static void swap(Obj &lhs, Obj &rhs) noexcept {
 }  // namespace detail
 
 struct Swap_DtorsSameWithSwap {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     size_t v_count = 0;
     size_t w_count = 0;
     {
@@ -154,10 +154,12 @@ struct Swap_DtorsSameWithSwap {
   }
 };
 
-TEST(Swap, DtorsSameWithSwap) { test_helper<Swap_DtorsSameWithSwap>(); }
+TEST(Swap, DtorsSameWithSwap) {
+  test_util::test_helper<Swap_DtorsSameWithSwap>();
+}
 
 struct Swap_DtorsDifferent {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     struct V {
       KOKKOS_FUNCTION V(size_t *dtor_count) : dtor_count_(dtor_count) {}
       V(const V &) = default;
@@ -193,6 +195,6 @@ struct Swap_DtorsDifferent {
   }
 };
 
-TEST(Swap, DtorsDifferent) { test_helper<Swap_DtorsDifferent>(); }
+TEST(Swap, DtorsDifferent) { test_util::test_helper<Swap_DtorsDifferent>(); }
 
 TEST_MAIN

@@ -15,7 +15,7 @@
 #include "util.hpp"
 
 struct Ctor_Fwd_Direct {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v(42);
     DEXPECT_EQ(42, cexa::experimental::get<int>(v));
 
@@ -26,10 +26,10 @@ struct Ctor_Fwd_Direct {
   }
 };
 
-TEST(Ctor_Fwd, Direct) { test_helper<Ctor_Fwd_Direct>(); }
+TEST(Ctor_Fwd, Direct) { test_util::test_helper<Ctor_Fwd_Direct>(); }
 
 struct Ctor_Fwd_DirectConversion {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v("42");
     DEXPECT_EQ("42", cexa::experimental::get<test_util::DeviceString>(v));
 
@@ -40,10 +40,12 @@ struct Ctor_Fwd_DirectConversion {
   }
 };
 
-TEST(Ctor_Fwd, DirectConversion) { test_helper<Ctor_Fwd_DirectConversion>(); }
+TEST(Ctor_Fwd, DirectConversion) {
+  test_util::test_helper<Ctor_Fwd_DirectConversion>();
+}
 
 struct Ctor_Fwd_CopyInitialization {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v = 42;
     DEXPECT_EQ(42, cexa::experimental::get<int>(v));
 
@@ -55,11 +57,11 @@ struct Ctor_Fwd_CopyInitialization {
 };
 
 TEST(Ctor_Fwd, CopyInitialization) {
-  test_helper<Ctor_Fwd_CopyInitialization>();
+  test_util::test_helper<Ctor_Fwd_CopyInitialization>();
 }
 
 struct Ctor_Fwd_CopyInitializationConversion {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v = "42";
     DEXPECT_EQ("42", cexa::experimental::get<test_util::DeviceString>(v));
 
@@ -71,7 +73,7 @@ struct Ctor_Fwd_CopyInitializationConversion {
 };
 
 TEST(Ctor_Fwd, CopyInitializationConversion) {
-  test_helper<Ctor_Fwd_CopyInitializationConversion>();
+  test_util::test_helper<Ctor_Fwd_CopyInitializationConversion>();
 }
 
 TEST_MAIN

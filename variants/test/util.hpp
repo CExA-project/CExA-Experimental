@@ -8,8 +8,8 @@
 // SPDX-FileCopyrightText: Michael Park
 // SPDX-License-Identifier: BSL-1.0
 
-#ifndef _UTIL_HPP
-#define _UTIL_HPP
+#ifndef KOKKOS_UTIL_HPP
+#define KOKKOS_UTIL_HPP
 
 #ifndef __has_feature
 #define __has_feature(x) 0
@@ -272,6 +272,8 @@ class DeviceString {
   // Getter
   KOKKOS_FUNCTION constexpr size_t capacity() const { return _capacity; }
 
+  KOKKOS_FUNCTION constexpr char *c_str() const { return _data; }
+
   // Affectation operators
   KOKKOS_FUNCTION DeviceString &operator=(const char *rhs) {
     _size = Kokkos::Impl::strlen(rhs);
@@ -379,37 +381,121 @@ KOKKOS_FUNCTION constexpr bool operator==(const DeviceString &lhs,
                                           const char *rhs) {
   return operator==(rhs, lhs);
 }
-}  // namespace test_util
 
-// Helper function for test: launch the test on the device
+// Helper function for test: launch the test on both host and device
 template <typename T>
 void test_helper() {
-  int errors = 0;
-  Kokkos::parallel_reduce(Kokkos::RangePolicy(0, 1), T{}, errors);
-  EXPECT_EQ(0, errors);
+  int num_errors = 0;
+  // Execute on device
+  Kokkos::parallel_reduce(Kokkos::RangePolicy(0, 1), T{}, num_errors);
+  EXPECT_EQ(0, num_errors);
+
+  // Execute on host if different
+  if constexpr (!std::is_same_v<Kokkos::DefaultHostExecutionSpace,
+                                Kokkos::DefaultExecutionSpace>) {
+    num_errors = 0;
+    Kokkos::parallel_reduce(
+        Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, 1), T{},
+        num_errors);
+    EXPECT_EQ(0, num_errors);
+  }
 }
 
+// Print the value of t deducing a sensible format from its type T.
+template <typename T>
+KOKKOS_FUNCTION void print_arg_value(T t) {
+  using type = std::remove_reference_t<std::remove_cv_t<T>>;
+  if constexpr (std::is_same_v<T, char *>) {
+    if (t != nullptr) {
+      // FIXME This is not 100% safe, as there is no guarantee that a const
+      // char* is a pointer to a C-style string
+      Kokkos::printf("\"%s\"", t);
+    } else {
+      Kokkos::printf("NULL");
+    }
+  } else if constexpr (std::is_pointer_v<type>) {
+    if (t != nullptr) {
+      Kokkos::printf("%p", t);
+    } else {
+      Kokkos::printf("NULL");
+    }
+  } else if constexpr (std::is_same_v<type, bool>) {
+    if (t) {
+      Kokkos::printf("true");
+    } else {
+      Kokkos::printf("false");
+    }
+  } else if constexpr (std::is_integral_v<type>) {
+    if constexpr (std::is_unsigned_v<type>) {
+      Kokkos::printf("%u", t);
+    } else {
+      Kokkos::printf("%i", t);
+    }
+  } else if constexpr (std::is_floating_point_v<type>) {
+    Kokkos::printf("%f", t);
+  } else if constexpr (std::is_same_v<type, DeviceString>) {
+    Kokkos::printf("\"%s\"", t.c_str());
+  } else if constexpr (std::is_enum_v<type>) {
+    Kokkos::printf("%i", t);
+  } else {
+    Kokkos::printf("Unknown type, can't display value.");
+  }
+}
+}  // namespace test_util
+
 // Dumbed down version of gtest's EXPECT_ functions, usable on the device
-// (needs to reduce on an argument named `error`)
-#define DEXPECT_EQ(arg1, arg2)    \
-  do {                            \
-    error += !((arg1) == (arg2)); \
-  } while (false);
+// (needs to reduce on an argument named `errors`)
+// FIXME the printf can get interleaved when executing in parallel, the whole
+// error message should be constructed at once in a string and displayed in a
+// printf, but there is no robust enough implementation of string on GPU to do
+// that portably
+#define DEXPECT_EQ(arg1, arg2)                                               \
+  do {                                                                       \
+    if (!((arg1) == (arg2))) {                                               \
+      errors += 1;                                                           \
+      Kokkos::printf("%s:%i: Failure\n", __FILE__, __LINE__);                \
+      Kokkos::printf("Expected equality of these values:\n");                \
+      Kokkos::printf("  " KOKKOS_IMPL_STRINGIFY(arg1) "\n    Which is: ");   \
+      test_util::print_arg_value(arg1);                                      \
+      Kokkos::printf("\n  " KOKKOS_IMPL_STRINGIFY(arg2) "\n    Which is: "); \
+      test_util::print_arg_value(arg2);                                      \
+      Kokkos::printf("\n");                                                  \
+    }                                                                        \
+  } while (false)
 
-#define DEXPECT_NE(arg1, arg2)    \
-  do {                            \
-    error += !((arg1) != (arg2)); \
-  } while (false);
+#define DEXPECT_NE(arg1, arg2)                                       \
+  do {                                                               \
+    if (!((arg1) != (arg2))) {                                       \
+      errors += 1;                                                   \
+      Kokkos::printf("%s:%i: Failure\n", __FILE__, __LINE__);        \
+      Kokkos::printf("Expected: (" KOKKOS_IMPL_STRINGIFY(            \
+          arg1) ") != (" KOKKOS_IMPL_STRINGIFY(arg2) "), actual: "); \
+      test_util::print_arg_value(arg1);                              \
+      Kokkos::printf(" vs ");                                        \
+      test_util::print_arg_value(arg2);                              \
+      Kokkos::printf("\n");                                          \
+    }                                                                \
+  } while (false)
 
-#define DEXPECT_TRUE(arg) \
-  do {                    \
-    error += !(arg);      \
-  } while (false);
+#define DEXPECT_TRUE(arg)                                     \
+  do {                                                        \
+    if (!(arg)) {                                             \
+      errors += 1;                                            \
+      Kokkos::printf("%s:%i: Failure\n", __FILE__, __LINE__); \
+      Kokkos::printf("Value of: " KOKKOS_IMPL_STRINGIFY(      \
+          arg) "\n  Actual: false\nExpected: true\n");        \
+    }                                                         \
+  } while (false)
 
-#define DEXPECT_FALSE(arg) \
-  do {                     \
-    error += !!(arg);      \
-  } while (false);
+#define DEXPECT_FALSE(arg)                                    \
+  do {                                                        \
+    if (!!(arg)) {                                            \
+      errors += 1;                                            \
+      Kokkos::printf("%s:%i: Failure\n", __FILE__, __LINE__); \
+      Kokkos::printf("Value of: " KOKKOS_IMPL_STRINGIFY(      \
+          arg) "\n  Actual: true\nExpected: false\n");        \
+    }                                                         \
+  } while (false)
 
 // main function: init Kokkos, init GTest, lauch tests
 #define TEST_MAIN                           \
@@ -421,4 +507,4 @@ void test_helper() {
     return result;                          \
   }
 
-#endif
+#endif  // KOKKOS_UTIL_HPP

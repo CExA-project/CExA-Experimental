@@ -17,7 +17,7 @@
 #include "util.hpp"
 
 struct Rel_SameTypeSameValue {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, const char *> v(0), w(0);
     // `v` op `w`
     DEXPECT_TRUE(v == w);
@@ -54,10 +54,12 @@ struct Rel_SameTypeSameValue {
   }
 };
 
-TEST(Rel, SameTypeSameValue) { test_helper<Rel_SameTypeSameValue>(); }
+TEST(Rel, SameTypeSameValue) {
+  test_util::test_helper<Rel_SameTypeSameValue>();
+}
 
 struct Rel_SameTypeDiffValue {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, const char *> v(0), w(1);
     // `v` op `w`
     DEXPECT_FALSE(v == w);
@@ -94,10 +96,12 @@ struct Rel_SameTypeDiffValue {
   }
 };
 
-TEST(Rel, SameTypeDiffValue) { test_helper<Rel_SameTypeDiffValue>(); }
+TEST(Rel, SameTypeDiffValue) {
+  test_util::test_helper<Rel_SameTypeDiffValue>();
+}
 
 struct Rel_DiffTypeSameValue {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, unsigned int> v(0), w(0u);
     // `v` op `w`
     DEXPECT_FALSE(v == w);
@@ -134,10 +138,12 @@ struct Rel_DiffTypeSameValue {
   }
 };
 
-TEST(Rel, DiffTypeSameValue) { test_helper<Rel_DiffTypeSameValue>(); }
+TEST(Rel, DiffTypeSameValue) {
+  test_util::test_helper<Rel_DiffTypeSameValue>();
+}
 
 struct Rel_DiffTypeDiffValue {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, unsigned int> v(0), w(1u);
     // `v` op `w`
     DEXPECT_FALSE(v == w);
@@ -174,7 +180,9 @@ struct Rel_DiffTypeDiffValue {
   }
 };
 
-TEST(Rel, DiffTypeDiffValue) { test_helper<Rel_DiffTypeDiffValue>(); }
+TEST(Rel, DiffTypeDiffValue) {
+  test_util::test_helper<Rel_DiffTypeDiffValue>();
+}
 
 #ifdef EXCEPTIONS_AVAILABLE
 TEST(Rel, OneValuelessByException) {

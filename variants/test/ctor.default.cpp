@@ -15,7 +15,7 @@
 #include "util.hpp"
 
 struct Ctor_Default_Variant {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v;
     DEXPECT_EQ(0, cexa::experimental::get<0>(v));
 
@@ -26,6 +26,6 @@ struct Ctor_Default_Variant {
   }
 };
 
-TEST(Ctor_Default, Variant) { test_helper<Ctor_Default_Variant>(); }
+TEST(Ctor_Default, Variant) { test_util::test_helper<Ctor_Default_Variant>(); }
 
 TEST_MAIN

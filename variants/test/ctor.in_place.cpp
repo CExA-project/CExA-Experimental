@@ -15,7 +15,7 @@
 #include "util.hpp"
 
 struct Ctor_InPlace_IndexDirect {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v(
         cexa::experimental::in_place_index_t<0>{}, 42);
     DEXPECT_EQ(42, cexa::experimental::get<0>(v));
@@ -28,10 +28,12 @@ struct Ctor_InPlace_IndexDirect {
   }
 };
 
-TEST(Ctor_InPlace, IndexDirect) { test_helper<Ctor_InPlace_IndexDirect>(); }
+TEST(Ctor_InPlace, IndexDirect) {
+  test_util::test_helper<Ctor_InPlace_IndexDirect>();
+}
 
 struct Ctor_InPlace_IndexDirectDuplicate {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, int> v(
         cexa::experimental::in_place_index_t<0>{}, 42);
     DEXPECT_EQ(42, cexa::experimental::get<0>(v));
@@ -45,11 +47,11 @@ struct Ctor_InPlace_IndexDirectDuplicate {
 };
 
 TEST(Ctor_InPlace, IndexDirectDuplicate) {
-  test_helper<Ctor_InPlace_IndexDirectDuplicate>();
+  test_util::test_helper<Ctor_InPlace_IndexDirectDuplicate>();
 }
 
 struct Ctor_InPlace_IndexConversion {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v(
         cexa::experimental::in_place_index_t<1>{}, "42");
     DEXPECT_EQ("42", cexa::experimental::get<1>(v));
@@ -63,11 +65,11 @@ struct Ctor_InPlace_IndexConversion {
 };
 
 TEST(Ctor_InPlace, IndexConversion) {
-  test_helper<Ctor_InPlace_IndexConversion>();
+  test_util::test_helper<Ctor_InPlace_IndexConversion>();
 }
 
 struct Ctor_InPlace_IndexInitializerList {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v(
         cexa::experimental::in_place_index_t<1>{}, {'4', '2'});
     DEXPECT_EQ("42", cexa::experimental::get<1>(v));
@@ -75,11 +77,11 @@ struct Ctor_InPlace_IndexInitializerList {
 };
 
 TEST(Ctor_InPlace, IndexInitializerList) {
-  test_helper<Ctor_InPlace_IndexInitializerList>();
+  test_util::test_helper<Ctor_InPlace_IndexInitializerList>();
 }
 
 struct Ctor_InPlace_TypeDirect {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v(
         cexa::experimental::in_place_type_t<test_util::DeviceString>{}, "42");
     DEXPECT_EQ("42", cexa::experimental::get<test_util::DeviceString>(v));
@@ -92,10 +94,12 @@ struct Ctor_InPlace_TypeDirect {
   }
 };
 
-TEST(Ctor_InPlace, TypeDirect) { test_helper<Ctor_InPlace_TypeDirect>(); }
+TEST(Ctor_InPlace, TypeDirect) {
+  test_util::test_helper<Ctor_InPlace_TypeDirect>();
+}
 
 struct Ctor_InPlace_TypeConversion {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v(
         cexa::experimental::in_place_type_t<int>{}, 42.5);
     DEXPECT_EQ(42, cexa::experimental::get<int>(v));
@@ -109,11 +113,11 @@ struct Ctor_InPlace_TypeConversion {
 };
 
 TEST(Ctor_InPlace, TypeConversion) {
-  test_helper<Ctor_InPlace_TypeConversion>();
+  test_util::test_helper<Ctor_InPlace_TypeConversion>();
 }
 
 struct Ctor_InPlace_TypeInitializerList {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v(
         cexa::experimental::in_place_type_t<test_util::DeviceString>{},
         {'4', '2'});
@@ -122,7 +126,7 @@ struct Ctor_InPlace_TypeInitializerList {
 };
 
 TEST(Ctor_InPlace, TypeInitializerList) {
-  test_helper<Ctor_InPlace_TypeInitializerList>();
+  test_util::test_helper<Ctor_InPlace_TypeInitializerList>();
 }
 
 TEST_MAIN

@@ -29,8 +29,7 @@
 #define __has_feature(x) 0
 #endif
 
-#if __has_builtin(__builtin_addressof) ||                                      \
-    (defined(__GNUC__) && __GNUC__ >= 7) || defined(_MSC_VER)
+#if __has_builtin(__builtin_addressof) || defined(__GNUC__) || defined(_MSC_VER)
 #define MPARK_BUILTIN_ADDRESSOF
 #endif
 
@@ -42,7 +41,7 @@
 #define MPARK_BUILTIN_UNREACHABLE
 #endif
 
-#if __has_builtin(__type_pack_element) && !(defined(__ICC))
+#if __has_builtin(__type_pack_element)
 #define MPARK_TYPE_PACK_ELEMENT
 #endif
 
@@ -51,11 +50,6 @@
     !(defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP) ||             \
       defined(KOKKOS_ENABLE_CUDA))
 #define MPARK_EXCEPTIONS
-#endif
-
-#if !defined(__GLIBCXX__) || __has_include(<codecvt>) // >= libstdc++-5
-#define MPARK_TRIVIALITY_TYPE_TRAITS
-#define MPARK_INCOMPLETE_TYPE_TRAITS
 #endif
 
 #endif // MPARK_CONFIG_HPP

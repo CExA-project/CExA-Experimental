@@ -21,7 +21,7 @@ struct Obj {
 };  // Obj
 
 struct Dtor_Value {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     bool dtor_called = false;
     // Construct/Destruct `Obj`.
     {
@@ -33,6 +33,6 @@ struct Dtor_Value {
   }
 };
 
-TEST(Dtor, Value) { test_helper<Dtor_Value>(); }
+TEST(Dtor, Value) { test_util::test_helper<Dtor_Value>(); }
 
 TEST_MAIN
