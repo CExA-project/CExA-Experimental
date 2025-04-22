@@ -137,7 +137,7 @@ KOKKOS_INLINE_FUNCTION bool operator!=(const move_thrower_t &,
 #endif
 
 // By default, HIP compiler tries to inline every function, which makes
-// compilation of some tests extremly slow.
+// compilation of some tests extremely slow.
 #ifdef KOKKOS_ENABLE_HIP
 #define KOKKOS_HIP_NO_INLINE __attribute__((noinline))
 #else
