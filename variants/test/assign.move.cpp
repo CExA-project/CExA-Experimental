@@ -36,7 +36,7 @@ struct Obj {
 };
 
 struct Assign_Move_SameType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     // `v`, `w`.
     FunctionCalled f{false, false};
     cexa::experimental::variant<Obj, int> v(f), w(f);
@@ -47,10 +47,10 @@ struct Assign_Move_SameType {
   }
 };
 
-TEST(Assign_Move, SameType) { test_helper<Assign_Move_SameType>(); }
+TEST(Assign_Move, SameType) { test_util::test_helper<Assign_Move_SameType>(); }
 
 struct Assign_Move_DiffType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     // `v`, `w`.
     FunctionCalled f{false, false};
     cexa::experimental::variant<Obj, int> v(42), w(f);
@@ -61,7 +61,7 @@ struct Assign_Move_DiffType {
   }
 };
 
-TEST(Assign_Move, DiffType) { test_helper<Assign_Move_DiffType>(); }
+TEST(Assign_Move, DiffType) { test_util::test_helper<Assign_Move_DiffType>(); }
 
 #ifdef EXCEPTIONS_AVAILABLE
 TEST(Assign_Move, ValuelessByException) {

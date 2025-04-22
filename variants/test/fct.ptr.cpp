@@ -53,7 +53,7 @@ KOKKOS_FUNCTION auto call_variant(const Variant &variant, const Args &...args) {
 }
 
 template <typename Real>
-void test_helper_Function_Ptr() {
+void test_util_Function_Ptr() {
   const int ntests = 10;
   FunctionVariant fvariant;
   int errors;
@@ -61,7 +61,7 @@ void test_helper_Function_Ptr() {
   fvariant = Function_Add{};
   Kokkos::parallel_reduce(
       "Test_Add1", Kokkos::RangePolicy(0, ntests),
-      KOKKOS_LAMBDA(int i, int &error) {
+      KOKKOS_LAMBDA(int i, int &errors) {
         Real a   = (Real)i;
         Real res = call_variant(fvariant, a);
         DEXPECT_EQ(res, a + a);
@@ -71,7 +71,7 @@ void test_helper_Function_Ptr() {
 
   Kokkos::parallel_reduce(
       "Test_Add2", Kokkos::RangePolicy(0, ntests),
-      KOKKOS_LAMBDA(int i, int &error) {
+      KOKKOS_LAMBDA(int i, int &errors) {
         Real a   = (Real)i;
         Real b   = (Real)2;
         Real res = call_variant(fvariant, a, b);
@@ -83,7 +83,7 @@ void test_helper_Function_Ptr() {
   fvariant = Function_Mul{};
   Kokkos::parallel_reduce(
       "Test_Mul1", Kokkos::RangePolicy(0, ntests),
-      KOKKOS_LAMBDA(int i, int &error) {
+      KOKKOS_LAMBDA(int i, int &errors) {
         Real a   = (Real)i;
         Real res = call_variant(fvariant, a);
         DEXPECT_EQ(res, a * a);
@@ -93,7 +93,7 @@ void test_helper_Function_Ptr() {
 
   Kokkos::parallel_reduce(
       "Test_Mul2", Kokkos::RangePolicy(0, ntests),
-      KOKKOS_LAMBDA(int i, int &error) {
+      KOKKOS_LAMBDA(int i, int &errors) {
         Real a   = (Real)i;
         Real b   = (Real)2;
         Real res = call_variant(fvariant, a, b);
@@ -105,7 +105,7 @@ void test_helper_Function_Ptr() {
   fvariant = Function_Pow{};
   Kokkos::parallel_reduce(
       "Test_Pow1", Kokkos::RangePolicy(0, ntests),
-      KOKKOS_LAMBDA(int i, int &error) {
+      KOKKOS_LAMBDA(int i, int &errors) {
         Real a   = (Real)i;
         Real res = call_variant(fvariant, a);
         DEXPECT_EQ(res, Kokkos::pow(a, a));
@@ -115,7 +115,7 @@ void test_helper_Function_Ptr() {
 
   Kokkos::parallel_reduce(
       "Test_Pow2", Kokkos::RangePolicy(0, ntests),
-      KOKKOS_LAMBDA(int i, int &error) {
+      KOKKOS_LAMBDA(int i, int &errors) {
         Real a   = (Real)i;
         Real b   = (Real)2;
         Real res = call_variant(fvariant, a, b);
@@ -125,8 +125,8 @@ void test_helper_Function_Ptr() {
   EXPECT_EQ(0, errors);
 }
 
-TEST(Function_Ptr, float) { test_helper_Function_Ptr<float>(); }
+TEST(Function_Ptr, float) { test_util_Function_Ptr<float>(); }
 
-TEST(Function_Ptr, double) { test_helper_Function_Ptr<double>(); }
+TEST(Function_Ptr, double) { test_util_Function_Ptr<double>(); }
 
 TEST_MAIN

@@ -39,7 +39,7 @@ KOKKOS_FUNCTION KOKKOS_HIP_NO_INLINE auto call_func(
                                    variant);
 }
 
-void test_helper_VirtualFct() {
+void test_util_VirtualFct() {
   const int ntests = 10;
   FunctionVariant var;
   int errors;
@@ -47,7 +47,7 @@ void test_helper_VirtualFct() {
   var = A{};
   Kokkos::parallel_reduce(
       "Test_A", Kokkos::RangePolicy(0, ntests),
-      KOKKOS_LAMBDA(int i, int &error) {
+      KOKKOS_LAMBDA(int i, int &errors) {
         test_util::DeviceString res      = call_func(var, i);
         test_util::DeviceString expected = test_util::DeviceString("A") + i;
         DEXPECT_EQ(res, expected);
@@ -58,7 +58,7 @@ void test_helper_VirtualFct() {
   var = B{};
   Kokkos::parallel_reduce(
       "Test_B", Kokkos::RangePolicy(0, ntests),
-      KOKKOS_LAMBDA(int i, int &error) {
+      KOKKOS_LAMBDA(int i, int &errors) {
         test_util::DeviceString res = call_func(var, i);
         test_util::DeviceString expected =
             test_util::DeviceString("A") + i + "B" + i;
@@ -70,7 +70,7 @@ void test_helper_VirtualFct() {
   var = C{};
   Kokkos::parallel_reduce(
       "Test_C", Kokkos::RangePolicy(0, ntests),
-      KOKKOS_LAMBDA(int i, int &error) {
+      KOKKOS_LAMBDA(int i, int &errors) {
         test_util::DeviceString res      = call_func(var, i);
         test_util::DeviceString expected = test_util::DeviceString("C") + i;
         DEXPECT_EQ(res, expected);
@@ -79,6 +79,6 @@ void test_helper_VirtualFct() {
   EXPECT_EQ(0, errors);
 }
 
-TEST(Virtual, test1) { test_helper_VirtualFct(); }
+TEST(Virtual, test1) { test_util_VirtualFct(); }
 
 TEST_MAIN

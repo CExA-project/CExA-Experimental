@@ -34,7 +34,7 @@ struct Obj {
 };
 
 struct Assign_Copy_SameType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     // `v`, `w`.
     FunctionCalled f{false, false};
     cexa::experimental::variant<Obj, int> v(f), w(f);
@@ -45,10 +45,10 @@ struct Assign_Copy_SameType {
   }
 };
 
-TEST(Assign_Copy, SameType) { test_helper<Assign_Copy_SameType>(); }
+TEST(Assign_Copy, SameType) { test_util::test_helper<Assign_Copy_SameType>(); }
 
 struct Assign_Copy_DiffType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     // `v`, `w`.
     FunctionCalled f{false, false};
     cexa::experimental::variant<Obj, int> v(42), w(f);
@@ -59,7 +59,7 @@ struct Assign_Copy_DiffType {
   }
 };
 
-TEST(Assign_Copy, DiffType) { test_helper<Assign_Copy_DiffType>(); }
+TEST(Assign_Copy, DiffType) { test_util::test_helper<Assign_Copy_DiffType>(); }
 
 #ifdef EXCEPTIONS_AVAILABLE
 TEST(Assign_Copy, ValuelessByException) {

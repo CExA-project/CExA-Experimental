@@ -20,7 +20,7 @@
 #include "util.hpp"
 
 struct Visit_MutVarMutType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int> v(42);
     // Check `v`.
     DEXPECT_EQ(42, cexa::experimental::get<int>(v));
@@ -30,10 +30,10 @@ struct Visit_MutVarMutType {
   }
 };
 
-TEST(Visit, MutVarMutType) { test_helper<Visit_MutVarMutType>(); }
+TEST(Visit, MutVarMutType) { test_util::test_helper<Visit_MutVarMutType>(); }
 
 struct Visit_MutVarConstType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<const int> v(42);
     DEXPECT_EQ(42, cexa::experimental::get<const int>(v));
     // Check qualifier.
@@ -42,10 +42,12 @@ struct Visit_MutVarConstType {
   }
 };
 
-TEST(Visit, MutVarConstType) { test_helper<Visit_MutVarConstType>(); }
+TEST(Visit, MutVarConstType) {
+  test_util::test_helper<Visit_MutVarConstType>();
+}
 
 struct Visit_ConstVarMutType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     const cexa::experimental::variant<int> v(42);
     DEXPECT_EQ(42, cexa::experimental::get<int>(v));
     // Check qualifier.
@@ -64,10 +66,12 @@ struct Visit_ConstVarMutType {
   }
 };
 
-TEST(Visit, ConstVarMutType) { test_helper<Visit_ConstVarMutType>(); }
+TEST(Visit, ConstVarMutType) {
+  test_util::test_helper<Visit_ConstVarMutType>();
+}
 
 struct Visit_ConstVarConstType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     const cexa::experimental::variant<const int> v(42);
     DEXPECT_EQ(42, cexa::experimental::get<const int>(v));
     // Check qualifier.
@@ -86,7 +90,9 @@ struct Visit_ConstVarConstType {
   }
 };
 
-TEST(Visit, ConstVarConstType) { test_helper<Visit_ConstVarConstType>(); }
+TEST(Visit, ConstVarConstType) {
+  test_util::test_helper<Visit_ConstVarConstType>();
+}
 
 struct concat {
   template <typename... Args>
@@ -99,15 +105,15 @@ struct concat {
 };
 
 struct Visit_Zero {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     DEXPECT_EQ("", cexa::experimental::visit(concat{}));
   }
 };
 
-TEST(Visit, Zero) { test_helper<Visit_Zero>(); }
+TEST(Visit, Zero) { test_util::test_helper<Visit_Zero>(); }
 
 struct Visit_Homogeneous_Double {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v("hello"),
         w("world!");
     DEXPECT_EQ("helloworld!", cexa::experimental::visit(concat{}, v, w));
@@ -137,10 +143,12 @@ struct Visit_Homogeneous_Double {
   }
 };
 
-TEST(Visit_Homogeneous, Double) { test_helper<Visit_Homogeneous_Double>(); }
+TEST(Visit_Homogeneous, Double) {
+  test_util::test_helper<Visit_Homogeneous_Double>();
+}
 
 struct Visit_Homogeneous_Quintuple {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v(101), w("+"),
         x(202), y("="), z(303);
     DEXPECT_EQ("101+202=303",
@@ -149,21 +157,23 @@ struct Visit_Homogeneous_Quintuple {
 };
 
 TEST(Visit_Homogeneous, Quintuple) {
-  test_helper<Visit_Homogeneous_Quintuple>();
+  test_util::test_helper<Visit_Homogeneous_Quintuple>();
 }
 
 struct Visit_Heterogeneous_Double {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v("hello");
     cexa::experimental::variant<double, const char *> w("world!");
     DEXPECT_EQ("helloworld!", cexa::experimental::visit(concat{}, v, w));
   }
 };
 
-TEST(Visit_Heterogeneous, Double) { test_helper<Visit_Heterogeneous_Double>(); }
+TEST(Visit_Heterogeneous, Double) {
+  test_util::test_helper<Visit_Heterogeneous_Double>();
+}
 
 struct Visit_Heterogenous_Quintuple {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, double> v(101);
     cexa::experimental::variant<const char *> w("+");
     cexa::experimental::variant<bool, test_util::DeviceString, int> x(202);
@@ -176,12 +186,12 @@ struct Visit_Heterogenous_Quintuple {
 };
 
 TEST(Visit_Heterogenous, Quintuple) {
-  test_helper<Visit_Heterogenous_Quintuple>();
+  test_util::test_helper<Visit_Heterogenous_Quintuple>();
 }
 
 // Only there to test DeviceString, not directly relevant to variant
 struct Visit_Negative_Numbers {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, double> v(-101);
     DEXPECT_EQ("-101", cexa::experimental::visit(concat{}, v));
     cexa::experimental::variant<short, double> w((short)-202);
@@ -191,6 +201,8 @@ struct Visit_Negative_Numbers {
   }
 };
 
-TEST(Visit_Negative, Numbers) { test_helper<Visit_Negative_Numbers>(); }
+TEST(Visit_Negative, Numbers) {
+  test_util::test_helper<Visit_Negative_Numbers>();
+}
 
 TEST_MAIN

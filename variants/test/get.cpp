@@ -17,7 +17,7 @@
 #include "util.hpp"
 
 struct Get_HoldsAlternative {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int, test_util::DeviceString> v(42);
     DEXPECT_TRUE(cexa::experimental::holds_alternative<int>(v));
     DEXPECT_FALSE(
@@ -32,10 +32,10 @@ struct Get_HoldsAlternative {
   }
 };
 
-TEST(Get, HoldsAlternative) { test_helper<Get_HoldsAlternative>(); }
+TEST(Get, HoldsAlternative) { test_util::test_helper<Get_HoldsAlternative>(); }
 
 struct Get_MutVarMutType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int> v(42);
     DEXPECT_EQ(42, cexa::experimental::get<int>(v));
     // Check qualifier.
@@ -44,10 +44,10 @@ struct Get_MutVarMutType {
   }
 };
 
-TEST(Get, MutVarMutType) { test_helper<Get_MutVarMutType>(); }
+TEST(Get, MutVarMutType) { test_util::test_helper<Get_MutVarMutType>(); }
 
 struct Get_MutVarConstType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<const int> v(42);
     DEXPECT_EQ(42, cexa::experimental::get<const int>(v));
     // Check qualifier.
@@ -57,10 +57,10 @@ struct Get_MutVarConstType {
   }
 };
 
-TEST(Get, MutVarConstType) { test_helper<Get_MutVarConstType>(); }
+TEST(Get, MutVarConstType) { test_util::test_helper<Get_MutVarConstType>(); }
 
 struct Get_ConstVarMutType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     const cexa::experimental::variant<int> v(42);
     DEXPECT_EQ(42, cexa::experimental::get<int>(v));
     // Check qualifier.
@@ -81,10 +81,10 @@ struct Get_ConstVarMutType {
   }
 };
 
-TEST(Get, ConstVarMutType) { test_helper<Get_ConstVarMutType>(); }
+TEST(Get, ConstVarMutType) { test_util::test_helper<Get_ConstVarMutType>(); }
 
 struct Get_ConstVarConstType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     const cexa::experimental::variant<const int> v(42);
     DEXPECT_EQ(42, cexa::experimental::get<const int>(v));
     // Check qualifier.
@@ -105,7 +105,9 @@ struct Get_ConstVarConstType {
   }
 };
 
-TEST(Get, ConstVarConstType) { test_helper<Get_ConstVarConstType>(); }
+TEST(Get, ConstVarConstType) {
+  test_util::test_helper<Get_ConstVarConstType>();
+}
 
 #ifdef EXCEPTIONS_AVAILABLE
 TEST(Get, ValuelessByException) {
@@ -120,7 +122,7 @@ TEST(Get, ValuelessByException) {
 #endif
 
 struct GetIf_MutVarMutType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<int> v(42);
     DEXPECT_EQ(42, *cexa::experimental::get_if<int>(&v));
     // Check qualifier.
@@ -128,10 +130,10 @@ struct GetIf_MutVarMutType {
   }
 };
 
-TEST(GetIf, MutVarMutType) { test_helper<GetIf_MutVarMutType>(); }
+TEST(GetIf, MutVarMutType) { test_util::test_helper<GetIf_MutVarMutType>(); }
 
 struct GetIf_MutVarConstType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     cexa::experimental::variant<const int> v(42);
     DEXPECT_EQ(42, *cexa::experimental::get_if<const int>(&v));
     // Check qualifier.
@@ -139,10 +141,12 @@ struct GetIf_MutVarConstType {
   }
 };
 
-TEST(GetIf, MutVarConstType) { test_helper<GetIf_MutVarConstType>(); }
+TEST(GetIf, MutVarConstType) {
+  test_util::test_helper<GetIf_MutVarConstType>();
+}
 
 struct GetIf_ConstVarMutType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     const cexa::experimental::variant<int> v(42);
     DEXPECT_EQ(42, *cexa::experimental::get_if<int>(&v));
     // Check qualifier.
@@ -158,10 +162,12 @@ struct GetIf_ConstVarMutType {
   }
 };
 
-TEST(GetIf, ConstVarMutType) { test_helper<GetIf_ConstVarMutType>(); }
+TEST(GetIf, ConstVarMutType) {
+  test_util::test_helper<GetIf_ConstVarMutType>();
+}
 
 struct GetIf_ConstVarConstType {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     const cexa::experimental::variant<const int> v(42);
     DEXPECT_EQ(42, *cexa::experimental::get_if<const int>(&v));
     // Check qualifier.
@@ -178,7 +184,9 @@ struct GetIf_ConstVarConstType {
   }
 };
 
-TEST(GetIf, ConstVarConstType) { test_helper<GetIf_ConstVarConstType>(); }
+TEST(GetIf, ConstVarConstType) {
+  test_util::test_helper<GetIf_ConstVarConstType>();
+}
 
 #ifdef MPARK_EXCEPTONS
 TEST(GetIf, ValuelessByException) {

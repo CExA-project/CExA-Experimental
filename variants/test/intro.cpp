@@ -17,7 +17,7 @@
 #include "util.hpp"
 
 struct Variant_Intro {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     // direct initialization.
     cexa::experimental::variant<int, test_util::DeviceString> v("hello world!");
 
@@ -84,6 +84,6 @@ struct Variant_Intro {
   }
 };
 
-TEST(Variant, Intro) { test_helper<Variant_Intro>(); }
+TEST(Variant, Intro) { test_util::test_helper<Variant_Intro>(); }
 
 TEST_MAIN

@@ -17,7 +17,7 @@
 #include "util.hpp"
 
 struct Ctor_Move_Value {
-  KOKKOS_FUNCTION void operator()(const int i, int &error) const {
+  KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
     // `v`
     cexa::experimental::variant<int, test_util::DeviceString> v("hello");
     DEXPECT_EQ("hello", cexa::experimental::get<test_util::DeviceString>(v));
@@ -37,7 +37,7 @@ struct Ctor_Move_Value {
   }
 };
 
-TEST(Ctor_Move, Value) { test_helper<Ctor_Move_Value>(); }
+TEST(Ctor_Move, Value) { test_util::test_helper<Ctor_Move_Value>(); }
 
 #ifdef EXCEPTIONS_AVAILABLE
 TEST(Ctor_Move, ValuelessByException) {
