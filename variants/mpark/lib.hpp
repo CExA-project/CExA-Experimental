@@ -225,14 +225,14 @@ namespace mpark {
                                               lib::forward<Arg>(arg),
                                               lib::forward<Args>(args)...))
 
-#ifdef _MSC_VER
+#if defined(KOKKOS_COMPILER_MSVC)
 #pragma warning(push)
 #pragma warning(disable : 4100)
 #endif
         template <typename F, typename... Args>
         KOKKOS_INLINE_FUNCTION constexpr auto invoke(F &&f, Args &&... args)
           MPARK_RETURN(lib::forward<F>(f)(lib::forward<Args>(args)...))
-#ifdef _MSC_VER
+#if defined(KOKKOS_COMPILER_MSVC)
 #pragma warning(pop)
 #endif
       }  // namespace detail

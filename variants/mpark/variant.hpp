@@ -391,7 +391,7 @@ namespace mpark {
       struct base {
         template <std::size_t I, typename V>
         KOKKOS_INLINE_FUNCTION static constexpr auto&&get_alt(V &&v) {
-#ifdef _MSC_VER
+#if defined(KOKKOS_COMPILER_MSVC)
 		return recursive_union::get_alt(lib::forward<V>(v).data_, in_place_index_t<I>{});
 #else
 		return recursive_union::get_alt(data(lib::forward<V>(v)), in_place_index_t<I>{});
@@ -410,7 +410,7 @@ namespace mpark {
 
     namespace visitation {
 
-#ifndef _MSC_VER
+#if !defined(KOKKOS_COMPILER_MSVC)
 #define MPARK_VARIANT_SWITCH_VISIT
 #endif
 
@@ -695,7 +695,7 @@ namespace mpark {
 #endif
       };
 
-#if _MSC_VER >= 1910
+#if KOKKOS_COMPILER_MSVC >= 1910
       template <typename F, typename... Vs>
       using fmatrix_t = decltype(base::make_fmatrix<F, Vs...>());
 
@@ -733,7 +733,7 @@ namespace mpark {
                                               lib::forward<Vs>(vs)))...>>::
                   template dispatch<0>(lib::forward<Visitor>(visitor),
                                        as_base(lib::forward<Vs>(vs))...);
-#elif _MSC_VER >= 1910
+#elif KOKKOS_COMPILER_MSVC >= 1910
 	      return base::at(
               fmatrix<Visitor &&,
                       decltype(as_base(lib::forward<Vs>(vs)))...>::value,
@@ -762,7 +762,7 @@ namespace mpark {
                   template dispatch_at<0>(index,
                                           lib::forward<Visitor>(visitor),
                                           as_base(lib::forward<Vs>(vs))...);
-#elif _MSC_VER >= 1910
+#elif KOKKOS_COMPILER_MSVC >= 1910
 	      return base::at(
               fdiagonal<Visitor &&,
                         decltype(as_base(lib::forward<Vs>(vs)))...>::value,
@@ -857,14 +857,14 @@ namespace mpark {
     struct alt {
       using value_type = T;
 
-#ifdef _MSC_VER
+#if defined(KOKKOS_COMPILER_MSVC)
 #pragma warning(push)
 #pragma warning(disable : 4244)
 #endif
       template <typename... Args>
       KOKKOS_INLINE_FUNCTION explicit constexpr alt(in_place_t, Args &&... args)
           : value(lib::forward<Args>(args)...) {}
-#ifdef _MSC_VER
+#if defined(KOKKOS_COMPILER_MSVC)
 #pragma warning(pop)
 #endif
 
@@ -972,18 +972,18 @@ namespace mpark {
     };
 
     struct dtor {
-#ifdef _MSC_VER
+#if defined(KOKKOS_COMPILER_MSVC)
 #pragma warning(push)
 #pragma warning(disable : 4100)
 #endif
       template <typename Alt>
       KOKKOS_INLINE_FUNCTION void operator()(Alt &alt) const noexcept { alt.~Alt(); }
-#ifdef _MSC_VER
+#if defined(KOKKOS_COMPILER_MSVC)
 #pragma warning(pop)
 #endif
     };
 
-#if !defined(_MSC_VER) || _MSC_VER >= 1910
+#if !defined(KOKKOS_COMPILER_MSVC) || KOKKOS_COMPILER_MSVC >= 1910
 #define MPARK_INHERITING_CTOR(type, base) using base::base;
 #else
 #define MPARK_INHERITING_CTOR(type, base)            \
@@ -1172,12 +1172,12 @@ namespace mpark {
       template <std::size_t I, typename T, typename Arg>
       KOKKOS_INLINE_FUNCTION constexpr void assign_alt(alt<I, T> &a, Arg &&arg) {
         if (this->index() == I) {
-#ifdef _MSC_VER
+#if defined(KOKKOS_COMPILER_MSVC)
 #pragma warning(push)
 #pragma warning(disable : 4244)
 #endif
           a.value = lib::forward<Arg>(arg);
-#ifdef _MSC_VER
+#if defined(KOKKOS_COMPILER_MSVC)
 #pragma warning(pop)
 #endif
         } else {
@@ -1396,7 +1396,7 @@ namespace mpark {
         I,
         T,
         true
-#if defined(__clang__) || !defined(__GNUC__) || __GNUC__ >= 5
+#if defined(KOKKOS_COMPILER_CLANG) || defined(KOKKOS_COMPILER_GNU)
         ,
         lib::enable_if_t<
             std::is_same<lib::remove_cvref_t<T>, bool>::value
