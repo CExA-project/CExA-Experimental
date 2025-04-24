@@ -11,8 +11,8 @@ namespace cexa::experimental {
 template <class T>
 KOKKOS_FORCEINLINE_FUNCTION constexpr std::enable_if_t<
     std::is_move_constructible_v<T> && std::is_move_assignable_v<T>>
-swap(T &a, T &b) noexcept(std::is_nothrow_move_constructible_v<T>
-                              &&std::is_nothrow_move_assignable_v<T>) {
+swap(T &a, T &b) noexcept(std::is_nothrow_move_constructible_v<T> &&
+                          std::is_nothrow_move_assignable_v<T>) {
   Kokkos::kokkos_swap(a, b);
 }
 
