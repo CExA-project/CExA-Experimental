@@ -25,7 +25,7 @@ swap(T (&a)[N], T (&b)[N]) noexcept(Kokkos::Impl::is_nothrow_swappable_v<T>) {
 }  // namespace cexa::experimental
 
 #if defined(KOKKOS_ENABLE_CUDA)
-#if KOKKOS_COMPILER_NVCC >= 1250
+#if KOKKOS_COMPILER_NVCC >= 1250 && !defined(KOKKOS_DISABLE_CUDA_VARIANT)
 #include <cuda/std/variant>
 #define KOKKOS_IMPL_VARIANT_PREFIX cuda::std
 #else

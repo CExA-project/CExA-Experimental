@@ -10,9 +10,14 @@ find_package(Kokkos REQUIRED)
 add_library(Cexa.Variant INTERFACE)
 target_include_directories(Cexa.Variant INTERFACE include/)
 
+option(CEXA_DISABLE_CUDA_IMPLEMENTATION "Never use the implementation of variant even if it is available in the cuda library" OFF)
 option(CEXA_BUILD_EXAMPLES "Build examples" OFF)
 option(CEXA_BUILD_TESTS "Build tests" OFF)
 option(CEXA_BUILD_MPARK_TESTS "Build the tests from MPark::variant" OFF)
+
+if("${CEXA_DISABLE_CUDA_IMPLEMENTATION}")
+  add_compile_definitions(KOKKOS_DISABLE_CUDA_VARIANT)
+endif()
 
 if("${CEXA_BUILD_EXAMPLES}")
   add_subdirectory(examples/)
