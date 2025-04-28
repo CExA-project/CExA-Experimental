@@ -16,7 +16,7 @@
 
 #include <gtest/gtest.h>
 
-#include "util.hpp"
+#include "../util.hpp"
 
 // This issues are specific to host specific function so no need to test them on
 // GPU

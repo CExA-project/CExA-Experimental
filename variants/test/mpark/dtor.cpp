@@ -12,7 +12,7 @@
 
 #include <gtest/gtest.h>
 
-#include "util.hpp"
+#include "../util.hpp"
 
 struct Obj {
   KOKKOS_FUNCTION Obj(bool &dtor_called) : dtor_called_(dtor_called) {}

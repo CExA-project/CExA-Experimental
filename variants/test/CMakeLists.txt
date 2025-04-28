@@ -5,13 +5,11 @@ cmake_minimum_required(VERSION 3.21.1)
 
 project(Cexa.Variant LANGUAGES CXX)
 
-find_package(Kokkos REQUIRED)
+list(APPEND TESTS
+  fct.ptr
+  virtual)
 
-enable_testing()
-
-add_subdirectory(${CMAKE_SOURCE_DIR}/3rdparty/googletest)
-
-set(TESTS
+list(APPEND TESTS_MPARK
   assign.copy
   assign.fwd
   assign.move
@@ -21,7 +19,6 @@ set(TESTS
   ctor.in_place
   ctor.move
   dtor
-  fct.ptr
   get
   hash
   intro
@@ -30,13 +27,19 @@ set(TESTS
   mod
   relops
   swap
-  virtual
   visit)
 
+if("${CEXA_BUILD_MPARK_TESTS}")
+  list(APPEND TESTS "${TESTS_MPARK}")
+endif()
+
 foreach(test ${TESTS})
-  add_executable(${test} ${test}.cpp)
+  if(${test} IN_LIST TESTS_MPARK)
+    add_executable(${test} mpark/${test}.cpp)
+  else()
+    add_executable(${test} ${test}.cpp)
+  endif()
   set_target_properties(${test} PROPERTIES COMPILE_FLAGS "${compile_flags}")
-  target_include_directories(${test} PRIVATE ..)
-  target_link_libraries(${test} gtest Kokkos::kokkos)
+  target_link_libraries(${test} gtest Kokkos::kokkos Cexa.Variant)
   add_test(${test} ${test} --gtest_color=yes)
 endforeach()
