@@ -10,8 +10,13 @@ find_package(Kokkos REQUIRED)
 add_library(Cexa.Variant INTERFACE)
 target_include_directories(Cexa.Variant INTERFACE include/)
 
+option(CEXA_BUILD_EXAMPLES "Build examples" OFF)
 option(CEXA_BUILD_TESTS "Build tests" OFF)
 option(CEXA_BUILD_MPARK_TESTS "Build the tests from MPark::variant" OFF)
+
+if("${CEXA_BUILD_EXAMPLES}")
+  add_subdirectory(examples/)
+endif()
 
 if("${CEXA_BUILD_MPARK_TESTS}" AND NOT "${CEXA_BUILD_TESTS}")
   message(FATAL_ERROR "Can't build MPark tests if testing is not enabled (CEXA_BUILD_TESTS should be ON)")
@@ -22,5 +27,3 @@ if("${CEXA_BUILD_TESTS}")
   add_subdirectory(${CMAKE_SOURCE_DIR}/3rdparty/googletest)
   add_subdirectory(tests/)
 endif()
-
-
