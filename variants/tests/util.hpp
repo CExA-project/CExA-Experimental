@@ -405,8 +405,7 @@ void test_helper() {
 template <typename T>
 KOKKOS_FUNCTION void print_arg_value(T t) {
   using type = std::remove_reference_t<std::remove_cv_t<T>>;
-  if constexpr (std::is_same_v<T, char *>
-      || std::is_same_v<T, const char *>) {
+  if constexpr (std::is_same_v<T, char *> || std::is_same_v<T, const char *>) {
     if (t != nullptr) {
       // FIXME This is not 100% safe, as there is no guarantee that a char* is
       // a pointer to a C-style string
