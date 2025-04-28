@@ -20,7 +20,7 @@ endif()
 if("${CEXA_BUILD_TESTS}")
   enable_testing()
   add_subdirectory(${CMAKE_SOURCE_DIR}/3rdparty/googletest)
-  add_subdirectory(test/)
+  add_subdirectory(tests/)
 endif()
 
 
