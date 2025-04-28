@@ -14,7 +14,7 @@
 
 #include <gtest/gtest.h>
 
-#include "util.hpp"
+#include "../util.hpp"
 
 struct FunctionCalled {
   bool move_constructor_called;

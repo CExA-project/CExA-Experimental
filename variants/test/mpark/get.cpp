@@ -14,7 +14,7 @@
 
 #include <gtest/gtest.h>
 
-#include "util.hpp"
+#include "../util.hpp"
 
 struct Get_HoldsAlternative {
   KOKKOS_FUNCTION void operator()(const int i, int &errors) const {

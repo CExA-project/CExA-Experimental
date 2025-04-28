@@ -12,7 +12,7 @@
 
 #include <gtest/gtest.h>
 
-#include "util.hpp"
+#include "../util.hpp"
 
 struct FunctionCalled {
   bool copy_constructor_called;

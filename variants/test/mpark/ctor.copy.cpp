@@ -12,7 +12,7 @@
 
 #include <gtest/gtest.h>
 
-#include "util.hpp"
+#include "../util.hpp"
 
 struct Ctor_Copy_Value {
   KOKKOS_FUNCTION void operator()(const int i, int &errors) const {

@@ -14,7 +14,7 @@
 
 #include <gtest/gtest.h>
 
-#include "util.hpp"
+#include "../util.hpp"
 
 // No need to test interaction between Kokkos::Variant and std::hash on GPU
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \

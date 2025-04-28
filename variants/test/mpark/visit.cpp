@@ -17,7 +17,7 @@
 
 #include <mpark/config.hpp>
 
-#include "util.hpp"
+#include "../util.hpp"
 
 struct Visit_MutVarMutType {
   KOKKOS_FUNCTION void operator()(const int i, int &errors) const {

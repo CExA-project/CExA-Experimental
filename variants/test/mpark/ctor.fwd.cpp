@@ -12,7 +12,7 @@
 
 #include <gtest/gtest.h>
 
-#include "util.hpp"
+#include "../util.hpp"
 
 struct Ctor_Fwd_Direct {
   KOKKOS_FUNCTION void operator()(const int i, int &errors) const {
