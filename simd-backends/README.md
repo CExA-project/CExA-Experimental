@@ -4,9 +4,9 @@ This header only library provides an interface to replace the Kokkos math functi
 
 ## Build
 
-To use the library, you can use the `find_package` command as shown in the
+To use this library, you can use the `find_package` command as shown in the
 example below. If not installed to a system location, you should provide the
-path to the library using the `-DKokkosSimdBackends_ROOT#<path to the lib>`
+path to the library using the `-DKokkosSimdBackends_ROOT=<path to the install location>`
 option.
 
 ```cmake
