@@ -16,4 +16,4 @@ To build examples:
 `cmake -B build_dir_name -DKokkos_DIR=${Kokkos_install_dir} -DCEXA_BUILD_EXAMPLES=ON`
 
 - Compile
-`cmake --build build_dir_name` [-j X]
+`cmake --build build_dir_name [-j X]`
