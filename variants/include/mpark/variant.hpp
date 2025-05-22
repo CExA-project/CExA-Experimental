@@ -220,12 +220,8 @@ namespace mpark {
   [[noreturn]] KOKKOS_INLINE_FUNCTION void throw_bad_variant_access() {
 #if defined(MPARK_EXCEPTIONS)
     throw bad_variant_access{};
-#elif  defined(__CUDA_ARCH__) ||       \
-    defined(__HIP_DEVICE_COMPILE__) || \
-    defined(__SYCL_DEVICE_ONLY__)
-    __assert_fail(nullptr, nullptr, 0, nullptr);
 #else
-    std::terminate();
+    Kokkos::abort("bad_variant_access");
 #endif
     MPARK_BUILTIN_UNREACHABLE;
   }
