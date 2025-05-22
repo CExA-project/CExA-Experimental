@@ -33,7 +33,7 @@ void do_computation() {
     std::cout << i << ": " << v[i]->f(i) << "\n";
   }
   
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; ++i) {
     delete v[i];
   }
 }
