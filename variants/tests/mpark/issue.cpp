@@ -23,7 +23,6 @@
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
     !defined(KOKKOS_ENABLE_SYCL)
 
-#ifdef MPARK_INCOMPLETE_TYPE_TRAITS
 // https://github.com/mpark/variant/issues/34
 TEST(Issue, 34) {
   struct S {
@@ -35,7 +34,6 @@ TEST(Issue, 34) {
     cexa::experimental::variant<std::map<test_util::DeviceString, S>> value;
   };
 }
-#endif
 
 // https://github.com/mpark/variant/pull/57
 TEST(Issue, 57) {

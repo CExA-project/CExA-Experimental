@@ -1391,14 +1391,11 @@ namespace mpark {
         Arg,
         I,
         T,
-        true
-#if defined(KOKKOS_COMPILER_CLANG) || defined(KOKKOS_COMPILER_GNU)
-        ,
+        true,
         lib::enable_if_t<
             std::is_same<lib::remove_cvref_t<T>, bool>::value
                 ? std::is_same<lib::remove_cvref_t<Arg>, bool>::value
                 : is_non_narrowing_convertible<Arg, T>::value>
-#endif
         > {
       using impl = lib::size_constant<I> (*)(T);
       KOKKOS_FUNCTION operator impl() const { return nullptr; };
