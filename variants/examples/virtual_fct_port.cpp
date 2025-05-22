@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-// Example of a code using virtual function, we want to parallelise it's main
+// Example of a code using virtual function, we want to parallelize its main
 // loop using Kokkos
 namespace original {
 struct A {
