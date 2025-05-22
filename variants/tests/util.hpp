@@ -8,8 +8,8 @@
 // SPDX-FileCopyrightText: Michael Park
 // SPDX-License-Identifier: BSL-1.0
 
-#ifndef KOKKOS_UTIL_HPP
-#define KOKKOS_UTIL_HPP
+#ifndef KOKKOS_VARIANT_TEST_UTIL_HPP
+#define KOKKOS_VARIANT_TEST_UTIL_HPP
 
 #ifndef __has_feature
 #define __has_feature(x) 0
