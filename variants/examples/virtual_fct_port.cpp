@@ -32,6 +32,10 @@ void do_computation() {
     // https://kokkos.org/kokkos-core-wiki/ProgrammingGuide/Kokkos-and-Virtual-Functions.html)
     std::cout << v[i]->f(i) << "\n";
   }
+  
+  for (int i = 0; i < 3; i++) {
+    delete v[i];
+  }
 }
 }  // namespace original
 
