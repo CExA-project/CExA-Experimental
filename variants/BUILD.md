@@ -9,7 +9,7 @@ Instruction to build tests:
 `cmake -B build_dir_name -DKokkos_DIR=${Kokkos_install_dir} -DCEXA_BUILD_TESTS=ON -DCEXA_BUILD_MPARK_TESTS=ON`
 
 - Compile
-`cmake --build build_dir_name` [-j X]
+`cmake --build build_dir_name [-j X]`
 
 To build examples:
 - Create cmake build dir:
