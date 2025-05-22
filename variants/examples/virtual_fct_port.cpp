@@ -30,7 +30,7 @@ void do_computation() {
   for (int i = 0; i < 3; ++i) {
     // This won't work on GPU (see here
     // https://kokkos.org/kokkos-core-wiki/ProgrammingGuide/Kokkos-and-Virtual-Functions.html)
-    std::cout << v[i]->f(i) << "\n";
+    std::cout << i << ": " << v[i]->f(i) << "\n";
   }
   
   for (int i = 0; i < 3; i++) {
@@ -71,7 +71,7 @@ void do_computation() {
   Kokkos::deep_copy(v, mv);
   Kokkos::parallel_for(
       Kokkos::RangePolicy(0, 3),
-      KOKKOS_LAMBDA(int i) { Kokkos::printf("%i\n", call_f(v(i), i)); });
+      KOKKOS_LAMBDA(int i) { Kokkos::printf("%i: %i\n", i, call_f(v(i), i)); });
 }
 }  // namespace Kokkos_port
 
