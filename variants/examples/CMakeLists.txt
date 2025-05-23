@@ -7,6 +7,5 @@ list(APPEND EXAMPLES
 
 foreach(example ${EXAMPLES})
   add_executable(${example} ${example}.cpp)
-  set_target_properties(${example} PROPERTIES COMPILE_FLAGS "${compile_flags}")
   target_link_libraries(${example} gtest Kokkos::kokkos Cexa.Variant)
 endforeach()
