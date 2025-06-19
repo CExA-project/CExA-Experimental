@@ -99,8 +99,8 @@ struct Swap_DtorsSame {
     {
       cexa::experimental::variant<Obj> v{&v_count}, w{&w_count};
       cexa::experimental::swap(v, w);
-      // Calls `cexa::experimental::swap(Obj &lhs, Obj &rhs)`, with which we
-      // perform:
+      // Calls `cexa::experimental::swap(Obj &lhs, Obj &rhs)`, which
+      // performs:
       // ```
       // {
       //   Obj temp(move(lhs));

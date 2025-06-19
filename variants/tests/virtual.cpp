@@ -7,6 +7,7 @@
 
 #include "util.hpp"
 
+// clang-format off
 struct A {
 #ifndef KOKKOS_ENABLE_SYCL
   KOKKOS_FUNCTION virtual test_util::DeviceString func(int in){
@@ -15,9 +16,9 @@ struct A {
   KOKKOS_FUNCTION test_util::DeviceString func(int in) {
 #endif
       return test_util::DeviceString("A") + in;
-}
-}
-;
+  }
+};
+// clang-format on
 
 struct B : public A {
   KOKKOS_FUNCTION test_util::DeviceString func(int in) {

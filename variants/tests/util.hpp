@@ -15,9 +15,10 @@
 #define __has_feature(x) 0
 #endif
 
-#if (__has_feature(cxx_exceptions) || defined(__cpp_exceptions) ||           \
-     (defined(_MSC_VER) && defined(_CPPUNWIND)) || defined(__EXCEPTIONS)) && \
-    !(defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP) ||           \
+#if (__has_feature(cxx_exceptions) || defined(__cpp_exceptions) || \
+     (defined(KOKKOS_COMPILER_MSVC) && defined(_CPPUNWIND)) ||     \
+     defined(__EXCEPTIONS)) &&                                     \
+    !(defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP) || \
       defined(KOKKOS_ENABLE_CUDA))
 
 #define EXCEPTIONS_AVAILABLE
@@ -137,7 +138,7 @@ KOKKOS_INLINE_FUNCTION bool operator!=(const move_thrower_t &,
 #endif
 
 // By default, HIP compiler tries to inline every function, which makes
-// compilation of some tests extremly slow.
+// compilation of some tests extremely slow.
 #ifdef KOKKOS_ENABLE_HIP
 #define KOKKOS_HIP_NO_INLINE __attribute__((noinline))
 #else
@@ -344,7 +345,7 @@ class DeviceString {
   // Concatenation
   KOKKOS_FUNCTION DeviceString &operator+=(const DeviceString &rhs) {
     _capacity = _size + rhs._size + 1;
-    // It still works on Sycl despite tmp_data == _data
+    // It still works on SYCL despite tmp_data == _data
     char *tmp_data =
         static_cast<char *>(_mempool.malloc(sizeof(char) * _capacity));
 

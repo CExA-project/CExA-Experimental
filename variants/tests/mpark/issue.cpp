@@ -18,8 +18,8 @@
 
 #include "../util.hpp"
 
-// This issues are specific to host specific function so no need to test them on
-// GPU
+// These issues are specific to host specific function so there is no need to
+// test them on GPU
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
     !defined(KOKKOS_ENABLE_SYCL)
 
