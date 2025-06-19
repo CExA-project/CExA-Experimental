@@ -21,7 +21,7 @@
 #define __has_feature(x) 0
 #endif
 
-#if __has_builtin(__builtin_addressof) || defined(KOKKOS_COMPILER_GNU) || \
+#if __has_builtin(__builtin_addressof) || defined(KOKKOS_COMPILER_GNU) ||      \
     defined(KOKKOS_COMPILER_MSVC)
 #define MPARK_BUILTIN_ADDRESSOF
 #endif
@@ -38,10 +38,10 @@
 #define MPARK_TYPE_PACK_ELEMENT
 #endif
 
-#if (__has_feature(cxx_exceptions) || defined(__cpp_exceptions) || \
-     (defined(KOKKOS_COMPILER_MSVC) && defined(_CPPUNWIND)) ||     \
-     defined(__EXCEPTIONS)) &&                                     \
-    !(defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP) || \
+#if (__has_feature(cxx_exceptions) || defined(__cpp_exceptions) ||             \
+     (defined(KOKKOS_COMPILER_MSVC) && defined(_CPPUNWIND)) ||                 \
+     defined(__EXCEPTIONS)) &&                                                 \
+    !(defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP) ||             \
       defined(KOKKOS_ENABLE_CUDA))
 #define MPARK_EXCEPTIONS
 #endif

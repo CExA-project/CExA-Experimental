@@ -3,8 +3,8 @@
 // Copyright Michael Park, 2015-2017
 //
 // Distributed under the Boost Software License, Version 1.0.
-// (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
-// SPDX-FileCopyrightText: Michael Park
+// (See accompanying file LICENSE.md or copy at
+// http://boost.org/LICENSE_1_0.txt) SPDX-FileCopyrightText: Michael Park
 // SPDX-License-Identifier: BSL-1.0
 
 #ifndef MPARK_LIB_HPP
@@ -18,396 +18,371 @@
 
 #include "config.hpp"
 
-#define MPARK_RETURN(...) \
-  noexcept(noexcept(__VA_ARGS__)) -> decltype(__VA_ARGS__) { return __VA_ARGS__; }
+#define MPARK_RETURN(...)                                                      \
+  noexcept(noexcept(__VA_ARGS__))->decltype(__VA_ARGS__) { return __VA_ARGS__; }
 
 namespace mpark {
-  namespace lib {
-    template <typename T>
-    struct identity { using type = T; };
+namespace lib {
+template <typename T> struct identity {
+  using type = T;
+};
 
-      template <typename T, std::size_t N>
-      struct array {
-        KOKKOS_FUNCTION constexpr const T &operator[](std::size_t index) const {
-          return data[index];
-        }
+template <typename T, std::size_t N> struct array {
+  KOKKOS_FUNCTION constexpr const T &operator[](std::size_t index) const {
+    return data[index];
+  }
 
-        T data[N == 0 ? 1 : N];
-      };
+  T data[N == 0 ? 1 : N];
+};
 
-      template <typename T>
-      using add_pointer_t = typename std::add_pointer<T>::type;
+template <typename T> using add_pointer_t = typename std::add_pointer<T>::type;
 
-      template <typename... Ts>
-      using common_type_t = typename std::common_type<Ts...>::type;
+template <typename... Ts>
+using common_type_t = typename std::common_type<Ts...>::type;
 
-      template <typename T>
-      using decay_t = typename std::decay<T>::type;
+template <typename T> using decay_t = typename std::decay<T>::type;
 
-      template <bool B, typename T = void>
-      using enable_if_t = typename std::enable_if<B, T>::type;
+template <bool B, typename T = void>
+using enable_if_t = typename std::enable_if<B, T>::type;
 
-      template <typename T>
-      using remove_const_t = typename std::remove_const<T>::type;
+template <typename T>
+using remove_const_t = typename std::remove_const<T>::type;
 
-      template <typename T>
-      using remove_reference_t = typename std::remove_reference<T>::type;
+template <typename T>
+using remove_reference_t = typename std::remove_reference<T>::type;
 
-      template <typename T>
-      using remove_cvref_t =
-          typename std::remove_cv<remove_reference_t<T>>::type;
+template <typename T>
+using remove_cvref_t = typename std::remove_cv<remove_reference_t<T>>::type;
 
-      template <typename T>
-      KOKKOS_INLINE_FUNCTION constexpr T &&forward(remove_reference_t<T> &t) noexcept {
-        return static_cast<T &&>(t);
-      }
+template <typename T>
+KOKKOS_INLINE_FUNCTION constexpr T &&
+forward(remove_reference_t<T> &t) noexcept {
+  return static_cast<T &&>(t);
+}
 
-      template <typename T>
-      KOKKOS_INLINE_FUNCTION constexpr T &&forward(remove_reference_t<T> &&t) noexcept {
-        static_assert(!std::is_lvalue_reference<T>::value,
-                      "can not forward an rvalue as an lvalue");
-        return static_cast<T &&>(t);
-      }
+template <typename T>
+KOKKOS_INLINE_FUNCTION constexpr T &&
+forward(remove_reference_t<T> &&t) noexcept {
+  static_assert(!std::is_lvalue_reference<T>::value,
+                "can not forward an rvalue as an lvalue");
+  return static_cast<T &&>(t);
+}
 
-      template <typename T>
-      KOKKOS_INLINE_FUNCTION constexpr remove_reference_t<T> &&move(T &&t) noexcept {
-        return static_cast<remove_reference_t<T> &&>(t);
-      }
+template <typename T>
+KOKKOS_INLINE_FUNCTION constexpr remove_reference_t<T> &&move(T &&t) noexcept {
+  return static_cast<remove_reference_t<T> &&>(t);
+}
 
-      using std::integer_sequence;
-      using std::index_sequence;
-      using std::make_index_sequence;
-      using std::index_sequence_for;
+using std::index_sequence;
+using std::index_sequence_for;
+using std::integer_sequence;
+using std::make_index_sequence;
 
-      struct equal_to {
-        template <typename Lhs, typename Rhs>
-          KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
-          MPARK_RETURN(lib::forward<Lhs>(lhs) == lib::forward<Rhs>(rhs))
-      };
-      struct not_equal_to {
-        template <typename Lhs, typename Rhs>
-          KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
-          MPARK_RETURN(lib::forward<Lhs>(lhs) != lib::forward<Rhs>(rhs))
-      };
-      struct less {
-        template <typename Lhs, typename Rhs>
-          KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
-          MPARK_RETURN(lib::forward<Lhs>(lhs) < lib::forward<Rhs>(rhs))
-      };
-      struct greater {
-        template <typename Lhs, typename Rhs>
-          KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
-          MPARK_RETURN(lib::forward<Lhs>(lhs) > lib::forward<Rhs>(rhs))
-      };
-      struct less_equal {
-        template <typename Lhs, typename Rhs>
-          KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
-          MPARK_RETURN(lib::forward<Lhs>(lhs) <= lib::forward<Rhs>(rhs))
-      };
-      struct greater_equal {
-        template <typename Lhs, typename Rhs>
-          KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
-          MPARK_RETURN(lib::forward<Lhs>(lhs) >= lib::forward<Rhs>(rhs))
-      };
+struct equal_to {
+  template <typename Lhs, typename Rhs>
+  KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+      MPARK_RETURN(lib::forward<Lhs>(lhs) == lib::forward<Rhs>(rhs))
+};
+struct not_equal_to {
+  template <typename Lhs, typename Rhs>
+  KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+      MPARK_RETURN(lib::forward<Lhs>(lhs) != lib::forward<Rhs>(rhs))
+};
+struct less {
+  template <typename Lhs, typename Rhs>
+  KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+      MPARK_RETURN(lib::forward<Lhs>(lhs) < lib::forward<Rhs>(rhs))
+};
+struct greater {
+  template <typename Lhs, typename Rhs>
+  KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+      MPARK_RETURN(lib::forward<Lhs>(lhs) > lib::forward<Rhs>(rhs))
+};
+struct less_equal {
+  template <typename Lhs, typename Rhs>
+  KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+      MPARK_RETURN(lib::forward<Lhs>(lhs) <= lib::forward<Rhs>(rhs))
+};
+struct greater_equal {
+  template <typename Lhs, typename Rhs>
+  KOKKOS_INLINE_FUNCTION constexpr auto operator()(Lhs &&lhs, Rhs &&rhs) const
+      MPARK_RETURN(lib::forward<Lhs>(lhs) >= lib::forward<Rhs>(rhs))
+};
 
-      // <type_traits>
-      template <bool B>
-      using bool_constant = std::integral_constant<bool, B>;
+// <type_traits>
+template <bool B> using bool_constant = std::integral_constant<bool, B>;
 
-      template <typename...>
-      struct voider : identity<void> {};
+template <typename...> struct voider : identity<void> {};
 
-      template <typename... Ts>
-      using void_t = typename voider<Ts...>::type;
+template <typename... Ts> using void_t = typename voider<Ts...>::type;
 
-      namespace detail {
-        namespace swappable {
+namespace detail {
+namespace swappable {
 
-          using std::swap;
+using std::swap;
 
-          template <typename T>
-          struct is_swappable {
-            private:
-            template <typename U,
-                      typename = decltype(swap(std::declval<U &>(),
-                                               std::declval<U &>()))>
-            KOKKOS_INLINE_FUNCTION static std::true_type test(int);
+template <typename T> struct is_swappable {
+private:
+  template <typename U,
+            typename = decltype(swap(std::declval<U &>(), std::declval<U &>()))>
+  KOKKOS_INLINE_FUNCTION static std::true_type test(int);
 
-            template <typename U>
-            KOKKOS_INLINE_FUNCTION static std::false_type test(...);
+  template <typename U> KOKKOS_INLINE_FUNCTION static std::false_type test(...);
 
-            public:
-            static constexpr bool value = decltype(test<T>(0))::value;
-          };
+public:
+  static constexpr bool value = decltype(test<T>(0))::value;
+};
 
-          template <bool IsSwappable, typename T>
-          struct is_nothrow_swappable {
-            static constexpr bool value =
-                noexcept(swap(std::declval<T &>(), std::declval<T &>()));
-          };
+template <bool IsSwappable, typename T> struct is_nothrow_swappable {
+  static constexpr bool value =
+      noexcept(swap(std::declval<T &>(), std::declval<T &>()));
+};
 
-          template <typename T>
-          struct is_nothrow_swappable<false, T> : std::false_type {};
+template <typename T>
+struct is_nothrow_swappable<false, T> : std::false_type {};
 
-        }  // namespace swappable
-      }  // namespace detail
+} // namespace swappable
+} // namespace detail
 
-      using detail::swappable::is_swappable;
+using detail::swappable::is_swappable;
 
-      template <typename T>
-      using is_nothrow_swappable =
-          detail::swappable::is_nothrow_swappable<is_swappable<T>::value, T>;
+template <typename T>
+using is_nothrow_swappable =
+    detail::swappable::is_nothrow_swappable<is_swappable<T>::value, T>;
 
-      // <functional>
-      namespace detail {
+// <functional>
+namespace detail {
 
-        template <typename T>
-        struct is_reference_wrapper : std::false_type {};
+template <typename T> struct is_reference_wrapper : std::false_type {};
 
-        template <typename T>
-        struct is_reference_wrapper<std::reference_wrapper<T>>
-            : std::true_type {};
+template <typename T>
+struct is_reference_wrapper<std::reference_wrapper<T>> : std::true_type {};
 
-        template <bool, int>
-        struct Invoke;
+template <bool, int> struct Invoke;
 
-        template <>
-        struct Invoke<true /* pmf */, 0 /* is_base_of */> {
-          template <typename R, typename T, typename Arg, typename... Args>
-          KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmf, Arg &&arg, Args &&... args)
-            MPARK_RETURN((lib::forward<Arg>(arg).*pmf)(lib::forward<Args>(args)...))
-        };
+template <> struct Invoke<true /* pmf */, 0 /* is_base_of */> {
+  template <typename R, typename T, typename Arg, typename... Args>
+  KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmf, Arg &&arg,
+                                                      Args &&...args)
+      MPARK_RETURN((lib::forward<Arg>(arg).*pmf)(lib::forward<Args>(args)...))
+};
 
-        template <>
-        struct Invoke<true /* pmf */, 1 /* is_reference_wrapper */> {
-          template <typename R, typename T, typename Arg, typename... Args>
-          KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmf, Arg &&arg, Args &&... args)
-            MPARK_RETURN((lib::forward<Arg>(arg).get().*pmf)(lib::forward<Args>(args)...))
-        };
+template <> struct Invoke<true /* pmf */, 1 /* is_reference_wrapper */> {
+  template <typename R, typename T, typename Arg, typename... Args>
+  KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmf, Arg &&arg,
+                                                      Args &&...args)
+      MPARK_RETURN((lib::forward<Arg>(arg).get().*
+                    pmf)(lib::forward<Args>(args)...))
+};
 
-        template <>
-        struct Invoke<true /* pmf */, 2 /* otherwise */> {
-          template <typename R, typename T, typename Arg, typename... Args>
-          KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmf, Arg &&arg, Args &&... args)
-            MPARK_RETURN(((*lib::forward<Arg>(arg)).*pmf)(lib::forward<Args>(args)...))
-        };
+template <> struct Invoke<true /* pmf */, 2 /* otherwise */> {
+  template <typename R, typename T, typename Arg, typename... Args>
+  KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmf, Arg &&arg,
+                                                      Args &&...args)
+      MPARK_RETURN(((*lib::forward<Arg>(arg)).*
+                    pmf)(lib::forward<Args>(args)...))
+};
 
-        template <>
-        struct Invoke<false /* pmo */, 0 /* is_base_of */> {
-          template <typename R, typename T, typename Arg>
-          KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmo, Arg &&arg)
-            MPARK_RETURN(lib::forward<Arg>(arg).*pmo)
-        };
+template <> struct Invoke<false /* pmo */, 0 /* is_base_of */> {
+  template <typename R, typename T, typename Arg>
+  KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmo, Arg &&arg)
+      MPARK_RETURN(lib::forward<Arg>(arg).*pmo)
+};
 
-        template <>
-        struct Invoke<false /* pmo */, 1 /* is_reference_wrapper */> {
-          template <typename R, typename T, typename Arg>
-          KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmo, Arg &&arg)
-            MPARK_RETURN(lib::forward<Arg>(arg).get().*pmo)
-        };
+template <> struct Invoke<false /* pmo */, 1 /* is_reference_wrapper */> {
+  template <typename R, typename T, typename Arg>
+  KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmo, Arg &&arg)
+      MPARK_RETURN(lib::forward<Arg>(arg).get().*pmo)
+};
 
-        template <>
-        struct Invoke<false /* pmo */, 2 /* otherwise */> {
-          template <typename R, typename T, typename Arg>
-          KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmo, Arg &&arg)
-              MPARK_RETURN((*lib::forward<Arg>(arg)).*pmo)
-        };
+template <> struct Invoke<false /* pmo */, 2 /* otherwise */> {
+  template <typename R, typename T, typename Arg>
+  KOKKOS_INLINE_FUNCTION static constexpr auto invoke(R T::*pmo, Arg &&arg)
+      MPARK_RETURN((*lib::forward<Arg>(arg)).*pmo)
+};
 
-        template <typename R, typename T, typename Arg, typename... Args>
-        KOKKOS_INLINE_FUNCTION constexpr auto invoke(R T::*f, Arg &&arg, Args &&... args)
-          MPARK_RETURN(
-              Invoke<std::is_function<R>::value,
-                     (std::is_base_of<T, lib::decay_t<Arg>>::value
-                          ? 0
-                          : is_reference_wrapper<lib::decay_t<Arg>>::value
-                                ? 1
-                                : 2)>::invoke(f,
-                                              lib::forward<Arg>(arg),
-                                              lib::forward<Args>(args)...))
+template <typename R, typename T, typename Arg, typename... Args>
+KOKKOS_INLINE_FUNCTION constexpr auto invoke(R T::*f, Arg &&arg, Args &&...args)
+    MPARK_RETURN(Invoke<std::is_function<R>::value,
+                        (std::is_base_of<T, lib::decay_t<Arg>>::value ? 0
+                         : is_reference_wrapper<lib::decay_t<Arg>>::value
+                             ? 1
+                             : 2)>::invoke(f, lib::forward<Arg>(arg),
+                                           lib::forward<Args>(args)...))
 
 #if defined(KOKKOS_COMPILER_MSVC)
 #pragma warning(push)
 #pragma warning(disable : 4100)
 #endif
         template <typename F, typename... Args>
-        KOKKOS_INLINE_FUNCTION constexpr auto invoke(F &&f, Args &&... args)
-          MPARK_RETURN(lib::forward<F>(f)(lib::forward<Args>(args)...))
+        KOKKOS_INLINE_FUNCTION constexpr auto invoke(F &&f, Args &&...args)
+            MPARK_RETURN(lib::forward<F>(f)(lib::forward<Args>(args)...))
 #if defined(KOKKOS_COMPILER_MSVC)
 #pragma warning(pop)
 #endif
-      }  // namespace detail
+} // namespace detail
 
-      template <typename F, typename... Args>
-      KOKKOS_INLINE_FUNCTION constexpr auto invoke(F &&f, Args &&... args)
-        MPARK_RETURN(detail::invoke(lib::forward<F>(f),
-                                    lib::forward<Args>(args)...))
+template <typename F, typename... Args>
+KOKKOS_INLINE_FUNCTION constexpr auto invoke(F &&f, Args &&...args)
+    MPARK_RETURN(detail::invoke(lib::forward<F>(f),
+                                lib::forward<Args>(args)...))
 
-      namespace detail {
+        namespace detail {
 
-        template <typename Void, typename, typename...>
-        struct invoke_result {};
+  template <typename Void, typename, typename...> struct invoke_result {};
 
-        template <typename F, typename... Args>
-        struct invoke_result<void_t<decltype(lib::invoke(
-                                 std::declval<F>(), std::declval<Args>()...))>,
-                             F,
-                             Args...>
-            : identity<decltype(
-                  lib::invoke(std::declval<F>(), std::declval<Args>()...))> {};
+  template <typename F, typename... Args>
+  struct invoke_result<
+      void_t<decltype(lib::invoke(std::declval<F>(), std::declval<Args>()...))>,
+      F, Args...> : identity<decltype(lib::invoke(std::declval<F>(),
+                                                  std::declval<Args>()...))> {};
 
-      }  // namespace detail
+} // namespace detail
 
-      template <typename F, typename... Args>
-      using invoke_result = detail::invoke_result<void, F, Args...>;
+template <typename F, typename... Args>
+using invoke_result = detail::invoke_result<void, F, Args...>;
 
-      template <typename F, typename... Args>
-      using invoke_result_t = typename invoke_result<F, Args...>::type;
+template <typename F, typename... Args>
+using invoke_result_t = typename invoke_result<F, Args...>::type;
 
-      namespace detail {
+namespace detail {
 
-        template <typename Void, typename, typename...>
-        struct is_invocable : std::false_type {};
+template <typename Void, typename, typename...>
+struct is_invocable : std::false_type {};
 
-        template <typename F, typename... Args>
-        struct is_invocable<void_t<invoke_result_t<F, Args...>>, F, Args...>
-            : std::true_type {};
+template <typename F, typename... Args>
+struct is_invocable<void_t<invoke_result_t<F, Args...>>, F, Args...>
+    : std::true_type {};
 
-        template <typename Void, typename, typename, typename...>
-        struct is_invocable_r : std::false_type {};
+template <typename Void, typename, typename, typename...>
+struct is_invocable_r : std::false_type {};
 
-        template <typename R, typename F, typename... Args>
-        struct is_invocable_r<void_t<invoke_result_t<F, Args...>>,
-                              R,
-                              F,
-                              Args...>
-            : std::is_convertible<invoke_result_t<F, Args...>, R> {};
+template <typename R, typename F, typename... Args>
+struct is_invocable_r<void_t<invoke_result_t<F, Args...>>, R, F, Args...>
+    : std::is_convertible<invoke_result_t<F, Args...>, R> {};
 
-      }  // namespace detail
+} // namespace detail
 
-      template <typename F, typename... Args>
-      using is_invocable = detail::is_invocable<void, F, Args...>;
+template <typename F, typename... Args>
+using is_invocable = detail::is_invocable<void, F, Args...>;
 
-      template <typename R, typename F, typename... Args>
-      using is_invocable_r = detail::is_invocable_r<void, R, F, Args...>;
+template <typename R, typename F, typename... Args>
+using is_invocable_r = detail::is_invocable_r<void, R, F, Args...>;
 
-      // <memory>
+// <memory>
 #ifdef MPARK_BUILTIN_ADDRESSOF
-      template <typename T>
-      KOKKOS_INLINE_FUNCTION constexpr T *addressof(T &arg) noexcept {
-        return __builtin_addressof(arg);
-      }
+template <typename T>
+KOKKOS_INLINE_FUNCTION constexpr T *addressof(T &arg) noexcept {
+  return __builtin_addressof(arg);
+}
 #else
-      namespace detail {
+namespace detail {
 
-        namespace has_addressof_impl {
+namespace has_addressof_impl {
 
-          struct fail;
+struct fail;
 
-          template <typename T>
-          KOKKOS_INLINE_FUNCTION fail operator&(T &&);
+template <typename T> KOKKOS_INLINE_FUNCTION fail operator&(T &&);
 
-          template <typename T>
-          KOKKOS_INLINE_FUNCTION static constexpr bool impl() {
-            return (std::is_class<T>::value || std::is_union<T>::value) &&
-                   !std::is_same<decltype(&std::declval<T &>()), fail>::value;
-          }
+template <typename T> KOKKOS_INLINE_FUNCTION static constexpr bool impl() {
+  return (std::is_class<T>::value || std::is_union<T>::value) &&
+         !std::is_same<decltype(&std::declval<T &>()), fail>::value;
+}
 
-        }  // namespace has_addressof_impl
+} // namespace has_addressof_impl
 
-        template <typename T>
-        using has_addressof = bool_constant<has_addressof_impl::impl<T>()>;
+template <typename T>
+using has_addressof = bool_constant<has_addressof_impl::impl<T>()>;
 
-        template <typename T>
-        KOKKOS_INLINE_FUNCTION constexpr T *addressof(T &arg, std::true_type) noexcept {
-          return std::addressof(arg);
-        }
+template <typename T>
+KOKKOS_INLINE_FUNCTION constexpr T *addressof(T &arg, std::true_type) noexcept {
+  return std::addressof(arg);
+}
 
-        template <typename T>
-        KOKKOS_INLINE_FUNCTION constexpr T *addressof(T &arg, std::false_type) noexcept {
-          return &arg;
-        }
+template <typename T>
+KOKKOS_INLINE_FUNCTION constexpr T *addressof(T &arg,
+                                              std::false_type) noexcept {
+  return &arg;
+}
 
-      }  // namespace detail
+} // namespace detail
 
-      template <typename T>
-      KOKKOS_INLINE_FUNCTION constexpr T *addressof(T &arg) noexcept {
-        return detail::addressof(arg, detail::has_addressof<T>{});
-      }
+template <typename T>
+KOKKOS_INLINE_FUNCTION constexpr T *addressof(T &arg) noexcept {
+  return detail::addressof(arg, detail::has_addressof<T>{});
+}
 #endif
 
-      template <typename T>
-      KOKKOS_INLINE_FUNCTION constexpr T *addressof(const T &&) = delete;
+template <typename T>
+KOKKOS_INLINE_FUNCTION constexpr T *addressof(const T &&) = delete;
 
-    template <typename T>
-    struct remove_all_extents : identity<T> {};
+template <typename T> struct remove_all_extents : identity<T> {};
 
-    template <typename T, std::size_t N>
-    struct remove_all_extents<array<T, N>> : remove_all_extents<T> {};
+template <typename T, std::size_t N>
+struct remove_all_extents<array<T, N>> : remove_all_extents<T> {};
 
-    template <typename T>
-    using remove_all_extents_t = typename remove_all_extents<T>::type;
+template <typename T>
+using remove_all_extents_t = typename remove_all_extents<T>::type;
 
-    template <std::size_t N>
-    using size_constant = std::integral_constant<std::size_t, N>;
+template <std::size_t N>
+using size_constant = std::integral_constant<std::size_t, N>;
 
-    template <std::size_t I, typename T>
-    struct indexed_type : size_constant<I> { using type = T; };
+template <std::size_t I, typename T> struct indexed_type : size_constant<I> {
+  using type = T;
+};
 
-    template <bool... Bs>
-    using all = std::is_same<integer_sequence<bool, true, Bs...>,
-                             integer_sequence<bool, Bs..., true>>;
+template <bool... Bs>
+using all = std::is_same<integer_sequence<bool, true, Bs...>,
+                         integer_sequence<bool, Bs..., true>>;
 
 #ifdef MPARK_TYPE_PACK_ELEMENT
-    template <std::size_t I, typename... Ts>
-    using type_pack_element_t = __type_pack_element<I, Ts...>;
+template <std::size_t I, typename... Ts>
+using type_pack_element_t = __type_pack_element<I, Ts...>;
 #else
-    template <std::size_t I, typename... Ts>
-    struct type_pack_element_impl {
-      private:
-      template <typename>
-      struct set;
+template <std::size_t I, typename... Ts> struct type_pack_element_impl {
+private:
+  template <typename> struct set;
 
-      template <std::size_t... Is>
-      struct set<index_sequence<Is...>> : indexed_type<Is, Ts>... {};
+  template <std::size_t... Is>
+  struct set<index_sequence<Is...>> : indexed_type<Is, Ts>... {};
 
-      template <typename T>
-      KOKKOS_INLINE_FUNCTION static std::enable_if<true, T> impl(indexed_type<I, T>);
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION static std::enable_if<true, T>
+      impl(indexed_type<I, T>);
 
-      KOKKOS_INLINE_FUNCTION static std::enable_if<false> impl(...);
+  KOKKOS_INLINE_FUNCTION static std::enable_if<false> impl(...);
 
-      public:
-      using type = decltype(impl(set<index_sequence_for<Ts...>>{}));
-    };
+public:
+  using type = decltype(impl(set<index_sequence_for<Ts...>>{}));
+};
 
-    template <std::size_t I, typename... Ts>
-    using type_pack_element = typename type_pack_element_impl<I, Ts...>::type;
+template <std::size_t I, typename... Ts>
+using type_pack_element = typename type_pack_element_impl<I, Ts...>::type;
 
-    template <std::size_t I, typename... Ts>
-    using type_pack_element_t = typename type_pack_element<I, Ts...>::type;
+template <std::size_t I, typename... Ts>
+using type_pack_element_t = typename type_pack_element<I, Ts...>::type;
 #endif
 
-    using std::is_trivially_copy_constructible;
-    using std::is_trivially_move_constructible;
-    using std::is_trivially_copy_assignable;
-    using std::is_trivially_move_assignable;
+using std::is_trivially_copy_assignable;
+using std::is_trivially_copy_constructible;
+using std::is_trivially_move_assignable;
+using std::is_trivially_move_constructible;
 
-    template <typename T, bool>
-    struct dependent_type : T {};
+template <typename T, bool> struct dependent_type : T {};
 
-    template <typename Is, std::size_t J>
-    struct push_back;
+template <typename Is, std::size_t J> struct push_back;
 
-    template <typename Is, std::size_t J>
-    using push_back_t = typename push_back<Is, J>::type;
+template <typename Is, std::size_t J>
+using push_back_t = typename push_back<Is, J>::type;
 
-    template <std::size_t... Is, std::size_t J>
-    struct push_back<index_sequence<Is...>, J> {
-      using type = index_sequence<Is..., J>;
-    };
+template <std::size_t... Is, std::size_t J>
+struct push_back<index_sequence<Is...>, J> {
+  using type = index_sequence<Is..., J>;
+};
 
-  }  // namespace lib
-}  // namespace mpark
+} // namespace lib
+} // namespace mpark
 
 #undef MPARK_RETURN
 
-#endif  // MPARK_LIB_HPP
+#endif // MPARK_LIB_HPP
