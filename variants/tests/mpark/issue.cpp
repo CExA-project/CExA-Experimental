@@ -1,0 +1,46 @@
+// MPark.Variant
+//
+// Copyright Michael Park, 2015-2017
+//
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE.md or copy at
+// http://boost.org/LICENSE_1_0.txt)
+// SPDX-FileCopyrightText: Michael Park
+// SPDX-License-Identifier: BSL-1.0
+
+#include <Kokkos_Variant.hpp>
+
+#include <map>
+#include <memory>
+#include <vector>
+
+#include <gtest/gtest.h>
+
+#include "../util.hpp"
+
+// These issues are specific to host specific function so there is no need to
+// test them on GPU
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
+    !defined(KOKKOS_ENABLE_SYCL)
+
+// https://github.com/mpark/variant/issues/34
+TEST(Issue, 34) {
+  struct S {
+    S(const S &)            = default;
+    S(S &&)                 = default;
+    S &operator=(const S &) = default;
+    S &operator=(S &&)      = default;
+
+    cexa::experimental::variant<std::map<test_util::DeviceString, S>> value;
+  };
+}
+
+// https://github.com/mpark/variant/pull/57
+TEST(Issue, 57) {
+  std::vector<cexa::experimental::variant<int, std::unique_ptr<int>>> vec;
+  vec.emplace_back(0);
+}
+
+#endif
+
+TEST_MAIN
