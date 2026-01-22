@@ -42,3 +42,36 @@ foreach(test ${TESTS})
   target_link_libraries(${test} gtest Kokkos::kokkos Cexa.Variant)
   add_test(${test} ${test} --gtest_color=yes)
 endforeach()
+
+find_package(benchmark QUIET 1.8.3)
+if(benchmark_FOUND)
+  message(STATUS "Using google benchmark found in ${benchmark_DIR}")
+else()
+  message(STATUS "No installed google benchmark found, fetching from GitHub")
+  include(FetchContent)
+  set(BENCHMARK_ENABLE_TESTING OFF)
+
+  list(APPEND CMAKE_MESSAGE_INDENT "[benchmark] ")
+  FetchContent_Declare(
+    googlebenchmark
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    URL https://github.com/google/benchmark/archive/refs/tags/v1.8.3.tar.gz
+    URL_HASH MD5=7b93dd03670665684f1b2e9b70ad17fe
+  )
+  FetchContent_MakeAvailable(googlebenchmark)
+  list(POP_BACK CMAKE_MESSAGE_INDENT)
+
+  # Suppress clang-tidy diagnostics on code that we do not have control over
+  if(CMAKE_CXX_CLANG_TIDY)
+    set_target_properties(benchmark PROPERTIES CXX_CLANG_TIDY "")
+  endif()
+
+  target_compile_options(benchmark PRIVATE -w)
+  target_compile_options(benchmark_main PRIVATE -w)
+endif()
+
+
+add_executable(bench bench.cpp)
+target_link_libraries(bench PRIVATE benchmark::benchmark Kokkos::kokkos Cexa.Variant)
+target_include_directories(bench SYSTEM PRIVATE ${benchmark_SOURCE_DIR}/include)
+add_test(NAME bench COMMAND bench --benchmark_counters_tabular=true --benchmark_out=bench_0.json)
