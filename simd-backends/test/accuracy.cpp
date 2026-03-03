@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_SIMD.hpp>
-#include <Kokkos_SIMD_Backends.hpp>
+#include <CEXA_SIMD_Backends.hpp>
 
 using simd_type          = Kokkos::Experimental::simd<float>;
 constexpr int simd_width = simd_type::size();
@@ -55,7 +55,7 @@ TEST_UNARY_FUNC(acosh)
 TEST_UNARY_FUNC(atanh)
 TEST_UNARY_FUNC(erf)
 TEST_UNARY_FUNC(erfc)
-#if defined(KOKKOS_ENABLE_SLEEF)
+#if defined(CEXA_ENABLE_SLEEF)
 TEST_UNARY_FUNC(tgamma)
 TEST_UNARY_FUNC(lgamma)
 #endif
