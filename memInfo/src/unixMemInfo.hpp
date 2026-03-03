@@ -4,40 +4,41 @@
 #include <unistd.h>
 
 #include <cstddef>
-#include <sstream>
 #include <fstream>
+#include <sstream>
+#include <string>
 
 #include <Kokkos_Core.hpp>
 
-namespace Kokkos {
-namespace Experimental {
+namespace Kokkos::Experimental {
 
 namespace {
-  constexpr size_t NO_LIMIT          = 1ull << 50; // No limit (like PAGE_COUNT_MAX)
-  constexpr int OVERCOMMIT_DISABLED = 2;
-  // Memory info keys
-  constexpr char MEM_FREE_KEY[]     = "MemFree:";
-  constexpr char MEM_TOTAL_KEY[]    = "MemTotal:";
-  constexpr char COMMITTED_AS_KEY[] = "Committed_AS:";
-  constexpr char COMMIT_LIMIT_KEY[] = "CommitLimit:";
-  // Cgroup v1 memory info
-  constexpr char CGROUP_PROCS[]     = "cgroup.procs";
-  constexpr char MEM_LIMIT_BYTES[]  = "memory.limit_in_bytes";
-  constexpr char MEM_USAGE_BYTES[]  = "memory.usage_in_bytes";
-  // Paths
-  constexpr char MEMINFO_PATH[]     = "/proc/meminfo";
-  constexpr char OVERCOMMIT_PATH[]  = "/proc/sys/vm/overcommit_memory";
-  constexpr char CGROUP_MEM_PATH[]  = "/sys/fs/cgroup/memory";
-}
+constexpr size_t NO_LIMIT = 1ULL << 50ULL;  // No limit (like PAGE_COUNT_MAX)
+constexpr int OVERCOMMIT_DISABLED = 2;
+// Memory info keys
+constexpr char MEM_FREE_KEY[]     = "MemFree:";
+constexpr char MEM_TOTAL_KEY[]    = "MemTotal:";
+constexpr char COMMITTED_AS_KEY[] = "Committed_AS:";
+constexpr char COMMIT_LIMIT_KEY[] = "CommitLimit:";
+// Cgroup v1 memory info
+constexpr char CGROUP_PROCS[]    = "cgroup.procs";
+constexpr char MEM_LIMIT_BYTES[] = "memory.limit_in_bytes";
+constexpr char MEM_USAGE_BYTES[] = "memory.usage_in_bytes";
+// Paths
+constexpr char MEMINFO_PATH[]    = "/proc/meminfo";
+constexpr char OVERCOMMIT_PATH[] = "/proc/sys/vm/overcommit_memory";
+constexpr char CGROUP_MEM_PATH[] = "/sys/fs/cgroup/memory";
+constexpr char CGROUP_V2_PATH[]  = "/sys/fs/cgroup/cgroup.controllers";
+}  // namespace
 
 template <typename Space>
 void MemGetInfo(size_t* free, size_t* total);
 
 // On some systems, overcommit is disabled, and the kernel does not allow
 // memory allocation beyond the commit limit. This means that allocations
-// that touch only a small amount of memory are still counted at their full size.
-// man proc_sys_vm
-bool is_overcommit_disabled() {
+// that touch only a small amount of memory are still counted at their full
+// size. man proc_sys_vm
+inline bool is_overcommit_disabled() {
   std::ifstream overcommit_file(OVERCOMMIT_PATH);
   int overcommit_value = 0;
 
@@ -49,7 +50,8 @@ bool is_overcommit_disabled() {
   return false;
 }
 
-size_t get_meminfo_value(const char* key) {
+// Extract a value from /proc/meminfo
+inline size_t get_meminfo_value(const char* key) {
   std::ifstream meminfo(MEMINFO_PATH);
   size_t value = 0;
   std::string line;
@@ -69,7 +71,7 @@ size_t get_meminfo_value(const char* key) {
 }
 
 // Extract a value from a cgroup file
-size_t get_cgroup_value(const char* path) {
+inline size_t get_cgroup_value(const char* path) {
   std::ifstream cgroup_file(path);
   size_t value = 0;
 
@@ -81,7 +83,8 @@ size_t get_cgroup_value(const char* path) {
 }
 
 // Check if a process is in the cgroup.procs file
-bool is_pid_in_cgroup_procs(const char* cgroup_procs_path, const pid_t pid) {
+inline bool is_pid_in_cgroup_procs(const char* cgroup_procs_path,
+                                   const pid_t pid) {
   std::ifstream cgroup_procs(cgroup_procs_path);
   pid_t proc_id = 0;
 
@@ -97,13 +100,13 @@ bool is_pid_in_cgroup_procs(const char* cgroup_procs_path, const pid_t pid) {
 
 // Find out if memory controller is enabled (cgroup v1)
 // Check in /proc/<pid>/cgroup
-bool is_cgroup_mem_control_enabled() {
+inline bool is_cgroup_mem_control_enabled() {
   const pid_t pid = getpid();
-  std::ifstream cgroup_memory_limit("/proc/" + std::to_string(pid) + "/cgroup");
+  std::ifstream cgroup_file("/proc/" + std::to_string(pid) + "/cgroup");
   std::string line;
 
-  if (cgroup_memory_limit.is_open()) {
-    while (std::getline(cgroup_memory_limit, line)) {
+  if (cgroup_file.is_open()) {
+    while (std::getline(cgroup_file, line)) {
       if (line.find("memory") != std::string::npos) {
         return true;
       }
@@ -112,27 +115,37 @@ bool is_cgroup_mem_control_enabled() {
   return false;
 }
 
+inline bool using_cgroup_v2() {
+  std::ifstream cgroup_file(CGROUP_V2_PATH);
+  return cgroup_file.is_open();
+}
+
 // Find the cgroup memory path for the current process
 // Verify if the process is in the cgroup.procs file
-std::string find_cgroup_memory_path() {
+inline std::string find_cgroup_memory_path() {
   const pid_t pid = getpid();
-  std::ifstream cgroup_memory_limit("/proc/" + std::to_string(pid) + "/cgroup");
+  std::ifstream cgroup_file("/proc/" + std::to_string(pid) + "/cgroup");
   std::string cgroup_path;
 
-  if (cgroup_memory_limit.is_open()) {
+  if (!using_cgroup_v2() && cgroup_file.is_open()) {
     std::string line;
-    while (std::getline(cgroup_memory_limit, line)) {
+    while (std::getline(cgroup_file, line)) {
       if (line.find(":memory:") != std::string::npos) {
         const size_t pos = line.find_last_of(':');
         if (pos != std::string::npos) {
-          std::string cgroup_path = line.substr(pos + 1);
-          if (is_pid_in_cgroup_procs((CGROUP_MEM_PATH + cgroup_path + "/" + CGROUP_PROCS).c_str(), pid)) {
+          cgroup_path = line.substr(pos + 1);
+          if (is_pid_in_cgroup_procs(
+                  (CGROUP_MEM_PATH + cgroup_path + "/" + CGROUP_PROCS).c_str(),
+                  pid)) {
             return CGROUP_MEM_PATH + cgroup_path;
           }
           const size_t last_slash = cgroup_path.find_last_of('/');
           if (last_slash != std::string::npos) {
             std::string parent_path = cgroup_path.substr(0, last_slash);
-            if (is_pid_in_cgroup_procs((CGROUP_MEM_PATH + parent_path + "/" + CGROUP_PROCS).c_str(), pid)) {
+            if (is_pid_in_cgroup_procs(
+                    (CGROUP_MEM_PATH + parent_path + "/" + CGROUP_PROCS)
+                        .c_str(),
+                    pid)) {
               return CGROUP_MEM_PATH + parent_path;
             }
           }
@@ -147,48 +160,46 @@ std::string find_cgroup_memory_path() {
 
 // Single node memory info
 template <>
-void MemGetInfo<Kokkos::HostSpace>(size_t* free, size_t* total) {
-  static bool overcommit_disabled = is_overcommit_disabled();
-  bool cgroup_mem_enable = is_cgroup_mem_control_enabled();
+inline void MemGetInfo<Kokkos::HostSpace>(size_t* free, size_t* total) {
+  static const bool overcommit_disabled = is_overcommit_disabled();
+  static const bool cgroup_mem_enabled  = is_cgroup_mem_control_enabled();
+  static const std::string cgroup_mem_path =
+      cgroup_mem_enabled ? find_cgroup_memory_path() : std::string{};
 
   // Cgroup memory info
-  if (cgroup_mem_enable) {
-    std::string cgroup_mem_path = find_cgroup_memory_path();
-    const size_t mem_limit = get_cgroup_value((cgroup_mem_path + "/" + MEM_LIMIT_BYTES).c_str());
+  if (cgroup_mem_enabled) {
+    const size_t mem_limit =
+        get_cgroup_value((cgroup_mem_path + "/" + MEM_LIMIT_BYTES).c_str());
+    const size_t mem_usage =
+        get_cgroup_value((cgroup_mem_path + "/" + MEM_USAGE_BYTES).c_str());
+
     if (mem_limit == 0 || mem_limit > NO_LIMIT) {
       if (overcommit_disabled) {
-        *total = get_meminfo_value(COMMIT_LIMIT_KEY);
+        *total            = get_meminfo_value(COMMIT_LIMIT_KEY);
+        const size_t used = get_meminfo_value(COMMITTED_AS_KEY);
+        *free             = (*total > used) ? *total - used : 0;
       } else {
         *total = get_meminfo_value(MEM_TOTAL_KEY);
+        *free  = get_meminfo_value(MEM_FREE_KEY);
       }
     } else {
       *total = mem_limit;
-    }
-    const size_t mem_usage = get_cgroup_value((cgroup_mem_path + "/" + MEM_USAGE_BYTES).c_str());
-    if (mem_usage == 0 || mem_usage > NO_LIMIT ) {
-      if (overcommit_disabled) {
-        *free = *total - get_meminfo_value(COMMITTED_AS_KEY);
-      } else {
-        *free = get_meminfo_value(MEM_FREE_KEY);
-      }
-    } else {
-      *free = *total - mem_usage;
+      *free  = (mem_limit > mem_usage) ? mem_limit - mem_usage : 0;
     }
     return;
   }
 
   // System memory info
   if (overcommit_disabled) {
-    *total = get_meminfo_value(COMMIT_LIMIT_KEY);
-    *free = *total - get_meminfo_value(COMMITTED_AS_KEY);
+    *total            = get_meminfo_value(COMMIT_LIMIT_KEY);
+    const size_t used = get_meminfo_value(COMMITTED_AS_KEY);
+    *free             = (*total > used) ? *total - used : 0;
   } else {
     *total = get_meminfo_value(MEM_TOTAL_KEY);
-    *free = get_meminfo_value(MEM_FREE_KEY);
+    *free  = get_meminfo_value(MEM_FREE_KEY);
   }
-  return;
 }
 
-}  // namespace Experimental
-}  // namespace Kokkos
+}  // namespace Kokkos::Experimental
 
 #endif  // KOKKOS_UNIX_MEMINFO_HPP
