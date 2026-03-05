@@ -1,6 +1,5 @@
 #include <Kokkos_Core.hpp>
 #include <gtest/gtest.h>
-#include <iostream>
 
 #include <cexa_ArchInfo.hpp>
 
@@ -9,11 +8,11 @@ namespace CE = cexa::experimental;
 #if defined(UNIX) || defined(__unix__)
 
 TEST(ArchInfo, KernelVersion) {
-  ASSERT_GT(CE::get_linux_kernel_version().size(), 0);
+  ASSERT_GT(CE::get_kernel_version().size(), 0);
 }
 
 TEST(ArchInfo, SysName) {
-  ASSERT_GT(CE::get_sysname().size(), 0);
+  ASSERT_GT(CE::get_sys_name().size(), 0);
 }
 
 TEST(ArchInfo, SysType) {
@@ -42,8 +41,10 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();
-  Kokkos::print_cpu(std::cout);
-  Kokkos::print_os(std::cout);
+
+  Kokkos::print_cpu();
+  Kokkos::print_os();
+
   Kokkos::finalize();
   return result;
 }

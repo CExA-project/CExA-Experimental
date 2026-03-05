@@ -1,0 +1,18 @@
+#ifndef CEXA_COMPILINFO_HPP
+#define CEXA_COMPILINFO_HPP
+
+namespace CExA {
+
+struct CompilInfo {
+  static constexpr const char* SysType    = "@CEXA_DISTRIB_TYPE@";
+  static constexpr const char* SysName    = "@CEXA_DISTRIB_NAME@";
+  static constexpr const char* SysVersion = "@CEXA_DISTRIB_VERSION@";
+
+  static constexpr const char* Processor = "@CEXA_PROCESSOR_NAME@";
+  static constexpr size_t CoresCount     = @CEXA_CORE_COUNT@;
+  static constexpr size_t ThreadsCount   = @CEXA_THREAD_COUNT@;
+};
+
+}  // namespace CExA
+
+#endif  // CEXA_COMPILINFO_HPP
