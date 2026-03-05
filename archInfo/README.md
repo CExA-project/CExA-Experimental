@@ -28,3 +28,17 @@ CPU Model   : AMD EPYC 9654 96-Core Processor
     Threads : 384
     Sockets : 2
 ```
+
+### Information about the GPU:
+
+```cpp
+Kokkos::print_gpu(std::cout);
+```
+
+Possible output:
+```text
+GPU Model           :AMD Instinct MI300A
+    Arch            :gfx942:sramecc+:xnack-
+    Runtime Version :6.3.42134
+    Driver Version  :6.3.42134
+```
