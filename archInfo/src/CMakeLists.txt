@@ -17,10 +17,6 @@ configure_file(
 
 target_sources(archInfo PRIVATE cexa_ArchInfo.cpp)
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  target_sources(archInfo PRIVATE cexa_unixArchInfo.cpp)
-endif()
-
 target_include_directories(archInfo PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
@@ -33,6 +29,3 @@ target_link_libraries(archInfo PUBLIC Kokkos::kokkos)
 install(TARGETS archInfo EXPORT CexaExpTargets)
 install(FILES cexa_ArchInfo.hpp DESTINATION include)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cexa_compilInfo.hpp DESTINATION include)
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  install(FILES cexa_unixArchInfo.cpp DESTINATION src)
-endif()

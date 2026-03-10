@@ -3,20 +3,15 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <fstream>
-#include <sstream>
 #include <string>
 #include <ostream>
 #include <iostream>
 
-namespace cexa::experimental {
-
-// Kokkos can use a subset of the available threads
-size_t get_kokkos_concurrency() { return Kokkos::num_threads(); }
-
 // Non-Linux
-#if !(defined(UNIX) || defined(__unix__))
-
+#if defined(UNIX) || defined(__unix__)
+#include <cexa_unixArchInfo.hpp>
+#else
+namespace cexa::experimental {
 size_t get_physical_socket_count() { return 1; }
 
 size_t get_core_count_per_socket() { return CExA::CompilInfo::CoresCount; }
@@ -34,9 +29,13 @@ std::string get_sys_type() { return std::string{CExA::CompilInfo::SysType}; }
 std::string get_kernel_version() {
   return std::string{CExA::CompilInfo::SysVersion};
 }
+}  // namespace cexa::experimental
+#endif  // defined(UNIX) || defined(__unix__)
 
-// No GPU support
-#endif  // !(defined(UNIX) || defined(__unix__))
+namespace cexa::experimental {
+
+// Kokkos can use a subset of the available threads
+size_t get_kokkos_concurrency() { return Kokkos::num_threads(); }
 
 #if !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_CUDA) && \
     !defined(KOKKOS_ENABLE_SYCL)
