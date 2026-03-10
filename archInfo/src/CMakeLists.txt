@@ -1,5 +1,5 @@
 add_library(archInfo)
-add_library(CexaExp::ArchInfo ALIAS archInfo)
+add_library(cexa::ArchInfo ALIAS archInfo)
 
 cmake_host_system_information(RESULT CEXA_DISTRIB_TYPE    QUERY OS_NAME)
 cmake_host_system_information(RESULT CEXA_DISTRIB_NAME    QUERY DISTRIB_PRETTY_NAME)
