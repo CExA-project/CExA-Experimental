@@ -10,6 +10,8 @@
 // Non-Linux
 #if defined(UNIX) || defined(__unix__)
 #include <cexa_unixArchInfo.hpp>
+#elif defined(_WIN32)
+#include <cexa_windowsArchInfo.hpp>
 #else
 namespace cexa::experimental {
 size_t get_physical_socket_count() { return 1; }
