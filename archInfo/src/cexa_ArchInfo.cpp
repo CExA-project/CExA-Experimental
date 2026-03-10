@@ -100,6 +100,8 @@ std::string get_gpu_runtime_version() {
 
 #elif defined(KOKKOS_ENABLE_CUDA)
 
+#include <nvml.h>
+
 std::string get_gpu_name() {
   cudaDeviceProp device_prop;
   int device_id = Kokkos::device_id();
@@ -117,13 +119,14 @@ std::string get_gpu_arch() {
 }
 
 std::string get_gpu_driver_version() {
-  int driver_version = 0;
-  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaDriverGetVersion(&driver_version));
-  int version_major = driver_version / 1000;
-  int version_minor = (driver_version % 1000) / 10;
-  std::stringstream ss;
-  ss << version_major << "." << version_minor;
-  return ss.str();
+  if (NVML_SUCCESS != nvmlInit_v2()) {
+    std::cerr << "get_gpu_driver_version: failed to initialize nvml\n";
+    return "ERROR";
+  }
+  char buffer[NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE];
+  nvmlSystemGetDriverVersion(buffer, NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE);
+  nvmlShutdown();
+  return buffer;
 }
 
 std::string get_gpu_runtime_version() {
@@ -162,10 +165,10 @@ void print_os(std::ostream& ostream) {
 
 void print_gpu(std::ostream& ostream) {
   using namespace cexa::experimental;
-  ostream << "GPU Model           :" << get_gpu_name() << "\n"
-          << "    Arch            :" << get_gpu_arch() << "\n"
-          << "    Runtime Version :" << get_gpu_runtime_version() << "\n"
-          << "    Driver Version  :" << get_gpu_driver_version() << std::endl;
+  ostream << "GPU Model           : " << get_gpu_name() << "\n"
+          << "    Arch            : " << get_gpu_arch() << "\n"
+          << "    Runtime Version : " << get_gpu_runtime_version() << "\n"
+          << "    Driver Version  : " << get_gpu_driver_version() << std::endl;
 }
 
 }  // namespace Kokkos
