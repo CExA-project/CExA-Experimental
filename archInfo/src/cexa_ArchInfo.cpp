@@ -139,7 +139,30 @@ std::string get_gpu_runtime_version() {
   return ss.str();
 }
 
-// TODO: SYCL
+#elif defined(KOKKOS_ENABLE_SYCL)
+
+template <class Info>
+std::string get_sycl_info() {
+  sycl::device d;
+  try {
+    d = sycl::device(sycl::gpu_selector_v);
+  } catch (sycl::exception const& e) {
+    d = sycl::device(sycl::cpu_selector_v);
+  }
+  return d.get_info<Info>();
+}
+
+std::string get_gpu_name() { return get_sycl_info<sycl::info::device::name>(); }
+
+std::string get_gpu_arch() { return "N/A"; }
+
+std::string get_gpu_driver_version() {
+  return get_sycl_info<sycl::info::device::driver_version>();
+}
+
+std::string get_gpu_runtime_version() {
+  return get_sycl_info<sycl::info::device::version>();
+}
 
 #endif
 
