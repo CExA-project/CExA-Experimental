@@ -149,7 +149,7 @@ std::string get_gpu_runtime_version() { return "N/A"; }
 
 namespace Kokkos {
 
-void print_cpu(std::ostream& ostream) {
+void print_host_info(std::ostream& ostream) {
   using namespace cexa::experimental;
   ostream << "CPU Model          : " << get_cpu_model_name() << "\n"
           << "    Cores          : " << get_core_count_per_socket() << "\n"
@@ -158,14 +158,14 @@ void print_cpu(std::ostream& ostream) {
           << "Kokkos Concurrency : " << get_kokkos_concurrency() << std::endl;
 }
 
-void print_os(std::ostream& ostream) {
+void print_os_info(std::ostream& ostream) {
   using namespace cexa::experimental;
   ostream << "OS Type   : " << get_sys_type() << "\n"
           << "   Name   : " << get_sys_name() << "\n"
           << "   Kernel : " << get_kernel_version() << std::endl;
 }
 
-void print_gpu(std::ostream& ostream) {
+void print_device_info(std::ostream& ostream) {
   using namespace cexa::experimental;
   ostream << "GPU Model           : " << get_gpu_name() << "\n"
           << "    Arch            : " << get_gpu_arch() << "\n"

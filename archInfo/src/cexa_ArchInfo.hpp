@@ -30,9 +30,9 @@ std::string get_gpu_runtime_version();
 
 namespace Kokkos {
 
-void print_os(std::ostream& ostream = std::cout);
-void print_cpu(std::ostream& ostream = std::cout);
-void print_gpu(std::ostream& ostream = std::cout);
+void print_os_info(std::ostream& ostream = std::cout);
+void print_host_info(std::ostream& ostream = std::cout);
+void print_device_info(std::ostream& ostream = std::cout);
 
 }  // namespace Kokkos
 
