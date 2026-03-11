@@ -12,11 +12,13 @@
 #include <windows.h>
 #include <intrin.h>
 
+// This header is only included in a single cpp file
+// NOLINTBEGIN(misc-definitions-in-headers)
 namespace cexa::experimental {
 
 template <class T>
-inline std::optional<T> read_registry_value(std::string_view path,
-                                            std::string_view key) {
+std::optional<T> read_registry_value(std::string_view path,
+                                     std::string_view key) {
   HKEY hKey;
   if (ERROR_SUCCESS !=
       RegOpenKeyExA(HKEY_LOCAL_MACHINE, path.data(), 0, KEY_READ, &hKey)) {
@@ -43,7 +45,7 @@ inline std::optional<T> read_registry_value(std::string_view path,
   return err == ERROR_SUCCESS ? std::optional(value) : std::nullopt;
 }
 
-inline std::size_t get_physical_socket_count() {
+std::size_t get_physical_socket_count() {
   DWORD length = 0;
   GetLogicalProcessorInformationEx(RelationProcessorPackage, nullptr, &length);
   std::vector<std::byte> proc_info(length);
@@ -69,7 +71,7 @@ inline std::size_t get_physical_socket_count() {
   return num_numa_node;
 }
 
-inline std::size_t get_core_count_per_socket() {
+std::size_t get_core_count_per_socket() {
   DWORD length = 0;
   GetLogicalProcessorInformationEx(RelationProcessorCore, nullptr, &length);
   std::vector<std::byte> proc_info(length);
@@ -96,7 +98,7 @@ inline std::size_t get_core_count_per_socket() {
   return num_cores / get_physical_socket_count();
 }
 
-inline std::size_t get_thread_count_per_socket() {
+std::size_t get_thread_count_per_socket() {
   DWORD length = 0;
   GetLogicalProcessorInformationEx(RelationProcessorPackage, nullptr, &length);
   std::vector<std::byte> proc_info(length);
@@ -125,7 +127,7 @@ inline std::size_t get_thread_count_per_socket() {
   return -1;
 }
 
-inline std::string get_cpu_model_name() {
+std::string get_cpu_model_name() {
   std::array<int, 4> regs;
 
   // The CPU brand can be obtained using ids 0x80000002 to 0x80000004, we check
@@ -150,16 +152,16 @@ inline std::string get_cpu_model_name() {
   return std::string(name);
 }
 
-inline std::string get_sys_name() {
+std::string get_sys_name() {
   std::optional<std::string> sys_name = read_registry_value<std::string>(
       "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", "ProductName");
 
   return sys_name.value_or("ERROR");
 }
 
-inline std::string get_sys_type() { return "Windows"; }
+std::string get_sys_type() { return "Windows"; }
 
-inline std::string get_kernel_version() {
+std::string get_kernel_version() {
   std::optional<std::string> current_build = read_registry_value<std::string>(
       "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", "CurrentBuildNumber");
   if (!current_build) {
@@ -176,5 +178,6 @@ inline std::string get_kernel_version() {
 }
 
 }  // namespace cexa::experimental
+// NOLINTEND(misc-definitions-in-headers)
 
 #endif
