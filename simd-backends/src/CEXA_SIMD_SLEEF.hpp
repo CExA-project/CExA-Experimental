@@ -8,6 +8,10 @@
 
 namespace Kokkos {
 
+// NOTE: If a function is commented out, it means that the accelerated version
+// is already available in Kokkos SIMD, either through auto-vectorization or
+// call to the associated intrinsic.
+
 #if defined(KOKKOS_ARCH_AVX2)
 
 #include <Kokkos_SIMD_AVX2.hpp>
@@ -66,6 +70,8 @@ CEXA_IMPL_SLEEF_AVX2_UNARY_FUNCTION(erfc, u15)
 CEXA_IMPL_SLEEF_AVX2_UNARY_FUNCTION(tgamma, u10)
 CEXA_IMPL_SLEEF_AVX2_UNARY_FUNCTION(lgamma, u10)
 
+// TODO: functions with lower accuracy, see if they provide a substantial
+// speedup compared to the accurate versions
 // CEXA_IMPL_SLEEF_AVX2_UNARY_FUNCTION(exp, u10)
 // CEXA_IMPL_SLEEF_AVX2_UNARY_FUNCTION(exp2, u10)
 // CEXA_IMPL_SLEEF_AVX2_UNARY_FUNCTION(log, u35)
@@ -133,6 +139,8 @@ CEXA_IMPL_SLEEF_AVX2_BINARY_FUNCTION(hypot, u05)
 CEXA_IMPL_SLEEF_AVX2_BINARY_FUNCTION(atan2, u10)
 // CEXA_IMPL_SLEEF_AVX2_BINARY_FUNCTION(copysign, )
 
+// TODO: functions with lower accuracy, see if they provide a substantial
+// speedup compared to the accurate versions
 // CEXA_IMPL_SLEEF_AVX2_BINARY_FUNCTION(pow, u10)
 // CEXA_IMPL_SLEEF_AVX2_BINARY_FUNCTION(hypot, u35)
 // CEXA_IMPL_SLEEF_AVX2_BINARY_FUNCTION(atan2, u35)
@@ -196,6 +204,8 @@ CEXA_IMPL_SLEEF_AVX512_UNARY_FUNCTION(erfc, u15)
 CEXA_IMPL_SLEEF_AVX512_UNARY_FUNCTION(tgamma, u10)
 CEXA_IMPL_SLEEF_AVX512_UNARY_FUNCTION(lgamma, u10)
 
+// TODO: functions with lower accuracy, see if they provide a substantial
+// speedup compared to the accurate versions
 // CEXA_IMPL_SLEEF_AVX512_UNARY_FUNCTION(exp, u10)
 // CEXA_IMPL_SLEEF_AVX512_UNARY_FUNCTION(exp2, u10)
 // CEXA_IMPL_SLEEF_AVX512_UNARY_FUNCTION(log, u35)
@@ -266,6 +276,8 @@ CEXA_IMPL_SLEEF_AVX512_BINARY_FUNCTION(hypot, u05)
 CEXA_IMPL_SLEEF_AVX512_BINARY_FUNCTION(atan2, u10)
 // CEXA_IMPL_SLEEF_AVX512_BINARY_FUNCTION(copysign, )
 
+// TODO: functions with lower accuracy, see if they provide a substantial
+// speedup compared to the accurate versions
 // CEXA_IMPL_SLEEF_AVX512_BINARY_FUNCTION(pow, u10)
 // CEXA_IMPL_SLEEF_AVX512_BINARY_FUNCTION(hypot, u35)
 // CEXA_IMPL_SLEEF_AVX512_BINARY_FUNCTION(atan2, u35)

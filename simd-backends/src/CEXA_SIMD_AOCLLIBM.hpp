@@ -10,6 +10,10 @@
 
 namespace Kokkos {
 
+// NOTE: Most of the commented out functions below are not implemented in AOCL
+// LibM. abs, sqrt and copysign are commented out because accelerated versions
+// are already available in Kokkos SIMD.
+
 #if defined(KOKKOS_ARCH_AVX2)
 
 #include <Kokkos_SIMD_AVX2.hpp>

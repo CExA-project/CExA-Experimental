@@ -8,6 +8,12 @@
 
 namespace Kokkos {
 
+// NOTE: If a function is commented out, it means that the accelerated version
+// is already available in Kokkos SIMD, either through auto-vectorization or
+// call to the associated intrinsic.
+// tgamma and lgamma are not offered in this wrapper as the svml version didn't
+// offer good performance.
+
 #if defined(KOKKOS_ARCH_AVX2)
 
 #include <Kokkos_SIMD_AVX2.hpp>
