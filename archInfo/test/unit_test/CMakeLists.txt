@@ -3,6 +3,8 @@ find_package(GTest QUIET)
 if (NOT GTest_FOUND)
   include(FetchContent)
 
+  set(BUILD_GMOCK OFF)
+  set(INSTALL_GTEST OFF)
   list(APPEND CMAKE_MESSAGE_INDENT "[googletest] ")
   FetchContent_Declare(
   googletest
