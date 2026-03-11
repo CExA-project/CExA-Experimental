@@ -1,5 +1,4 @@
 #include "cexa_ArchInfo.hpp"
-#include "cexa_compilInfo.hpp"
 
 #include <Kokkos_Core.hpp>
 
@@ -12,27 +11,11 @@
 #include <cexa_unixArchInfo.hpp>
 #elif defined(_WIN32)
 #include <cexa_windowsArchInfo.hpp>
+#elif defined(__APPLE__)
+#include <cexa_macosArchInfo.hpp>
 #else
-namespace cexa::experimental {
-size_t get_physical_socket_count() { return 1; }
-
-size_t get_core_count_per_socket() { return CExA::CompilInfo::CoresCount; }
-
-size_t get_thread_count_per_socket() { return CExA::CompilInfo::ThreadsCount; }
-
-std::string get_cpu_model_name() {
-  return std::string{CExA::CompilInfo::Processor};
-}
-
-std::string get_sys_name() { return std::string{CExA::CompilInfo::SysName}; }
-
-std::string get_sys_type() { return std::string{CExA::CompilInfo::SysType}; }
-
-std::string get_kernel_version() {
-  return std::string{CExA::CompilInfo::SysVersion};
-}
-}  // namespace cexa::experimental
-#endif  // defined(UNIX) || defined(__unix__)
+#error "This utility only supports unix, windows and macos"
+#endif
 
 namespace cexa::experimental {
 
