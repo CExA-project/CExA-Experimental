@@ -1,0 +1,87 @@
+name: ArchInfo Tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/arch-info.yml'
+      - 'archInfo/**.cpp'
+      - 'archInfo/**.hpp'
+      - 'archInfo/**/CMakeLists.txt'
+      - 'archInfo/cmake/**'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/arch-info.yml'
+      - 'archInfo/**.cpp'
+      - 'archInfo/**.hpp'
+      - 'archInfo/**/CMakeLists.txt'
+      - 'archInfo/cmake/**'
+
+concurrency:
+  group: ${{ github.event_name }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  archinfo-ci:
+    continue-on-error: true
+    strategy:
+      matrix:
+        backend: ["SERIAL"]
+        kokkos-version: ["5.0.2"]
+        runner: ["ubuntu-22.04", "macos-15", "macos-15-intel"] #, "windows-2022", "windows-latest"]
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        id: cache-kokkos
+        with:
+          path: ${{ github.workspace }}/opt/kokkos
+          key: archinfo-kokkos-${{ matrix.backend }}-${{ matrix.kokkos-version }}-${{ matrix.runner }}
+      - name: Checkout Kokkos
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        if: steps.cache-kokkos.outputs.cache-hit != 'true'
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ matrix.kokkos-version }}
+          path: kokkos
+      - name: Install kokkos
+        if: steps.cache-kokkos.outputs.cache-hit != 'true'
+        run: |
+          cmake -S kokkos -B kokkos/build \
+            -DKokkos_ENABLE_${{ matrix.backend }}=ON \
+            -DKokkos_ARCH_NATIVE=ON \
+            -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/opt/kokkos
+          cmake --build kokkos/build -j --target install
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Configure
+        working-directory: ${{ github.workspace }}/archInfo
+        env:
+          Kokkos_ROOT: ${{ github.workspace }}/opt/kokkos
+        run:
+          cmake -S . -B build
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo
+            -DCEXA_ARCHINFO_ENABLE_TESTS=ON
+            -DCMAKE_INSTALL_PREFIX=install
+      - name: Build
+        working-directory: ${{ github.workspace }}/archInfo
+        run: cmake --build build -j
+      - name: Run tests
+        working-directory: ${{ github.workspace }}/archInfo
+        run: ctest --test-dir build
+      - name: Install
+        working-directory: ${{ github.workspace }}/archInfo
+        run: cmake --install build
+      - name: Test install
+        working-directory: ${{ github.workspace }}/archInfo/test/install_test
+        env:
+          Kokkos_ROOT: ${{ github.workspace }}/opt/kokkos
+          CexaArchInfo_ROOT: ${{ github.workspace }}/archInfo/install
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          cmake --build build -j
+          ./build/main
