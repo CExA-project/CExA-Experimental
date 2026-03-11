@@ -37,7 +37,7 @@ jobs:
       - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         id: cache-kokkos
         with:
-          path: ${{ github.workspace }}/opt/kokkos
+          path: /usr/kokkos-install
           key: archinfo-kokkos-${{ matrix.backend }}-${{ matrix.kokkos-version }}-${{ matrix.runner }}
       - name: Checkout Kokkos
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -54,14 +54,14 @@ jobs:
             -DKokkos_ARCH_NATIVE=ON \
             -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/opt/kokkos
+            -DCMAKE_INSTALL_PREFIX=/usr/kokkos-install
           cmake --build kokkos/build -j --target install
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Configure
         working-directory: ${{ github.workspace }}/archInfo
         env:
-          Kokkos_ROOT: ${{ github.workspace }}/opt/kokkos
+          Kokkos_ROOT: /usr/kokkos-install
         run:
           cmake -S . -B build
             -DCMAKE_BUILD_TYPE=RelWithDebInfo
@@ -79,7 +79,7 @@ jobs:
       - name: Test install
         working-directory: ${{ github.workspace }}/archInfo/test/install_test
         env:
-          Kokkos_ROOT: ${{ github.workspace }}/opt/kokkos
+          Kokkos_ROOT: /usr/kokkos-install
           CexaArchInfo_ROOT: ${{ github.workspace }}/archInfo/install
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
