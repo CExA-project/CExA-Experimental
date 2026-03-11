@@ -9,7 +9,7 @@ The library can be built using CMake, it depends on Kokkos
 ```bash
 git clone https://github.com/CExA-project/CExA-Experimental
 cd CExA-Experimental/archInfo
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DKokkos_ROOT=\<path/to/kokkos/install\>
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DKokkos_ROOT=<path/to/kokkos/install>
 cmake --build build
 cmake --install
 ```
