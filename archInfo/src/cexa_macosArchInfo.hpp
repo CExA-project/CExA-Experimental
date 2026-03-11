@@ -97,7 +97,9 @@ std::string get_cpu_model_name() {
 std::string get_sys_name() {
   std::ifstream plist_file("/System/Library/CoreServices/SystemVersion.plist");
 
-  if (!plist_file.is_open()) return "macOS";
+  if (!plist_file.is_open()) {
+    return "ERROR";
+  }
 
   std::string name, version;
   std::string line;
