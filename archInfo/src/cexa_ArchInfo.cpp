@@ -22,21 +22,6 @@ namespace cexa::experimental {
 // Kokkos can use a subset of the available threads
 size_t get_kokkos_concurrency() { return Kokkos::num_threads(); }
 
-#if !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_CUDA) && \
-    !defined(KOKKOS_ENABLE_SYCL)
-
-std::string get_gpu_name() {
-  return std::string{"Not compiled with GPU support"};
-}
-
-std::string get_gpu_arch() { return std::string{"N/A"}; }
-
-std::string get_gpu_driver_version() { return std::string{"N/A"}; }
-
-std::string get_gpu_runtime_version() { return std::string{"N/A"}; }
-
-#endif
-
 #if defined(KOKKOS_ENABLE_HIP)
 
 std::string get_gpu_name() {
@@ -60,7 +45,7 @@ std::string get_gpu_driver_version() {
   int version_minor = (driver_version - version_major * 10000000) / 100000;
   int version_patch =
       driver_version - version_major * 10000000 - version_minor * 100000;
-  // Format
+
   std::stringstream ss_driver_version;
   ss_driver_version << version_major << "." << version_minor << "."
                     << version_patch;
@@ -74,7 +59,7 @@ std::string get_gpu_runtime_version() {
   int version_minor = (runtime_version - version_major * 10000000) / 100000;
   int version_patch =
       runtime_version - version_major * 10000000 - version_minor * 100000;
-  // Format
+
   std::stringstream ss_runtime_version;
   ss_runtime_version << version_major << "." << version_minor << "."
                      << version_patch;
@@ -96,6 +81,7 @@ std::string get_gpu_arch() {
   cudaDeviceProp device_prop;
   int device_id = Kokkos::device_id();
   KOKKOS_IMPL_CUDA_SAFE_CALL(cudaGetDeviceProperties(&device_prop, device_id));
+
   std::stringstream ss;
   ss << device_prop.major << device_prop.minor;
   return ss.str();
@@ -146,6 +132,16 @@ std::string get_gpu_driver_version() {
 std::string get_gpu_runtime_version() {
   return get_sycl_info<sycl::info::device::version>();
 }
+
+#else
+
+std::string get_gpu_name() { return "Not compiled with GPU support"; }
+
+std::string get_gpu_arch() { return "N/A"; }
+
+std::string get_gpu_driver_version() { return "N/A"; }
+
+std::string get_gpu_runtime_version() { return "N/A"; }
 
 #endif
 
