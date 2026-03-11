@@ -56,11 +56,6 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();
-
-  Kokkos::print_os();
-  Kokkos::print_cpu();
-  Kokkos::print_gpu();
-
   Kokkos::finalize();
   return result;
 }
