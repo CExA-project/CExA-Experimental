@@ -94,7 +94,7 @@ cpu_topology init_cpu_topology() {
 static cpu_topology topology = init_cpu_topology();
 
 std::optional<std::string> read_cpu_model_lscpu() {
-  FILE* f = popen("lscpu --parse=MODELNAME", "r");
+  FILE* f = popen("lscpu --parse=MODELNAME 2>/dev/null", "r");
   if (!f) {
     return std::nullopt;
   }
