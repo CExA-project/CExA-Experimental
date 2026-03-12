@@ -51,10 +51,10 @@ Kokkos::print_host_info(std::cout);
 
 Possible output:
 ```text
-CPU Model   : AMD EPYC 9654 96-Core Processor
-    Cores   : 96
-    Threads : 384
-    Sockets : 2
+CPU Model   : AMD EPYC 7A53 64-Core Processor
+    Cores   : 64
+    Threads : 128
+    Sockets : 1
 ```
 
 #### Information about the GPU
