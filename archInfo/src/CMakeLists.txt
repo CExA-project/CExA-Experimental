@@ -10,7 +10,6 @@ target_include_directories(archInfo PUBLIC
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 target_compile_features(archInfo PUBLIC cxx_std_17)
-target_compile_options(archInfo PRIVATE -Wall -Wextra)
 target_link_libraries(archInfo PUBLIC Kokkos::kokkos)
 if ("${Kokkos_ENABLE_CUDA}")
   find_package(CUDAToolkit REQUIRED)
