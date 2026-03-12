@@ -127,6 +127,7 @@ std::size_t get_thread_count_per_socket() {
   return -1;
 }
 
+// FIXME: This will not work on arm
 std::string get_cpu_model_name() {
   std::array<int, 4> regs;
 
