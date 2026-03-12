@@ -29,7 +29,14 @@ jobs:
       matrix:
         backend: ["SERIAL"]
         kokkos-version: ["5.0.2"]
-        runner: ["ubuntu-22.04", "ubuntu-22.04-arm", "macos-15", "macos-15-intel"] #, "windows-2022", "windows-latest"]
+        runner: ["windows-2025", "ubuntu-22.04", "ubuntu-22.04-arm", "macos-15", "macos-15-intel"]
+        include:
+          - extra_cmake_build_flags: ""
+          - extra_ctest_flags: ""
+          - extra_cmake_build_flags: "--config RelWithDebInfo"
+            runner: "windows-2025"
+          - extra_ctest_flags: "--build-config RelWithDebInfo"
+            runner: "windows-2025"
 
     runs-on: ${{ matrix.runner }}
 
@@ -50,38 +57,48 @@ jobs:
           path: kokkos
       - name: Install kokkos
         if: steps.cache-kokkos.outputs.cache-hit != 'true'
+        shell: bash
         run: |
           cmake -S kokkos -B kokkos/build \
             -DKokkos_ENABLE_${{ matrix.backend }}=ON \
             -DKokkos_ARCH_NATIVE=ON \
             -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/opt/kokkos
-          cmake --build kokkos/build -j --target install
+          cmake --build kokkos/build ${{ matrix.extra_cmake_build_flags }} -j --target install
       - name: Configure
         working-directory: ${{ github.workspace }}/archInfo
         env:
           Kokkos_ROOT: ${{ github.workspace }}/opt/kokkos
+        shell: bash
         run:
           cmake -S . -B build
             -DCMAKE_BUILD_TYPE=RelWithDebInfo
             -DCEXA_ARCHINFO_ENABLE_TESTS=ON
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
             -DCMAKE_INSTALL_PREFIX=install
       - name: Build
         working-directory: ${{ github.workspace }}/archInfo
-        run: cmake --build build -j
+        shell: bash
+        run: cmake --build build ${{ matrix.extra_cmake_build_flags }} -j
       - name: Run tests
         working-directory: ${{ github.workspace }}/archInfo
-        run: ctest --test-dir build
+        shell: bash
+        run: ctest --test-dir build ${{ matrix.extra_ctest_flags }}
       - name: Install
         working-directory: ${{ github.workspace }}/archInfo
-        run: cmake --install build
+        shell: bash
+        run: cmake --install build ${{ matrix.extra_cmake_build_flags }}
       - name: Test install
         working-directory: ${{ github.workspace }}/archInfo/test/install_test
         env:
           Kokkos_ROOT: ${{ github.workspace }}/opt/kokkos
           CexaArchInfo_ROOT: ${{ github.workspace }}/archInfo/install
+        shell: bash
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
-          cmake --build build -j
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+          cmake --build build ${{ matrix.extra_cmake_build_flags }} -j
           ./build/main
