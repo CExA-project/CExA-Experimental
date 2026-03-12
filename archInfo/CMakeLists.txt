@@ -27,7 +27,7 @@ install(
   EXPORT CexaArchInfoTargets
   FILE CexaArchInfoTargets.cmake
   NAMESPACE cexa::
-  DESTINATION lib/cmake/CexaArchInfo
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/CexaArchInfo"
 )
 
 install(FILES
