@@ -42,21 +42,25 @@ std::optional<std::int64_t> get_sysctl_int(std::string_view name) {
       return std::nullopt;
     }
     return value;
-  } else if (size == 4) {
+  }
+
+  if (size == 4) {
     std::int32_t value;
     if (sysctlbyname(name.data(), &value, &size, nullptr, 0) != 0) {
       return std::nullopt;
     }
     return value;
-  } else if (size == 8) {
+  }
+
+  if (size == 8) {
     std::int64_t value;
     if (sysctlbyname(name.data(), &value, &size, nullptr, 0) != 0) {
       return std::nullopt;
     }
     return value;
-  } else {
-    return std::nullopt;
   }
+
+  return std::nullopt;
 }
 
 // Extracts the value from an XML string node (<string>value</string>)

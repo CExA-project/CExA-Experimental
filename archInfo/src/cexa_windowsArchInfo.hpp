@@ -42,7 +42,12 @@ std::optional<T> read_registry_value(std::string_view path,
   LSTATUS err = RegGetValueA(hKey, nullptr, key.data(), RRF_RT_ANY, nullptr,
                              buffer, &buffer_size);
   RegCloseKey(hKey);
-  return err == ERROR_SUCCESS ? std::optional(value) : std::nullopt;
+
+  if (err != ERROR_SUCCESS) {
+    return std::nullopt;
+  }
+
+  return value;
 }
 
 std::size_t get_physical_socket_count() {
