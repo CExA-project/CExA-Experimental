@@ -132,30 +132,12 @@ std::size_t get_thread_count_per_socket() {
   return -1;
 }
 
-// FIXME: This will not work on arm
 std::string get_cpu_model_name() {
-  std::array<int, 4> regs;
+  std::optional<std::string> cpu_model_name = read_registry_value<std::string>(
+      "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+      "ProcessorNameString");
 
-  // The CPU brand can be obtained using ids 0x80000002 to 0x80000004, we check
-  // that these ids are below the maximum id available.
-  __cpuid(regs.data(), 0x80000000);
-  int max_ext_id = regs[0];
-
-  if (static_cast<unsigned int>(max_ext_id) < 0x80000004) {
-    return "N/A";
-  }
-
-  constexpr std::size_t regs_size = 16;
-  char name[3 * regs_size + 1]    = {};
-
-  __cpuid(regs.data(), 0x80000002);
-  memcpy(name, regs.data(), regs_size);
-  __cpuid(regs.data(), 0x80000003);
-  memcpy(name + regs_size, regs.data(), regs_size);
-  __cpuid(regs.data(), 0x80000004);
-  memcpy(name + 2 * regs_size, regs.data(), regs_size);
-
-  return std::string(name);
+  return cpu_model_name.value_or("ERROR");
 }
 
 std::string get_sys_name() {
