@@ -123,6 +123,8 @@ std::string get_sycl_info() {
 
 std::string get_gpu_name() { return get_sycl_info<sycl::info::device::name>(); }
 
+// The GPU architecture isn't currently exposed by the SYCL api (and wouldn't
+// make sense for Intel GPUs).
 std::string get_gpu_arch() { return "N/A"; }
 
 std::string get_gpu_driver_version() {
@@ -135,7 +137,9 @@ std::string get_gpu_runtime_version() {
 
 #else
 
-std::string get_gpu_name() { return "Not compiled with GPU support"; }
+std::string get_gpu_name() {
+  return "Not compiled with a supported GPU backend (CUDA, HIP or SYCL)";
+}
 
 std::string get_gpu_arch() { return "N/A"; }
 

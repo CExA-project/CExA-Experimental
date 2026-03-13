@@ -59,6 +59,7 @@ std::optional<std::int64_t> get_sysctl_int(std::string_view name) {
   }
 }
 
+// Extracts the value from an XML string node (<string>value</string>)
 std::optional<std::string> extract_plist_value(const std::string& line) {
   if (line.empty()) {
     return std::nullopt;
@@ -95,6 +96,8 @@ std::string get_cpu_model_name() {
 }
 
 std::string get_sys_name() {
+  // We have to read the values from this XML-like file. The file contains a
+  // sequence of key and string XML nodes
   std::ifstream plist_file("/System/Library/CoreServices/SystemVersion.plist");
 
   if (!plist_file.is_open()) {
