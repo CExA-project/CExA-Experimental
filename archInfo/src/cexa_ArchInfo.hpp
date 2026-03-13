@@ -1,5 +1,5 @@
-#ifndef CEXA_EXP_ARCHINFO_HPP
-#define CEXA_EXP_ARCHINFO_HPP
+#ifndef CEXA_ARCHINFO_HPP
+#define CEXA_ARCHINFO_HPP
 
 #include <string>
 #include <ostream>
