@@ -135,10 +135,40 @@ std::string get_gpu_runtime_version() {
   return get_sycl_info<sycl::info::device::version>();
 }
 
+#elif defined(KOKKOS_ENABLE_OPENACC)
+
+std::string get_gpu_name() {
+  const char* name =
+      acc_get_property_string(0, acc_device_current, acc_property_name);
+
+  if (!name) {
+    return "ERROR";
+  }
+
+  return name;
+}
+
+// We cannot query this information from the OpenACC api
+std::string get_gpu_arch() { return "N/A"; }
+
+std::string get_gpu_driver_version() {
+  const char* driver_version =
+      acc_get_property_string(0, acc_device_current, acc_property_driver);
+
+  if (!driver_version) {
+    return "ERROR";
+  }
+
+  return driver_version;
+}
+
+// We cannot query this information from the OpenACC api
+std::string get_gpu_runtime_version() { return "N/A"; }
+
 #else
 
 std::string get_gpu_name() {
-  return "Not compiled with a supported GPU backend (CUDA, HIP or SYCL)";
+  return "Not compiled with a supported GPU backend (CUDA, HIP, SYCL, OpenACC)";
 }
 
 std::string get_gpu_arch() { return "N/A"; }

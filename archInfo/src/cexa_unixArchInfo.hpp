@@ -32,9 +32,9 @@ std::optional<std::string> get_proc_sys_value(const char* files) {
 }
 
 struct cpu_topology {
-  std::size_t n_sockets          = -1;
-  std::size_t procs_per_socket   = -1;
-  std::size_t threads_per_socket = -1;
+  std::size_t n_sockets          = static_cast<std::size_t>(-1);
+  std::size_t procs_per_socket   = static_cast<std::size_t>(-1);
+  std::size_t threads_per_socket = static_cast<std::size_t>(-1);
 };
 
 // Reads informations about the cpus from /sys/devices/system/cpu. This assumes
