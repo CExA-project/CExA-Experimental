@@ -32,6 +32,12 @@ jobs:
             runner: "windows-2025"
           - install_test_exe: "./build/RelWithDebInfo/main.exe"
             runner: "windows-2025"
+          - extra_cmake_build_flags: "--config RelWithDebInfo"
+            runner: "windows-11-arm"
+          - extra_ctest_flags: "--build-config RelWithDebInfo"
+            runner: "windows-11-arm"
+          - install_test_exe: "./build/RelWithDebInfo/main.exe"
+            runner: "windows-11-arm"
 
     runs-on: ${{ matrix.runner }}
 
