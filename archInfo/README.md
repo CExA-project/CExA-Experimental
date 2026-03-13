@@ -33,7 +33,7 @@ target_link_libraries(main PRIVATE cexa::archInfo Kokkos::kokkos)
 #### Information about the operating system
 
 ```cpp
-Kokkos::print_os_info(std::cout);
+cexa::print_os_info(std::cout);
 ```
 
 Possible output on a Linux system:
@@ -46,7 +46,7 @@ OS Type   : Linux
 #### Information about the CPU
 
 ```cpp
-Kokkos::print_host_info(std::cout);
+cexa::print_host_info(std::cout);
 ```
 
 Possible output:
@@ -60,7 +60,7 @@ CPU Model   : AMD EPYC 7A53 64-Core Processor
 #### Information about the GPU
 
 ```cpp
-Kokkos::print_device_info(std::cout);
+cexa::print_device_info(std::cout);
 ```
 
 Possible output:
