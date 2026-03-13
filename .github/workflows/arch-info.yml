@@ -4,19 +4,11 @@ on:
   pull_request:
     paths:
       - '.github/workflows/arch-info.yml'
-      - 'archInfo/**.cpp'
-      - 'archInfo/**.hpp'
-      - 'archInfo/**/CMakeLists.txt'
-      - 'archInfo/cmake/**'
+      - 'archInfo/**'
+      - '!archInfo/README.md'
   push:
     branches:
       - main
-    paths:
-      - '.github/workflows/arch-info.yml'
-      - 'archInfo/**.cpp'
-      - 'archInfo/**.hpp'
-      - 'archInfo/**/CMakeLists.txt'
-      - 'archInfo/cmake/**'
 
 concurrency:
   group: ${{ github.event_name }}-${{ github.workflow }}-${{ github.ref }}
