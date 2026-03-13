@@ -9,13 +9,13 @@ namespace cexa {
 
 namespace impl {
 
-size_t get_kokkos_concurrency();
+std::size_t get_kokkos_concurrency();
 
 // CPU
 std::string get_cpu_model_name();
-size_t get_physical_socket_count();
-size_t get_core_count_per_socket();
-size_t get_thread_count_per_socket();
+std::size_t get_physical_socket_count();
+std::size_t get_core_count_per_socket();
+std::size_t get_thread_count_per_socket();
 
 // OS
 std::string get_sys_name();

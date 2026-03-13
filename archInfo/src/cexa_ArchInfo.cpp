@@ -21,7 +21,7 @@ namespace cexa {
 namespace impl {
 
 // Kokkos can use a subset of the available threads
-size_t get_kokkos_concurrency() { return Kokkos::num_threads(); }
+std::size_t get_kokkos_concurrency() { return Kokkos::num_threads(); }
 
 #if defined(KOKKOS_ENABLE_HIP)
 

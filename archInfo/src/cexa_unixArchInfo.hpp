@@ -168,11 +168,13 @@ std::optional<std::string> get_os_release_str(const char* key) {
   return std::nullopt;
 }
 
-size_t get_physical_socket_count() { return topology.n_sockets; }
+std::size_t get_physical_socket_count() { return topology.n_sockets; }
 
-size_t get_core_count_per_socket() { return topology.procs_per_socket; }
+std::size_t get_core_count_per_socket() { return topology.procs_per_socket; }
 
-size_t get_thread_count_per_socket() { return topology.threads_per_socket; }
+std::size_t get_thread_count_per_socket() {
+  return topology.threads_per_socket;
+}
 
 std::string get_cpu_model_name() {
   // NOTE: /proc/cpuinfo on arm does not provide the CPU model name, lscpu on

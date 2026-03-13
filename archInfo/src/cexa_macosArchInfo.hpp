@@ -65,13 +65,13 @@ std::optional<std::string> extract_plist_value(const std::string& line) {
     return std::nullopt;
   }
 
-  size_t pos = line.find("<string>");
+  std::size_t pos = line.find("<string>");
   if (pos == std::string::npos) {
     return std::nullopt;
   };
   pos += 8;
 
-  size_t end = line.find("</string>", pos);
+  std::size_t end = line.find("</string>", pos);
   if (end == std::string::npos || pos == end) {
     return std::nullopt;
   };
@@ -79,15 +79,15 @@ std::optional<std::string> extract_plist_value(const std::string& line) {
   return line.substr(pos, end - pos);
 }
 
-size_t get_physical_socket_count() {
+std::size_t get_physical_socket_count() {
   return get_sysctl_int("hw.packages").value_or(-1);
 }
 
-size_t get_core_count_per_socket() {
+std::size_t get_core_count_per_socket() {
   return get_sysctl_int("machdep.cpu.cores_per_package").value_or(-1);
 }
 
-size_t get_thread_count_per_socket() {
+std::size_t get_thread_count_per_socket() {
   return get_sysctl_int("machdep.cpu.logical_per_package").value_or(-1);
 }
 
