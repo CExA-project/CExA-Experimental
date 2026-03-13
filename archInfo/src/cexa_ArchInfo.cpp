@@ -6,7 +6,6 @@
 #include <ostream>
 #include <iostream>
 
-// Non-Linux
 #if defined(UNIX) || defined(__unix__)
 #include <cexa_unixArchInfo.hpp>
 #elif defined(_WIN32)
@@ -89,7 +88,6 @@ std::string get_gpu_arch() {
 
 std::string get_gpu_driver_version() {
   if (NVML_SUCCESS != nvmlInit_v2()) {
-    std::cerr << "get_gpu_driver_version: failed to initialize nvml\n";
     return "ERROR";
   }
   char buffer[NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE];
