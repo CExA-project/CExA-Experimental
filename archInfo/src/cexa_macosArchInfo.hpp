@@ -13,7 +13,7 @@
 // This header is only included in a single cpp file, and adding inline to the
 // functions leads to undefined references with apple clang
 // NOLINTBEGIN(misc-definitions-in-headers)
-namespace cexa::experimental {
+namespace cexa::impl {
 
 std::optional<std::string> get_sysctl_string(std::string_view name) {
   std::size_t size = 0;
@@ -125,7 +125,7 @@ std::string get_kernel_version() {
   return get_sysctl_string("kern.osrelease").value_or("ERROR");
 }
 
-}  // namespace cexa::experimental
+}  // namespace cexa::impl
 // NOLINTEND(misc-definitions-in-headers)
 
 #endif

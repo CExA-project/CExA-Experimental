@@ -14,7 +14,7 @@
 
 // This header is only included in a single cpp file
 // NOLINTBEGIN(misc-definitions-in-headers)
-namespace cexa::experimental {
+namespace cexa::impl {
 
 template <class T>
 std::optional<T> read_registry_value(std::string_view path,
@@ -178,7 +178,7 @@ std::string get_kernel_version() {
   return current_build.value() + "." + std::to_string(ubr.value());
 }
 
-}  // namespace cexa::experimental
+}  // namespace cexa::impl
 // NOLINTEND(misc-definitions-in-headers)
 
 #endif

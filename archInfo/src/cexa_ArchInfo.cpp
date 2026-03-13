@@ -16,7 +16,9 @@
 #error "This utility only supports unix, windows and macos"
 #endif
 
-namespace cexa::experimental {
+namespace cexa {
+
+namespace impl {
 
 // Kokkos can use a subset of the available threads
 size_t get_kokkos_concurrency() { return Kokkos::num_threads(); }
@@ -143,12 +145,10 @@ std::string get_gpu_runtime_version() { return "N/A"; }
 
 #endif
 
-}  // namespace cexa::experimental
-
-namespace Kokkos {
+}  // namespace impl
 
 void print_host_info(std::ostream& ostream) {
-  using namespace cexa::experimental;
+  using namespace cexa::impl;
   ostream << "CPU Model          : " << get_cpu_model_name() << "\n"
           << "    Cores          : " << get_core_count_per_socket() << "\n"
           << "    Threads        : " << get_thread_count_per_socket() << "\n"
@@ -157,18 +157,18 @@ void print_host_info(std::ostream& ostream) {
 }
 
 void print_os_info(std::ostream& ostream) {
-  using namespace cexa::experimental;
+  using namespace cexa::impl;
   ostream << "OS Type   : " << get_sys_type() << "\n"
           << "   Name   : " << get_sys_name() << "\n"
           << "   Kernel : " << get_kernel_version() << std::endl;
 }
 
 void print_device_info(std::ostream& ostream) {
-  using namespace cexa::experimental;
+  using namespace cexa::impl;
   ostream << "GPU Model           : " << get_gpu_name() << "\n"
           << "    Arch            : " << get_gpu_arch() << "\n"
           << "    Runtime Version : " << get_gpu_runtime_version() << "\n"
           << "    Driver Version  : " << get_gpu_driver_version() << std::endl;
 }
 
-}  // namespace Kokkos
+}  // namespace cexa

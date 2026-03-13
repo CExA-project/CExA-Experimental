@@ -12,7 +12,7 @@
 
 // This header is only included in a single cpp file
 // NOLINTBEGIN(misc-definitions-in-headers)
-namespace cexa::experimental {
+namespace cexa::impl {
 
 // Extract a value from /proc/sys/ files
 std::optional<std::string> get_proc_sys_value(const char* files) {
@@ -198,7 +198,7 @@ std::string get_kernel_version() {
   return get_proc_sys_value("kernel/osrelease").value_or("ERROR");
 }
 
-}  // namespace cexa::experimental
+}  // namespace cexa::impl
 // NOLINTEND(misc-definitions-in-headers)
 
 #endif

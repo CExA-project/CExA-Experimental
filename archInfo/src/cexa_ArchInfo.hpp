@@ -5,7 +5,9 @@
 #include <ostream>
 #include <iostream>
 
-namespace cexa::experimental {
+namespace cexa {
+
+namespace impl {
 
 size_t get_kokkos_concurrency();
 
@@ -26,14 +28,12 @@ std::string get_gpu_arch();
 std::string get_gpu_driver_version();
 std::string get_gpu_runtime_version();
 
-}  // namespace cexa::experimental
-
-namespace Kokkos {
+}  // namespace impl
 
 void print_os_info(std::ostream& ostream = std::cout);
 void print_host_info(std::ostream& ostream = std::cout);
 void print_device_info(std::ostream& ostream = std::cout);
 
-}  // namespace Kokkos
+}  // namespace cexa
 
 #endif  // CEXA_EXP_ARCHINFO_HPP
