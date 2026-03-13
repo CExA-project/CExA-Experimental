@@ -3,7 +3,15 @@ include(GNUInstallDirs)
 add_library(archInfo)
 add_library(cexa::ArchInfo ALIAS archInfo)
 
-target_sources(archInfo PRIVATE cexa_ArchInfo.cpp)
+target_sources(
+  archInfo
+  PUBLIC
+    FILE_SET HEADERS
+    FILES
+      cexa_ArchInfo.hpp
+  PRIVATE
+    cexa_ArchInfo.cpp
+)
 
 target_include_directories(archInfo PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -19,8 +27,5 @@ endif()
 install(
   TARGETS archInfo
   EXPORT CexaArchInfoTargets
-  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  FILE_SET HEADERS
 )
-install(FILES cexa_ArchInfo.hpp DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
