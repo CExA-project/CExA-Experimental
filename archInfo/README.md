@@ -37,10 +37,11 @@ cexa::print_os_info(std::cout);
 ```
 
 Possible output on a Linux system:
-```text
-OS Type   : Linux
-   Name   : Red Hat Enterprise Linux 9.6 (Plow)
-   Kernel : 5.14.0-570.69.1.el9_6.x86_64
+```
+OS:
+- Type: Linux
+- Name: Red Hat Enterprise Linux 9.6 (Plow)
+- Kernel: 5.14.0-570.69.1.el9_6.x86_64
 ```
 
 #### Information about the CPU
@@ -50,11 +51,13 @@ cexa::print_host_info(std::cout);
 ```
 
 Possible output:
-```text
-CPU Model   : AMD EPYC 7A53 64-Core Processor
-    Cores   : 64
-    Threads : 128
-    Sockets : 1
+```
+HOST:
+- Model: AMD EPYC 7A53 64-Core Processor
+- Cores per socket: 64
+- Threads per socket: 128
+- Sockets: 1
+- Kokkos Concurrency: 1
 ```
 
 #### Information about the GPU
@@ -64,9 +67,10 @@ cexa::print_device_info(std::cout);
 ```
 
 Possible output:
-```text
-GPU Model           : AMD Instinct MI300A
-    Arch            : gfx942:sramecc+:xnack-
-    Runtime Version : 6.3.42134
-    Driver Version  : 6.3.42134
+```
+DEVICE:
+- Model: AMD Instinct MI300A
+- Arch: gfx942:sramecc+:xnack-
+- Runtime Version: 6.3.42134
+- Driver Version: 6.3.42134
 ```
