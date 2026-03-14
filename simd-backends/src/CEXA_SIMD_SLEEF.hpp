@@ -4,7 +4,7 @@
 #ifndef CEXA_SIMD_SLEEF_HPP
 #define CEXA_SIMD_SLEEF_HPP
 
-#include <Kokkos_Core.hpp>
+#include <Kokkos_Macros.hpp>
 #include <sleef.h>
 
 namespace Kokkos {
