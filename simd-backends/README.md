@@ -16,6 +16,8 @@ The available cmake configuration options are:
 - `CEXA_SIMD_ENABLE_TESTS`: build the tests
 - `CEXA_SIMD_ENABLE_INSTALL`: enable the installation target
 
+The sleef backend requires sleef v3.6.0 or later.
+
 ## Usage
 
 ### Manual
