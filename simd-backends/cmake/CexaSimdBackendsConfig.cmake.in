@@ -1,12 +1,17 @@
 # SPDX-FileCopyrightText: 2026 CExA-project
 # SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
+
+@PACKAGE_INIT@
+
 include(CMakeFindDependencyMacro)
 
 find_dependency(Kokkos 4.5 REQUIRED CONFIG)
 
-set(USING_USER_SLEEF @USING_USER_SLEEF@)
-if(USING_USER_SLEEF)
+set(CEXA_SIMD_ENABLE_SLEEF @CEXA_SIMD_ENABLE_SLEEF@)
+if(CEXA_SIMD_ENABLE_SLEEF)
   find_dependency(sleef 3.6 REQUIRED CONFIG)
 endif()
 
-include("${CMAKE_CURRENT_LIST_DIR}/KokkosSimdBackendsTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/CexaSimdBackendsTargets.cmake")
+
+check_required_components(CexaSimdBackends)
