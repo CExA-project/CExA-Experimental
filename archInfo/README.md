@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 CExA-project
+
+SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
+-->
+
 # ArchInfo
 
 A small utility library for printing useful information about the system a

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CExA-project
+# SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
+
 cmake_minimum_required(VERSION 3.23)
 
 project(cexa-experimental-archInfo LANGUAGES CXX VERSION 0.1.0)

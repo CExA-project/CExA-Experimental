@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CExA-project
+// SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
+
 #include <Kokkos_Core.hpp>
 #include <gtest/gtest.h>
 

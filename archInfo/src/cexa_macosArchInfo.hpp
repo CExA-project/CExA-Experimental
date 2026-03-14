@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CExA-project
+// SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
+
 #ifndef CEXA_MACOS_ARCHINFO_HPP
 #define CEXA_MACOS_ARCHINFO_HPP
 
