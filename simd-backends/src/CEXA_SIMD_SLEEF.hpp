@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2025 CExA-project
+// SPDX-FileCopyrightText: 2026 CExA-project
 // SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
+
 #ifndef CEXA_SIMD_SLEEF_HPP
 #define CEXA_SIMD_SLEEF_HPP
 

@@ -1,5 +1,6 @@
-# SPDX-FileCopyrightText: 2025 CExA-project
+# SPDX-FileCopyrightText: 2026 CExA-project
 # SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
+
 cmake_minimum_required(VERSION 3.16)
 
 project(simd-backends VERSION 0.1.0)

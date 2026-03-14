@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 CExA-project
+
+SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
+-->
+
 # SIMD backends
 
 This header only library provides an interface to replace the Kokkos math functions for SIMD types with calls to different external libraries.
