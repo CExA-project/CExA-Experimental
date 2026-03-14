@@ -37,8 +37,8 @@ cmake_minimum_required(VERSION 3.16)
 
 project(test)
 
-find_package(Kokkos 5.0 REQUIRED CONFIG)
-find_package(CexaSimdBackends 0.1 REQUIRED CONFIG)
+find_package(Kokkos 5.0 REQUIRED)
+find_package(CexaSimdBackends 0.1 REQUIRED)
 
 add_executable(main main.cpp)
 target_link_libraries(main PRIVATE Kokkos::kokkos cexa::simd-backends)

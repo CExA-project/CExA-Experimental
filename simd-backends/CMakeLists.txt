@@ -21,7 +21,7 @@ if(CEXA_SIMD_ENABLE_SLEEF AND CEXA_SIMD_ENABLE_SVML)
 endif()
 
 if(CEXA_SIMD_ENABLE_SLEEF)
-  find_package(sleef 3.6 QUIET CONFIG)
+  find_package(sleef 3.6 QUIET)
   if(NOT sleef_FOUND)
     include(FetchContent)
 
