@@ -21,8 +21,7 @@ The available cmake configuration options are:
 ### Manual
 
 As the library is header only, you can include the header for your library of choice
-directly in your code. Or include `CEXA_SIMD_Backends.hpp` and use the macros
-`CEXA_SIMD_ENABLE_<backend_name>` to control which library is being used.
+directly in your code.
 
 ### CMake
 
@@ -36,12 +35,25 @@ cmake_minimum_required(VERSION 3.16)
 
 project(test)
 
-find_package(Kokkos 4.5 REQUIRED CONFIG)
+find_package(Kokkos 5.0 REQUIRED CONFIG)
 find_package(CexaSimdBackends 0.1 REQUIRED CONFIG)
 
 add_executable(main main.cpp)
-target_link_libraries(main PRIVATE Kokkos::kokkos cexa-experimental::simd-backends)
+target_link_libraries(main PRIVATE Kokkos::kokkos cexa::simd-backends)
 ```
 
 You can then include `CEXA_SIMD_Backends.hpp` in your code and use the Kokkos simd math
 functions as usual.
+
+```
+#include <Kokkos_Core.hpp>
+#include <Kokkos_SIMD.hpp>
+#include <CEXA_SIMD_Backends.hpp>
+
+int main(int argc, char* argv[]) {
+  Kokkos::ScopeGuard kokkos_scope(argc, argv);
+
+  Kokkos::Experimental::simd<float> vec(1.f);
+  vec = Kokkos::exp(vec);
+}
+```
