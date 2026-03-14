@@ -98,14 +98,13 @@ jobs:
         working-directory: ${{ github.workspace }}/kokkos/simd/unit_tests
         run: |
           cp "$CexaSimdBackends_ROOT/include/CEXA_SIMD_SLEEF.hpp" include
+          sed -i '/kokkos_add_executable_and_test/a find_package(sleef REQUIRED)\ntarget_link_libraries(Kokkos_UnitTest_SIMD PRIVATE sleef::sleef)' CMakeLists.txt
           sed -i '/include <Kokkos_SIMD.hpp>/a #include <CEXA_SIMD_SLEEF.hpp>' include/TestSIMD_MathOps.hpp
       - name: Build and run Kokkos SIMD unit test
         working-directory: ${{ github.workspace }}/kokkos
         run: |
-          # We use find to get the libdir as it could be lib or lib64
           cmake -S . -B build \
             -DCMAKE_CXX_COMPILER=g++ \
-            -DCMAKE_CXX_FLAGS="-I$sleef_ROOT/include -L$(find "$sleef_ROOT" -type d -name "lib*") -lsleef" \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DKokkos_ARCH_NATIVE=ON \
             -DKokkos_ENABLE_TESTS=ON
