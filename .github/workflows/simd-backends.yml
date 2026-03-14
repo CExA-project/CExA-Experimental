@@ -29,14 +29,31 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout Sleef
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: shibatch/sleef
+          ref: 3.9.0
+          path: sleef
+      - name: Install Sleef
+        run: |
+          cmake -S sleef -B sleef/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DSLEEF_BUILD_GNUABI_LIBS=OFF \
+            -DSLEEF_BUILD_TESTS=OFF \
+            -DSLEEF_ENABLE_TLFLOAT=OFF \
+            -DSLEEF_ENABLE_FFTW=OFF \
+            -DSLEEF_ENABLE_MPFR=OFF
+          cmake --build sleef/build -j
+          sudo cmake --install sleef/build
       - name: Checkout Kokkos
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: kokkos/kokkos
           ref: 5.0.2
           path: kokkos
-      - name: Install Sleef
-        run: sudo apt-get install -y libsleef-dev
       - name: Install kokkos
         run: |
           cmake -S kokkos -B kokkos/build \
