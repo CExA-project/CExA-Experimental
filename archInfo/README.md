@@ -1,0 +1,82 @@
+<!--
+SPDX-FileCopyrightText: 2026 CExA-project
+
+SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
+-->
+
+# ArchInfo
+
+A small utility library for printing useful information about the system a
+Kokkos program runs on.
+
+## Build
+
+The library can be built using CMake, it depends on Kokkos
+```bash
+git clone https://github.com/CExA-project/CExA-Experimental
+cd CExA-Experimental/archInfo
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DKokkos_ROOT=<path/to/kokkos/install>
+cmake --build build
+cmake --install
+```
+
+The tests can be enabled by adding the option `-DCEXA_ARCHINFO_ENABLE_TESTS=ON`
+to CMake.
+
+## Usage
+
+The library can be included in a CMake project using `find_package`
+```cmake
+find_package(Kokkos REQUIRED)
+find_package(CexaArchInfo 0.1.0 REQUIRED)
+
+add_executable(main)
+target_link_libraries(main PRIVATE cexa::archInfo Kokkos::kokkos)
+```
+
+### API
+
+#### Information about the operating system
+
+```cpp
+cexa::print_os_info(std::cout);
+```
+
+Possible output on a Linux system:
+```
+OS:
+- Type: Linux
+- Name: Red Hat Enterprise Linux 9.6 (Plow)
+- Kernel: 5.14.0-570.69.1.el9_6.x86_64
+```
+
+#### Information about the CPU
+
+```cpp
+cexa::print_host_info(std::cout);
+```
+
+Possible output:
+```
+HOST:
+- Model: AMD EPYC 7A53 64-Core Processor
+- Cores per socket: 64
+- Threads per socket: 128
+- Sockets: 1
+- Kokkos Concurrency: 1
+```
+
+#### Information about the GPU
+
+```cpp
+cexa::print_device_info(std::cout);
+```
+
+Possible output:
+```
+DEVICE:
+- Model: AMD Instinct MI300A
+- Arch: gfx942:sramecc+:xnack-
+- Runtime Version: 6.3.42134
+- Driver Version: 6.3.42134
+```

@@ -1,0 +1,115 @@
+# SPDX-FileCopyrightText: 2026 CExA-project
+# SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
+
+name: ArchInfo Tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/arch-info.yml'
+      - 'archInfo/**'
+      - '!archInfo/README.md'
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.event_name }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  archinfo-ci:
+    continue-on-error: true
+    strategy:
+      matrix:
+        backend: ["SERIAL"]
+        kokkos-version: ["5.0.2"]
+        runner: ["windows-2025", "windows-11-arm", "ubuntu-22.04", "ubuntu-22.04-arm", "macos-15", "macos-15-intel"]
+        include:
+          - extra_cmake_build_flags: ""
+          - extra_ctest_flags: ""
+          - install_test_exe: "./build/main"
+          - extra_cmake_build_flags: "--config RelWithDebInfo"
+            runner: "windows-2025"
+          - extra_ctest_flags: "--build-config RelWithDebInfo"
+            runner: "windows-2025"
+          - install_test_exe: "./build/RelWithDebInfo/main.exe"
+            runner: "windows-2025"
+          - extra_cmake_build_flags: "--config RelWithDebInfo"
+            runner: "windows-11-arm"
+          - extra_ctest_flags: "--build-config RelWithDebInfo"
+            runner: "windows-11-arm"
+          - install_test_exe: "./build/RelWithDebInfo/main.exe"
+            runner: "windows-11-arm"
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        id: cache-kokkos
+        with:
+          path: opt/kokkos
+          key: archinfo-kokkos-${{ matrix.backend }}-${{ matrix.kokkos-version }}-${{ matrix.runner }}
+      # We need to use cygpath on Windows to avoid the '\' in github.workspace
+      # leading to incorrect paths in bash
+      - name: Setup Windows env variables
+        shell: bash
+        if: ${{ contains(matrix.runner, 'windows') }}
+        run: |
+          echo "Kokkos_ROOT=$(cygpath "${{ github.workspace }}/opt/kokkos")" >> $GITHUB_ENV
+          echo "CexaArchInfo_ROOT=$(cygpath "${{ github.workspace }}/archInfo/install")" >> $GITHUB_ENV
+      - name: Setup Unix env variables
+        shell: bash
+        if: ${{ !contains(matrix.runner, 'windows') }}
+        run: |
+          echo "Kokkos_ROOT=${{ github.workspace }}/opt/kokkos" >> $GITHUB_ENV
+          echo "CexaArchInfo_ROOT=${{ github.workspace }}/archInfo/install" >> $GITHUB_ENV
+      - name: Checkout Kokkos
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        if: steps.cache-kokkos.outputs.cache-hit != 'true'
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ matrix.kokkos-version }}
+          path: kokkos
+      - name: Install kokkos
+        if: steps.cache-kokkos.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          cmake -S kokkos -B kokkos/build \
+            -DKokkos_ENABLE_${{ matrix.backend }}=ON \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded \
+            -DCMAKE_INSTALL_PREFIX="$Kokkos_ROOT"
+          cmake --build kokkos/build ${{ matrix.extra_cmake_build_flags }} -j --target install
+      - name: Configure
+        working-directory: ${{ github.workspace }}/archInfo
+        shell: bash
+        run:
+          cmake -S . -B build
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo
+            -DCEXA_ARCHINFO_ENABLE_TESTS=ON
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+            -DCMAKE_INSTALL_PREFIX="$CexaArchInfo_ROOT"
+      - name: Build
+        working-directory: ${{ github.workspace }}/archInfo
+        shell: bash
+        run: cmake --build build ${{ matrix.extra_cmake_build_flags }} -j
+      - name: Run tests
+        working-directory: ${{ github.workspace }}/archInfo
+        shell: bash
+        run: ctest --test-dir build ${{ matrix.extra_ctest_flags }}
+      - name: Install
+        working-directory: ${{ github.workspace }}/archInfo
+        shell: bash
+        run: cmake --install build ${{ matrix.extra_cmake_build_flags }}
+      - name: Test install
+        working-directory: ${{ github.workspace }}/archInfo/test/install_test
+        shell: bash
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+          cmake --build build ${{ matrix.extra_cmake_build_flags }} -j
+          ${{ matrix.install_test_exe }}
