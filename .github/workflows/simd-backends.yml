@@ -18,36 +18,44 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  archinfo-ci:
+  simd-backends-ci:
     continue-on-error: true
 
     runs-on: ubuntu-latest
 
     env:
       Kokkos_ROOT: ${{ github.workspace }}/opt/kokkos
+      sleef_ROOT: ${{ github.workspace }}/opt/sleef
       CexaSimdBackends_ROOT: ${{ github.workspace }}/simd-backends/install
     steps:
+      - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        id: cache-sleef
+        with:
+          path: opt/sleef
+          key: simd-backends-sleef-ubuntu-latest
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Checkout Sleef
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        if: steps.cache-sleef.outputs.cache-hit != 'true'
         with:
           repository: shibatch/sleef
           ref: 3.9.0
           path: sleef
       - name: Install Sleef
+        if: steps.cache-sleef.outputs.cache-hit != 'true'
         run: |
           cmake -S sleef -B sleef/build \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_INSTALL_PREFIX="$sleef_ROOT" \
             -DSLEEF_BUILD_GNUABI_LIBS=OFF \
             -DSLEEF_BUILD_TESTS=OFF \
             -DSLEEF_ENABLE_TLFLOAT=OFF \
             -DSLEEF_ENABLE_FFTW=OFF \
             -DSLEEF_ENABLE_MPFR=OFF
-          cmake --build sleef/build -j
-          sudo cmake --install sleef/build
+          cmake --build sleef/build -j --target install
       - name: Checkout Kokkos
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -93,9 +101,10 @@ jobs:
       - name: Build and run Kokkos SIMD unit test
         working-directory: ${{ github.workspace }}/kokkos
         run: |
+          sleef_LIBDIR=$sleef_ROOT/lib* # the libdir could be lib/ or lib64/
           cmake -S . -B build \
             -DCMAKE_CXX_COMPILER=g++ \
-            -DCMAKE_CXX_FLAGS="-lsleef" \
+            -DCMAKE_CXX_FLAGS="-I$sleef_ROOT/include -L$sleef_LIBDIR -lsleef" \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DKokkos_ARCH_NATIVE=ON \
             -DKokkos_ENABLE_TESTS=ON
