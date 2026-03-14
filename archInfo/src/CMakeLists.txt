@@ -13,10 +13,6 @@ target_sources(
     cexa_ArchInfo.cpp
 )
 
-target_include_directories(archInfo PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-
 target_compile_features(archInfo PUBLIC cxx_std_17)
 target_link_libraries(archInfo PUBLIC Kokkos::kokkos)
 if ("${Kokkos_ENABLE_CUDA}")
