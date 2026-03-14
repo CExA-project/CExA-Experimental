@@ -1,0 +1,86 @@
+# SPDX-FileCopyrightText: 2026 CExA-project
+# SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
+
+name: SIMD Backends Tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/simd-backends.yml'
+      - 'simd-backends/**'
+      - '!simd-backends/README.md'
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.event_name }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  archinfo-ci:
+    continue-on-error: true
+
+    runs-on: ubuntu-latest
+
+    env:
+      Kokkos_ROOT: ${{ github.workspace }}/opt/kokkos
+      CexaSimdBackends_ROOT: ${{ github.workspace }}/simd-backends/install
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout Kokkos
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: kokkos/kokkos
+          ref: 5.0.2
+          path: kokkos
+      - name: Install Sleef
+        run: sudo apt-get install -y libsleef-dev
+      - name: Install kokkos
+        run: |
+          cmake -S kokkos -B kokkos/build \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_INSTALL_PREFIX="$Kokkos_ROOT" \
+            -DKokkos_ARCH_NATIVE=ON
+          cmake --build kokkos/build -j --target install
+      - name: Configure
+        working-directory: ${{ github.workspace }}/simd-backends
+        run:
+          cmake -S . -B build
+            -DCMAKE_CXX_COMPILER=g++
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo
+            -DCMAKE_INSTALL_PREFIX="$CexaSimdBackends_ROOT"
+            -DCEXA_SIMD_ENABLE_SLEEF=ON
+            -DCEXA_SIMD_ENABLE_TESTS=ON
+      - name: Build
+        working-directory: ${{ github.workspace }}/simd-backends
+        run: cmake --build build -j
+      - name: Install
+        working-directory: ${{ github.workspace }}/simd-backends
+        run: cmake --install build
+      - name: Test install
+        working-directory: ${{ github.workspace }}/simd-backends/test/install_test
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          cmake --build build -j
+          ./build/main
+      - name: Patch Kokkos
+        working-directory: ${{ github.workspace }}/kokkos/simd/unit_tests
+        run: |
+          cp "$CexaSimdBackends_ROOT/include/CEXA_SIMD_SLEEF.hpp" include
+          sed -i '/include <Kokkos_SIMD.hpp>/a #include <CEXA_SIMD_SLEEF.hpp>' include/TestSIMD_MathOps.hpp
+      - name: Build and run Kokkos SIMD unit test
+        working-directory: ${{ github.workspace }}/kokkos
+        run: |
+          cmake -S kokkos -B kokkos/build \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS="-lsleef" \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DKokkos_ARCH_NATIVE=ON \
+            -DKokkos_ENABLE_TESTS=ON
+          cmake --build kokkos/build -j --target Kokkos_UnitTest_SIMD
+          ctest --test-dir build --output-on-failure -R SIMD
