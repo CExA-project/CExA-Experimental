@@ -76,11 +76,11 @@ jobs:
       - name: Build and run Kokkos SIMD unit test
         working-directory: ${{ github.workspace }}/kokkos
         run: |
-          cmake -S kokkos -B kokkos/build \
+          cmake -S . -B build \
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_CXX_FLAGS="-lsleef" \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DKokkos_ARCH_NATIVE=ON \
             -DKokkos_ENABLE_TESTS=ON
-          cmake --build kokkos/build -j --target Kokkos_UnitTest_SIMD
+          cmake --build build -j --target Kokkos_UnitTest_SIMD
           ctest --test-dir build --output-on-failure -R SIMD
