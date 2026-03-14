@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      CMAKE_GENERATOR: Ninja
       Kokkos_ROOT: ${{ github.workspace }}/opt/kokkos
       sleef_ROOT: ${{ github.workspace }}/opt/sleef
       CexaSimdBackends_ROOT: ${{ github.workspace }}/simd-backends/install
