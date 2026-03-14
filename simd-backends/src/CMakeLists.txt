@@ -21,5 +21,5 @@ target_sources(
 target_link_libraries(simd-backends INTERFACE Kokkos::kokkossimd)
 
 if(CEXA_SIMD_ENABLE_SLEEF)
-  target_link_libraries(simd-backends INTERFACE sleef)
+  target_link_libraries(simd-backends INTERFACE sleef::sleef)
 endif()
