@@ -24,7 +24,7 @@
 #include <support/test_macros.h>
 #include <support/MoveOnly.h>
 
-KOKKOS_INLINE_FUNCTION TEST_CONSTEXPR_CXX20
+KOKKOS_INLINE_FUNCTION constexpr
 bool test()
 {
     {

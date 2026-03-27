@@ -21,7 +21,7 @@ template <class C, class Pointed, class Object, class... Args>
 KOKKOS_INLINE_FUNCTION constexpr decltype(auto) invoke_ptr(Pointed C::* member,
                                                            Object&& object,
                                                            Args&&... args) {
-  using object_t            = remove_cvref_t<Object>;
+  using object_t            = std::remove_cvref_t<Object>;
   constexpr bool is_wrapped = is_reference_wrapper_v<object_t>;
   constexpr bool is_derived_object =
       std::is_same_v<C, object_t> || std::is_base_of_v<C, object_t>;
@@ -50,7 +50,7 @@ KOKKOS_INLINE_FUNCTION constexpr decltype(auto) invoke_ptr(Pointed C::* member,
 
 template <class F, class... Args>
 KOKKOS_INLINE_FUNCTION constexpr decltype(auto) invoke(F&& f, Args&&... args) {
-  if constexpr (std::is_member_pointer_v<remove_cvref_t<F>>) {
+  if constexpr (std::is_member_pointer_v<std::remove_cvref_t<F>>) {
     return invoke_ptr(f, std::forward<Args>(args)...);
   } else {
     return (std::forward<F>(f))(std::forward<Args>(args)...);
@@ -69,7 +69,7 @@ KOKKOS_INLINE_FUNCTION constexpr T make_from_tuple(Tuple&& t,
   return T(cexa::get<I>(std::forward<Tuple>(t))...);
 }
 
-template <class U, class T, std::size_t = tuple_size_v<impl::remove_cvref_t<T>>>
+template <class U, class T, std::size_t = tuple_size_v<std::remove_cvref_t<T>>>
 struct make_tuple_constraint : std::true_type {};
 
 template <class U, class Tuple>
@@ -91,13 +91,13 @@ template <class T, class Tuple>
 inline constexpr bool is_constructible_from_tuple_v =
     is_constructible_from_tuple<T, Tuple,
                                 std::make_index_sequence<tuple_size_v<
-                                    impl::remove_cvref_t<Tuple>>>>::value;
+                                    std::remove_cvref_t<Tuple>>>>::value;
 
 }  // namespace impl
 
 template <class F, class Tuple>
 KOKKOS_INLINE_FUNCTION constexpr decltype(auto) apply(F&& f, Tuple&& t) {
-  static_assert(impl::is_tuple_v<impl::remove_cvref_t<Tuple>>,
+  static_assert(impl::is_tuple_v<std::remove_cvref_t<Tuple>>,
                 "cexa::apply can only be called with cexa::tuple");
   return impl::apply(
       std::forward<F>(f), std::forward<Tuple>(t),
@@ -108,11 +108,11 @@ template <
     class T, class Tuple,
     class = std::enable_if_t<impl::is_constructible_from_tuple_v<T, Tuple>>>
 KOKKOS_INLINE_FUNCTION constexpr T make_from_tuple(Tuple&& t) {
-  static_assert(impl::is_tuple_v<impl::remove_cvref_t<Tuple>>,
+  static_assert(impl::is_tuple_v<std::remove_cvref_t<Tuple>>,
                 "cexa::make_from_tuple can only be called with cexa::tuple");
   constexpr std::size_t size = tuple_size_v<std::remove_reference_t<Tuple>>;
   static_assert(
-      impl::make_tuple_constraint<T, impl::remove_cvref_t<Tuple>>::value);
+      impl::make_tuple_constraint<T, std::remove_cvref_t<Tuple>>::value);
   return impl::make_from_tuple<T>(std::forward<Tuple>(t),
                                   std::make_index_sequence<size>{});
 }

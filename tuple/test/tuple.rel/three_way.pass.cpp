@@ -24,7 +24,7 @@
 // UNSUPPORTED: c++03, c++11, c++14, c++17
 
 #include <tuple.hpp>
-#if defined(CEXA_HAS_CXX20)
+#if defined(CEXA_TUPLE_IMPL_USE_SPACESHIP_OPERATOR)
 #include <support/cexa_test_macros.hpp>
 #include <support/test_macros.h>
 
@@ -39,12 +39,12 @@ TEST_MSVC_DIAGNOSTIC_IGNORED(4242 4244)
 
 // A custom three-way result type
 struct CustomEquality {
-  friend constexpr bool operator==(const CustomEquality&, int) noexcept { return true; }
-  friend constexpr bool operator<(const CustomEquality&, int) noexcept { return false; }
-  friend constexpr bool operator<(int, const CustomEquality&) noexcept { return false; }
+  KOKKOS_FUNCTION friend constexpr bool operator==(const CustomEquality&, int) noexcept { return true; }
+  KOKKOS_FUNCTION friend constexpr bool operator<(const CustomEquality&, int) noexcept { return false; }
+  KOKKOS_FUNCTION friend constexpr bool operator<(int, const CustomEquality&) noexcept { return false; }
 };
 
-constexpr bool test() {
+KOKKOS_FUNCTION constexpr bool test() {
   struct WeakSpaceship {
     constexpr bool operator==(const WeakSpaceship&) const { return true; }
     constexpr std::weak_ordering operator<=>(const WeakSpaceship&) const { return std::weak_ordering::equivalent; }
@@ -122,21 +122,21 @@ constexpr bool test() {
   {
     typedef cexa::tuple<float> T1;
     typedef cexa::tuple<double> T2;
-    constexpr double nan = std::numeric_limits<double>::quiet_NaN();
+    constexpr double nan = Kokkos::Experimental::quiet_NaN_v<double>;
     // Comparisons with NaN and non-NaN are non-constexpr in GCC, so both sides must be NaN
     CEXA_EXPECT_EQ((T1(nan) <=> T2(nan)), std::partial_ordering::unordered);
   }
   {
     typedef cexa::tuple<double, double> T1;
     typedef cexa::tuple<float, float> T2;
-    constexpr double nan = std::numeric_limits<double>::quiet_NaN();
+    constexpr double nan = Kokkos::Experimental::quiet_NaN_v<double>;
     CEXA_EXPECT_EQ((T1(nan, 2) <=> T2(nan, 2)), std::partial_ordering::unordered);
     CEXA_EXPECT_EQ((T1(1, nan) <=> T2(1, nan)), std::partial_ordering::unordered);
   }
   {
     typedef cexa::tuple<double, float, float> T1;
     typedef cexa::tuple<double, double, float> T2;
-    constexpr double nan = std::numeric_limits<double>::quiet_NaN();
+    constexpr double nan = Kokkos::Experimental::quiet_NaN_v<double>;
     CEXA_EXPECT_EQ((T1(nan, 2, 3) <=> T2(nan, 2, 3)), std::partial_ordering::unordered);
     CEXA_EXPECT_EQ((T1(1, nan, 3) <=> T2(1, nan, 3)), std::partial_ordering::unordered);
     CEXA_EXPECT_EQ((T1(1, 2, nan) <=> T2(1, 2, nan)), std::partial_ordering::unordered);
@@ -210,14 +210,14 @@ constexpr bool test() {
     {
       typedef cexa::tuple<double> T1;
       typedef cexa::tuple<int> T2;
-      constexpr double nan = std::numeric_limits<double>::quiet_NaN();
+      constexpr double nan = Kokkos::Experimental::quiet_NaN_v<double>;
       ASSERT_SAME_TYPE(decltype(T1() <=> T2()), std::partial_ordering);
       CEXA_EXPECT_EQ((T1(nan) <=> T2(1)), std::partial_ordering::unordered);
     }
     {
       typedef cexa::tuple<double, double> T1;
       typedef cexa::tuple<int, int> T2;
-      constexpr double nan = std::numeric_limits<double>::quiet_NaN();
+      constexpr double nan = Kokkos::Experimental::quiet_NaN_v<double>;
       ASSERT_SAME_TYPE(decltype(T1() <=> T2()), std::partial_ordering);
       CEXA_EXPECT_EQ((T1(nan, 2) <=> T2(1, 2)), std::partial_ordering::unordered);
       CEXA_EXPECT_EQ((T1(1, nan) <=> T2(1, 2)), std::partial_ordering::unordered);
@@ -225,7 +225,7 @@ constexpr bool test() {
     {
       typedef cexa::tuple<double, double, double> T1;
       typedef cexa::tuple<int, int, int> T2;
-      constexpr double nan = std::numeric_limits<double>::quiet_NaN();
+      constexpr double nan = Kokkos::Experimental::quiet_NaN_v<double>;
       ASSERT_SAME_TYPE(decltype(T1() <=> T2()), std::partial_ordering);
       CEXA_EXPECT_EQ((T1(nan, 2, 3) <=> T2(1, 2, 3)), std::partial_ordering::unordered);
       CEXA_EXPECT_EQ((T1(1, nan, 3) <=> T2(1, 2, 3)), std::partial_ordering::unordered);
@@ -243,4 +243,3 @@ CEXA_TEST(tuple_rel, three_way, (
 ))
 // clang-format on
 #endif
-

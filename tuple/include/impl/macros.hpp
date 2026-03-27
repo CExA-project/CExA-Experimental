@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 #pragma once
 
+#include <Kokkos_Macros.hpp>
+
 #if defined(_MSVC_LANG)
 #define CEXA_STD_VERSION _MSVC_LANG
 #else
@@ -13,4 +15,9 @@
 #endif
 #if CEXA_STD_VERSION >= 202302L
 #define CEXA_HAS_CXX23
+#endif
+
+// FIXME: As of cuda 13, support for operator<=> in device code is still brittle
+#if !defined(KOKKOS_COMPILER_NVCC)
+#define CEXA_TUPLE_IMPL_USE_SPACESHIP_OPERATOR
 #endif

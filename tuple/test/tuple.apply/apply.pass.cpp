@@ -46,21 +46,21 @@ KOKKOS_INLINE_FUNCTION void test_constexpr_evaluation()
     {
         using Tup = cexa::tuple<>;
         using Fn = int(&)();
-        constexpr Tup t;
+        [[maybe_unused]] constexpr Tup t;
         static_assert(cexa::apply(static_cast<Fn>(constexpr_sum_fn), t) == 0, "");
         static_assert(cexa::apply(sum_obj, t) == 0, "");
     }
     {
         using Tup = cexa::tuple<int>;
         using Fn = int(&)(int);
-        constexpr Tup t(42);
+        [[maybe_unused]] constexpr Tup t(42);
         static_assert(cexa::apply(static_cast<Fn>(constexpr_sum_fn), t) == 42, "");
         static_assert(cexa::apply(sum_obj, t) == 42, "");
     }
     {
         using Tup = cexa::tuple<int, long>;
         using Fn = int(&)(int, int);
-        constexpr Tup t(42, 101);
+        [[maybe_unused]] constexpr Tup t(42, 101);
         static_assert(cexa::apply(static_cast<Fn>(constexpr_sum_fn), t) == 143, "");
         static_assert(cexa::apply(sum_obj, t) == 143, "");
     }
@@ -74,7 +74,7 @@ KOKKOS_INLINE_FUNCTION void test_constexpr_evaluation()
     {
         using Tup = cexa::tuple<int, long, int>;
         using Fn = int(&)(int, int, int);
-        constexpr Tup t(42, 101, -1);
+        [[maybe_unused]] constexpr Tup t(42, 101, -1);
         static_assert(cexa::apply(static_cast<Fn>(constexpr_sum_fn), t) == 142, "");
         static_assert(cexa::apply(sum_obj, t) == 142, "");
     }

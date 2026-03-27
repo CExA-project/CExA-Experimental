@@ -64,7 +64,7 @@ bool device_test()
     return true;
 }
 
-TEST_CONSTEXPR_CXX20
+constexpr
 bool test()
 {
     int i = 0;
@@ -89,9 +89,7 @@ bool test()
 
 TEST(host_tuple_creation, make_tuple_host) {
     test();
-#if TEST_STD_VER >= 20
     static_assert(test());
-#endif
 }
 
 // clang-format off

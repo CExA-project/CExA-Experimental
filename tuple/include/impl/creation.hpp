@@ -13,7 +13,7 @@ namespace cexa {
 
 // tuple.creation
 template <class... TTypes>
-KOKKOS_INLINE_FUNCTION constexpr tuple<impl::unwrap_ref_decay_t<TTypes>...>
+KOKKOS_INLINE_FUNCTION constexpr tuple<std::unwrap_ref_decay_t<TTypes>...>
 make_tuple(TTypes&&... t) {
   return {std::forward<TTypes>(t)...};
 }
@@ -69,7 +69,7 @@ struct cartesian_product
 template <class... Tuples, std::size_t... Ints1, std::size_t... Ints2>
 KOKKOS_FORCEINLINE_FUNCTION constexpr tuple<cexa::tuple_element_t<
     Ints1,
-    impl::remove_cvref_t<cexa::tuple_element_t<Ints2, tuple<Tuples...>>>>...>
+    std::remove_cvref_t<cexa::tuple_element_t<Ints2, tuple<Tuples...>>>>...>
 tuple_cat_impl(tuple<Tuples...>&& tuples, std::index_sequence<Ints1...>,
                std::index_sequence<Ints2...>) {
   return {get<Ints1>(std::move(get<Ints2>(tuples)))...};

@@ -40,13 +40,11 @@ KOKKOS_INLINE_FUNCTION constexpr void CreateTuple(std::index_sequence<I...>) {
   TargetTuple t5;                                          // default constructor
   (void)t1; (void)t2; (void)t3; (void)t4; (void)t5;
 
-#if TEST_STD_VER >= 20
   t1 = tuple;                                              // converting assignment from &
   t1 = static_cast<LargeTuple const&>(tuple);              // converting assignment from const&
   t1 = std::move(tuple);                                   // converting assignment from &&
   t1 = static_cast<LargeTuple const&&>(tuple);             // converting assignment from const&&
   swap(t1, t2);                                            // swap
-#endif
   // t1 == tuple;                                          // comparison does not work yet (we blow the constexpr stack)
 }
 

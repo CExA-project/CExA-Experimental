@@ -49,7 +49,7 @@ struct PotentiallyThrowingCopyAssignable {
     KOKKOS_INLINE_FUNCTION PotentiallyThrowingCopyAssignable& operator=(PotentiallyThrowingCopyAssignable const&) { return *this; }
 };
 
-KOKKOS_INLINE_FUNCTION TEST_CONSTEXPR_CXX20
+KOKKOS_INLINE_FUNCTION constexpr
 bool test()
 {
     {
@@ -109,9 +109,7 @@ bool test()
 // clang-format off
 CEXA_TEST(tuple_assign, convert_copy, (
     test();
-#if TEST_STD_VER >= 20
     static_assert(test());
-#endif
 
     {
         using T = cexa::tuple<int, NonAssignable>;

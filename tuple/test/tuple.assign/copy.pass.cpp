@@ -50,7 +50,7 @@ struct CopyAssignableInt {
   CopyAssignableInt& operator=(int&) { return *this; }
 };
 
-TEST_CONSTEXPR_CXX20
+constexpr
 bool test()
 {
     {
@@ -107,9 +107,7 @@ TEST(tuple_assign, copy_host) {
 // clang-format off
 CEXA_TEST(tuple_assign, copy, (
     test();
-#if TEST_STD_VER >= 20
     static_assert(test());
-#endif
 
     {
         // test that the implicitly generated copy assignment operator
@@ -120,7 +118,6 @@ CEXA_TEST(tuple_assign, copy, (
     {
         using T = cexa::tuple<int, NonAssignable>;
         static_assert(!std::is_copy_assignable<T>::value, "");
-        static_assert(!std::is_copy_assignable<cexa::impl::store_<std::unique_ptr<int>>>::value, "");
     }
     {
         using T = cexa::tuple<int, CopyAssignable>;

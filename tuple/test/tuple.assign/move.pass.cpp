@@ -62,7 +62,7 @@ struct CountAssign {
   KOKKOS_INLINE_FUNCTION CountAssign& operator=(CountAssign&&) { ++moved; return *this; }
 };
 
-KOKKOS_INLINE_FUNCTION TEST_CONSTEXPR_CXX20
+KOKKOS_INLINE_FUNCTION constexpr
 bool test()
 {
     {
@@ -116,10 +116,7 @@ bool test()
 // clang-format off
 CEXA_TEST(tuple_assign, move, (
     test();
-    // TODO: see if this is also constexpr in 17
-#if TEST_STD_VER >= 20
     static_assert(test());
-#endif
 
     {
         // test that the implicitly generated move assignment operator
