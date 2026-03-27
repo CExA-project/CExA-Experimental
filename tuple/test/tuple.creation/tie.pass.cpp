@@ -39,11 +39,9 @@ KOKKOS_INLINE_FUNCTION constexpr bool test_tie()
         CEXA_EXPECT_EQ(&cexa::get<1>(res), &cexa::ignore);
         CEXA_EXPECT_EQ(&cexa::get<2>(res), &f);
 
-#if TEST_STD_VER >= 20
         res = cexa::make_tuple(101, nullptr, -1.0);
         CEXA_EXPECT_EQ(i, 101);
         CEXA_EXPECT_EQ(f, -1.0);
-#endif
     }
     return true;
 }

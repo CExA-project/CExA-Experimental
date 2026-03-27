@@ -4,48 +4,11 @@
 
 #include <array>
 #include <type_traits>
-#include <functional>
-#if defined(CEXA_HAS_CXX20)
 #include <ranges>
-#endif
 
 #include "tuple_fwd.hpp"
 
 namespace cexa::impl {
-#if defined(CEXA_HAS_CXX20)
-template <class T>
-using remove_cvref = std::remove_cvref<T>;
-#else
-template <class T>
-struct remove_cvref {
-  using type = std::remove_cv_t<std::remove_reference_t<T>>;
-};
-#endif
-template <class T>
-using remove_cvref_t = typename remove_cvref<T>::type;
-
-#if defined(CEXA_HAS_CXX20)
-template <class T>
-using unwrap_ref_decay = std::unwrap_ref_decay<T>;
-#else
-template <class T>
-struct unwrap_reference {
-  using type = T;
-};
-
-template <class T>
-struct unwrap_reference<std::reference_wrapper<T>> {
-  using type = T&;
-};
-
-template <class T>
-struct unwrap_ref_decay {
-  using type = typename unwrap_reference<std::decay_t<T>>::type;
-};
-#endif
-template <class T>
-using unwrap_ref_decay_t = typename unwrap_ref_decay<T>::type;
-
 // NOTE: Since const T& t = {} is not an expression, we check that a member of
 // type T can be initialized with empty braces when calling a constructor.
 template <class U, class = void>
@@ -96,13 +59,11 @@ struct is_tuple_like_impl<std::tuple<Types...>> : std::true_type {};
 template <typename... Types>
 struct is_tuple_like_impl<cexa::tuple<Types...>> : std::true_type {};
 
-#if defined(CEXA_HAS_CXX20)
 template <class I, class S, std::ranges::subrange_kind K>
 struct is_tuple_like_impl<std::ranges::subrange<I, S, K>> : std::true_type {};
-#endif
 
 template <typename T>
-struct is_tuple_like : is_tuple_like_impl<impl::remove_cvref_t<T>> {};
+struct is_tuple_like : is_tuple_like_impl<std::remove_cvref_t<T>> {};
 
 template <typename T>
 inline constexpr bool is_tuple_like_v = is_tuple_like<T>::value;
@@ -121,10 +82,8 @@ inline constexpr bool is_tuple_v = is_tuple<T>::value;
 template <class T>
 struct is_subrange : std::false_type {};
 
-#if defined(CEXA_HAS_CXX20)
 template <class I, class S, std::ranges::subrange_kind K>
 struct is_subrange<std::ranges::subrange<I, S, K>> : std::true_type {};
-#endif
 
 template <class T>
 inline constexpr bool is_subrange_v = is_subrange<T>::value;
@@ -133,7 +92,7 @@ inline constexpr bool is_subrange_v = is_subrange<T>::value;
 template <class T, class U>
 struct is_different_from {
   static constexpr bool value =
-      !std::is_same_v<remove_cvref_t<T>, remove_cvref_t<U>>;
+      !std::is_same_v<std::remove_cvref_t<T>, std::remove_cvref_t<U>>;
 };
 
 template <class T, class U>
@@ -146,37 +105,38 @@ struct reference_constructs_from_temporary : std::false_type {};
 template <class T, class U>
 struct reference_constructs_from_temporary<const T&, U>
     : std::integral_constant<
-          bool, (std::is_same_v<remove_cvref_t<T>, remove_cvref_t<U>> &&
-                 !std::is_reference_v<U>) ||
-                    (std::conjunction_v<
-                        std::negation<
-                            std::is_same<remove_cvref_t<T>, remove_cvref_t<U>>>,
-                        std::is_convertible<
-                            std::conditional_t<std::is_scalar_v<U> ||
-                                                   std::is_void_v<U>,
-                                               std::remove_cv_t<U>, U>,
-                            T>>)> {};
+          bool,
+          (std::is_same_v<std::remove_cvref_t<T>, std::remove_cvref_t<U>> &&
+           !std::is_reference_v<U>) ||
+              (std::conjunction_v<
+                  std::negation<std::is_same<std::remove_cvref_t<T>,
+                                             std::remove_cvref_t<U>>>,
+                  std::is_convertible<
+                      std::conditional_t<std::is_scalar_v<U> ||
+                                             std::is_void_v<U>,
+                                         std::remove_cv_t<U>, U>,
+                      T>>)> {};
 
 template <class T, class U>
 struct reference_constructs_from_temporary<T&&, U>
     : std::integral_constant<
-          bool, (std::is_same_v<remove_cvref_t<T>, remove_cvref_t<U>> &&
-                 !std::is_reference_v<U>) ||
-                    (std::conjunction_v<
-                        std::negation<
-                            std::is_same<remove_cvref_t<T>, remove_cvref_t<U>>>,
-                        std::is_convertible<
-                            std::conditional_t<std::is_scalar_v<U> ||
-                                                   std::is_void_v<U>,
-                                               std::remove_cv_t<U>, U>,
-                            T>>)> {};
+          bool,
+          (std::is_same_v<std::remove_cvref_t<T>, std::remove_cvref_t<U>> &&
+           !std::is_reference_v<U>) ||
+              (std::conjunction_v<
+                  std::negation<std::is_same<std::remove_cvref_t<T>,
+                                             std::remove_cvref_t<U>>>,
+                  std::is_convertible<
+                      std::conditional_t<std::is_scalar_v<U> ||
+                                             std::is_void_v<U>,
+                                         std::remove_cv_t<U>, U>,
+                      T>>)> {};
 
 template <class T, class U>
 constexpr inline bool reference_constructs_from_temporary_v =
     reference_constructs_from_temporary<T, U>::value;
 
 // common_reference helper
-#if defined(CEXA_HAS_CXX20)
 template <class TTuple, class UTuple, template <class> class TQual,
           template <class> class UQual, class IndexSeq>
 struct common_reference_helper;
@@ -189,7 +149,6 @@ struct common_reference_helper<TTuple, UTuple, TQual, UQual,
       std::common_reference_t<TQual<std::tuple_element_t<Ints, TTuple>>,
                               UQual<std::tuple_element_t<Ints, UTuple>>>...>;
 };
-#endif
 
 // common_type helper
 template <class TTuple, class UTuple, class IndexSeq>
@@ -205,7 +164,6 @@ struct common_type_helper<TTuple, UTuple, std::index_sequence<Ints...>> {
 }  // namespace cexa::impl
 
 // tuple.common.ref
-#if defined(CEXA_HAS_CXX20)
 // NOTE: specializations of std::basic_common_reference are allowed if T1 and/or
 // T2 is a user defined type and std::decay is and identity transformation for
 // T1 and T2
@@ -240,7 +198,6 @@ struct std::basic_common_reference<TTuple, cexa::tuple<UTypes...>, TQual,
       decltype(std::index_sequence_for<UTypes...>{})>::type;
 };
 // NOLINTEND(cert-dcl58-cpp)
-#endif
 
 // NOTE: specializations of std::common_type are allowed if T1 and/or T2 is a
 // user defined type and std::decay is and identity transformation for T1 and T2
