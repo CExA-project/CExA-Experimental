@@ -9,31 +9,31 @@
 using simd_type          = Kokkos::Experimental::simd<float>;
 constexpr int simd_width = simd_type::size();
 
-#define TEST_UNARY_FUNC(FUNC)                                        \
-  TEST(unary_functions, FUNC) {                                      \
-    float values[simd_width];                                        \
-                                                                     \
-    const float max_float = std::numeric_limits<float>::infinity();  \
-                                                                     \
-    values[0] = -std::numeric_limits<float>::infinity();             \
-    for (int i = 1; i < simd_width; i++) {                           \
-      values[i] = std::nextafter(values[i - 1], max_float);          \
-    }                                                                \
-                                                                     \
-    while (values[simd_width - 1] < max_float) {                     \
-      simd_type x(values, Kokkos::Experimental::simd_flag_default);  \
-      simd_type res = Kokkos::FUNC(x);                               \
-                                                                     \
-      for (int i = 0; i < simd_width; i++) {                         \
-        float expected = std::FUNC(values[i]);                       \
-        EXPECT_FLOAT_EQ(res[i], expected);                           \
-      }                                                              \
-                                                                     \
-      values[0] = std::nextafter(values[simd_width - 1], max_float); \
-      for (int i = 1; i < simd_width; i++) {                         \
-        values[i] = std::nextafter(values[i - 1], max_float);        \
-      }                                                              \
-    }                                                                \
+#define TEST_UNARY_FUNC(FUNC)                                           \
+  TEST(unary_functions, FUNC) {                                         \
+    float values[simd_width];                                           \
+                                                                        \
+    const float inf = std::numeric_limits<float>::infinity();           \
+                                                                        \
+    values[0] = -inf;                                                   \
+    for (int i = 1; i < simd_width; i++) {                              \
+      values[i] = std::nextafter(values[i - 1], inf);                   \
+    }                                                                   \
+                                                                        \
+    while (values[simd_width - 1] < inf) {                              \
+      simd_type x(values, Kokkos::Experimental::simd_flag_default);     \
+      simd_type res = Kokkos::FUNC(x);                                  \
+                                                                        \
+      for (int i = 0; i < simd_width; i++) {                            \
+        float expected = std::FUNC(values[i]);                          \
+        EXPECT_FLOAT_EQ(res[i], expected) << "For value " << values[i]; \
+      }                                                                 \
+                                                                        \
+      values[0] = std::nextafter(values[simd_width - 1], inf);          \
+      for (int i = 1; i < simd_width; i++) {                            \
+        values[i] = std::nextafter(values[i - 1], inf);                 \
+      }                                                                 \
+    }                                                                   \
   }
 
 TEST_UNARY_FUNC(exp)
@@ -64,9 +64,8 @@ TEST_UNARY_FUNC(lgamma)
 // TODO: test binary and ternary functions
 
 int main(int argc, char* argv[]) {
-  Kokkos::initialize(argc, argv);
+  Kokkos::ScopeGuard guard(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();
-  Kokkos::finalize();
   return result;
 }
