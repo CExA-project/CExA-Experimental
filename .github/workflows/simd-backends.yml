@@ -94,7 +94,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=RelWithDebInfo
           cmake --build build -j
           ./build/main
-      - name: Patch Kokkos
+      - name: Patch Kokkos to use the Sleef SIMD backend
         working-directory: ${{ github.workspace }}/kokkos/simd/unit_tests
         run: |
           cp "$CexaSimdBackends_ROOT/include/CEXA_SIMD_SLEEF.hpp" include
