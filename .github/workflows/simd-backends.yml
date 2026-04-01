@@ -194,7 +194,7 @@ jobs:
             -DKokkos_ARCH_NATIVE=ON \
             -DKokkos_ENABLE_BENCHMARKS=ON
           cmake --build build -j --target Kokkos_PerformanceTest_SIMD_Host
-          ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=baseline.json
+          ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=baseline.json --benchmark_filter="math"
       - name: Patch the Kokkos SIMD perf tests to use the Sleef backend
         working-directory: ${{ github.workspace }}/kokkos/simd/perf_tests
         run: |
@@ -205,7 +205,7 @@ jobs:
         working-directory: ${{ github.workspace }}/kokkos
         run: |
           cmake --build build -j --target Kokkos_PerformanceTest_SIMD_Host
-          ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=sleef.json
+          ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=sleef.json --benchmark_filter="math"
       - name: Compare the perf test results
         working-directory: ${{ github.workspace }}/kokkos
         run: |
