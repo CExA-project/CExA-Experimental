@@ -14,7 +14,6 @@ option(
 )
 option(CEXA_SIMD_ENABLE_SVML "Use the svml to implement the simd math functions" OFF)
 option(CEXA_SIMD_ENABLE_TESTS "Enable accuracy tests" OFF)
-option(CEXA_SIMD_ENABLE_INSTALL "Enable installation of the library" ON)
 
 if(CEXA_SIMD_ENABLE_SLEEF AND CEXA_SIMD_ENABLE_SVML)
   message(FATAL_ERROR "Only one backend can be enabled at a time")
@@ -55,38 +54,37 @@ if(CEXA_SIMD_ENABLE_TESTS)
   add_subdirectory(test)
 endif()
 
-if(CEXA_SIMD_ENABLE_INSTALL)
-  include(GNUInstallDirs)
+# Install
+include(GNUInstallDirs)
 
-  include(CMakePackageConfigHelpers)
-  write_basic_package_version_file(
-    CexaSimdBackendsConfigVersion.cmake
-    COMPATIBILITY AnyNewerVersion
-  )
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  CexaSimdBackendsConfigVersion.cmake
+  COMPATIBILITY AnyNewerVersion
+)
 
-  install(
-    TARGETS simd-backends
-    EXPORT CexaSimdBackends
-    FILE_SET HEADERS
-  )
+install(
+  TARGETS simd-backends
+  EXPORT CexaSimdBackends
+  FILE_SET HEADERS
+)
 
-  install(
-    EXPORT CexaSimdBackends
-    FILE CexaSimdBackendsTargets.cmake
-    NAMESPACE cexa::
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/CexaSimdBackends"
-  )
+install(
+  EXPORT CexaSimdBackends
+  FILE CexaSimdBackendsTargets.cmake
+  NAMESPACE cexa::
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/CexaSimdBackends"
+)
 
-  configure_package_config_file(
-    cmake/CexaSimdBackendsConfig.cmake.in
+configure_package_config_file(
+  cmake/CexaSimdBackendsConfig.cmake.in
+  "${CMAKE_CURRENT_BINARY_DIR}/CexaSimdBackendsConfig.cmake"
+  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/CexaSimdBackends"
+)
+
+install(
+  FILES
     "${CMAKE_CURRENT_BINARY_DIR}/CexaSimdBackendsConfig.cmake"
-    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/CexaSimdBackends"
-  )
-
-  install(
-    FILES
-      "${CMAKE_CURRENT_BINARY_DIR}/CexaSimdBackendsConfig.cmake"
-      "${CMAKE_CURRENT_BINARY_DIR}/CexaSimdBackendsConfigVersion.cmake"
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/CexaSimdBackends"
-  )
-endif()
+    "${CMAKE_CURRENT_BINARY_DIR}/CexaSimdBackendsConfigVersion.cmake"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/CexaSimdBackends"
+)

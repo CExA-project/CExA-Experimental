@@ -14,7 +14,6 @@ The available cmake configuration options are:
 - `CEXA_SIMD_ENABLE_SLEEF`: use the sleef library
 - `CEXA_SIMD_ENABLE_SVML`: use the Intel SVML library (only available with intel compilers)
 - `CEXA_SIMD_ENABLE_TESTS`: build the tests
-- `CEXA_SIMD_ENABLE_INSTALL`: enable the installation target
 
 The sleef backend requires sleef v3.6.0 or later.
 
