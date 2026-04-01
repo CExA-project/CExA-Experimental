@@ -198,7 +198,7 @@ jobs:
       - name: Patch the Kokkos SIMD perf tests to use the Sleef backend
         working-directory: ${{ github.workspace }}/kokkos/simd/perf_tests
         run: |
-          cp "${{ github.workspace }}/src/CEXA_SIMD_SLEEF.hpp" include
+          cp "${{ github.workspace }}/simd-backends/src/CEXA_SIMD_SLEEF.hpp" include
           sed -i '/KOKKOS_IMPL_SIMD_DEVICE_PERFTEST/a find_package(sleef REQUIRED)\ntarget_link_libraries(Kokkos_PerformanceTest_SIMD_Host PRIVATE sleef::sleef)' CMakeLists.txt
           sed -i '/include <Kokkos_SIMD.hpp>/a #include <CEXA_SIMD_SLEEF.hpp>' include/PerfTest_Host.hpp
       - name: Run the Kokkos SIMD perf tests using the Sleef backend
