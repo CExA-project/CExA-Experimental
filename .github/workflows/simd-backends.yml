@@ -208,4 +208,6 @@ jobs:
           ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=sleef.json
       - name: Compare the perf test results
         working-directory: ${{ github.workspace }}/kokkos
-        run: ${{ env.compare_ROOT }}/compare.py benchmarks baseline.json sleef.json
+        run: |
+          source ${{ env.compare_ROOT }}/venv/bin/activate
+          ${{ env.compare_ROOT }}/compare.py benchmarks baseline.json sleef.json
