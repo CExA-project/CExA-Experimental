@@ -32,12 +32,12 @@ path to the library using the `-DCexaSimdBackends_ROOT=<path to the install loca
 option.
 
 ```cmake
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.23)
 
 project(test)
 
-find_package(Kokkos 5.0 REQUIRED)
-find_package(CexaSimdBackends 0.1 REQUIRED)
+find_package(Kokkos REQUIRED)
+find_package(CexaSimdBackends REQUIRED)
 
 add_executable(main main.cpp)
 target_link_libraries(main PRIVATE Kokkos::kokkos cexa::simd-backends)
