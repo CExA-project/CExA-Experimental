@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.23)
 
 project(simd-backends VERSION 0.1.0)
 
-find_package(Kokkos 4.5 REQUIRED)
+find_package(Kokkos 4.6 REQUIRED)
 
 option(
   CEXA_SIMD_ENABLE_SLEEF

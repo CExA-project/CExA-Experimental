@@ -1,11 +1,11 @@
 # SPDX-FileCopyrightText: 2026 CExA-project
 # SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.23)
 
 project(simd-backends-install-test)
 
-find_package(Kokkos 5 REQUIRED)
+find_package(Kokkos 4.6 REQUIRED)
 find_package(CexaSimdBackends REQUIRED)
 
 add_executable(main main.cpp)

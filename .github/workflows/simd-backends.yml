@@ -21,6 +21,10 @@ jobs:
   simd-backends-ci:
     continue-on-error: true
 
+    strategy:
+      matrix:
+        kokkos-version: [4.6.00, 5.1.0]
+
     runs-on: ubuntu-latest
 
     env:
@@ -61,7 +65,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: kokkos/kokkos
-          ref: 5.0.2
+          ref: ${{ matrix.kokkos-version }}
           path: kokkos
       - name: Install kokkos
         run: |
