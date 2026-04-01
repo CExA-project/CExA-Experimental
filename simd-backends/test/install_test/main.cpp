@@ -7,4 +7,6 @@ int main(int argc, char* argv[]) {
 
   Kokkos::Experimental::simd<float> vec(1.f);
   vec = Kokkos::exp(vec);
+
+  return 0;
 }
