@@ -97,7 +97,7 @@ cpu_topology init_cpu_topology() {
 
 static cpu_topology topology = init_cpu_topology();
 
-#if defined(__aarch64__)
+#if defined(__aarch64__) || defined(__arm__)
 
 std::optional<std::string> read_cpu_model_lscpu() {
   static const char* model_name_key = "Model name";
