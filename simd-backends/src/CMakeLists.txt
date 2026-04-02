@@ -15,7 +15,7 @@ target_sources(
       "${CMAKE_CURRENT_BINARY_DIR}"
     FILES
       CEXA_SIMD_SLEEF.hpp
-      CEXA_SIMD_SLEEF.hpp
+      CEXA_SIMD_SVML.hpp
       "${CMAKE_CURRENT_BINARY_DIR}/CEXA_SIMD_Backends.hpp"
 )
 target_link_libraries(simd-backends INTERFACE Kokkos::kokkos)
