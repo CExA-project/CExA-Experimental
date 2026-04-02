@@ -61,7 +61,7 @@ jobs:
             -DSLEEF_ENABLE_FFTW=OFF \
             -DSLEEF_ENABLE_MPFR=OFF \
             -B sleef/build -S sleef
-          cmake --build sleef/build -j --target install
+          cmake --build sleef/build -j $(nproc) --target install
       - name: Checkout Kokkos
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -76,7 +76,7 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="$Kokkos_ROOT" \
             -DKokkos_ARCH_NATIVE=ON \
             -B kokkos/build -S kokkos
-          cmake --build kokkos/build -j --target install
+          cmake --build kokkos/build -j $(nproc) --target install
       - name: Configure
         working-directory: ${{ github.workspace }}/simd-backends
         run:
@@ -89,7 +89,7 @@ jobs:
             -B build -S .
       - name: Build
         working-directory: ${{ github.workspace }}/simd-backends
-        run: cmake --build build -j
+        run: cmake --build build -j $(nproc)
       - name: Install
         working-directory: ${{ github.workspace }}/simd-backends
         run: cmake --install build
@@ -100,7 +100,7 @@ jobs:
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -B build -S .
-          cmake --build build -j
+          cmake --build build -j $(nproc)
           ./build/main
       - name: Patch the Kokkos SIMD unit tests to use the Sleef backend
         working-directory: ${{ github.workspace }}/kokkos/simd/unit_tests
@@ -117,7 +117,7 @@ jobs:
             -DKokkos_ARCH_NATIVE=ON \
             -DKokkos_ENABLE_TESTS=ON \
             -B build -S .
-          cmake --build build -j --target Kokkos_UnitTest_SIMD
+          cmake --build build -j $(nproc) --target Kokkos_UnitTest_SIMD
           ctest --test-dir build --output-on-failure -R SIMD
 
   performance-tests:
@@ -159,7 +159,7 @@ jobs:
             -DSLEEF_ENABLE_FFTW=OFF \
             -DSLEEF_ENABLE_MPFR=OFF \
             -B sleef/build -S sleef
-          cmake --build sleef/build -j --target install
+          cmake --build sleef/build -j $(nproc) --target install
       - run: echo "PYTHON_VERSION=$(python3 --version | sed 's/ /_/')" >> $GITHUB_ENV
       - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         id: cache-gbench-compare
@@ -206,7 +206,7 @@ jobs:
             -DKokkos_ARCH_NATIVE=ON \
             -DKokkos_ENABLE_BENCHMARKS=ON \
             -B build -S .
-          cmake --build build -j --target Kokkos_PerformanceTest_SIMD_Host
+          cmake --build build -j $(nproc) --target Kokkos_PerformanceTest_SIMD_Host
           ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=baseline.json --benchmark_filter="math .[^c]"
       - name: Patch the Kokkos SIMD perf tests to use the Sleef backend
         working-directory: ${{ github.workspace }}/kokkos/simd/perf_tests
@@ -217,7 +217,7 @@ jobs:
       - name: Run the Kokkos SIMD perf tests using the Sleef backend
         working-directory: ${{ github.workspace }}/kokkos
         run: |
-          cmake --build build -j --target Kokkos_PerformanceTest_SIMD_Host
+          cmake --build build -j $(nproc) --target Kokkos_PerformanceTest_SIMD_Host
           ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=sleef.json --benchmark_filter="math .[^c]"
       - name: Compare the perf test results
         working-directory: ${{ github.workspace }}/kokkos
