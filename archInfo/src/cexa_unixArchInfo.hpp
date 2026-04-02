@@ -11,6 +11,7 @@
 #include <fstream>
 #include <optional>
 #include <string>
+#include <cstring>
 #include <unordered_set>
 
 // This header is only included in a single cpp file
@@ -102,7 +103,7 @@ std::optional<std::string> read_cpu_model_lscpu() {
   static const char* model_name_key = "Model name";
 
   // "lscpu --parse=MODELNAME" Not available on GH200
-  FILE* f = popen(" lscpu | head -n 32 2>/dev/null", "r");
+  FILE* f = popen("lscpu | head -n 32 2>/dev/null", "r");
   if (!f) {
     return std::nullopt;
   }
@@ -113,6 +114,7 @@ std::optional<std::string> read_cpu_model_lscpu() {
 
   while (pos == nullptr) {
     if (!std::fgets(buffer, 1024, f)) {
+      pclose(f);
       return std::nullopt;
     }
     pos = std::strstr(buffer, model_name_key);
@@ -124,9 +126,9 @@ std::optional<std::string> read_cpu_model_lscpu() {
     pos++;
   }
 
+  std::string model_name(pos);
   pclose(f);
 
-  std::string model_name(pos);
   if (model_name.back() == '\n') {
     model_name.pop_back();
   }
@@ -148,13 +150,14 @@ std::optional<std::string> read_cpu_model_lscpu() {
   // lscpu puts some comments on the first lines of output
   while (buffer[0] == '#') {
     if (!std::fgets(buffer, 1024, f)) {
+      pclose(f);
       return std::nullopt;
     }
   }
 
+  std::string model_name(buffer);
   pclose(f);
 
-  std::string model_name(buffer);
   if (model_name.back() == '\n') {
     model_name.pop_back();
   }
