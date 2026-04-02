@@ -26,7 +26,7 @@ write_basic_package_version_file(
 )
 
 configure_package_config_file(
-  "${CMAKE_CURREN_SOURCE_DIR}/cmake/CexaArchInfoConfig.cmake.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CexaArchInfoConfig.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/CexaArchInfoConfig.cmake"
   INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/CexaArchInfo"
 )

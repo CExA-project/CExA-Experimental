@@ -96,6 +96,45 @@ cpu_topology init_cpu_topology() {
 
 static cpu_topology topology = init_cpu_topology();
 
+#if defined(__aarch64__)
+
+std::optional<std::string> read_cpu_model_lscpu() {
+  static const char* model_name_key = "Model name";
+
+  // "lscpu --parse=MODELNAME" Not available on GH200
+  FILE* f = popen(" lscpu | head -n 32 2>/dev/null", "r");
+  if (!f) {
+    return std::nullopt;
+  }
+
+  // We don't expect cpu model names to be longer that 1024 characters
+  char buffer[1024];
+  char* pos = nullptr;
+
+  while (pos == nullptr) {
+    if (!std::fgets(buffer, 1024, f)) {
+      return std::nullopt;
+    }
+    pos = std::strstr(buffer, model_name_key);
+  }
+
+  // Skip key and whitespace
+  pos += std::strlen(model_name_key) + 1;
+  while (std::isspace(*pos)) {
+    pos++;
+  }
+
+  pclose(f);
+
+  std::string model_name(pos);
+  if (model_name.back() == '\n') {
+    model_name.pop_back();
+  }
+  return model_name;
+}
+
+#else  // x86_64
+
 std::optional<std::string> read_cpu_model_lscpu() {
   FILE* f = popen("lscpu --parse=MODELNAME 2>/dev/null", "r");
   if (!f) {
@@ -121,6 +160,8 @@ std::optional<std::string> read_cpu_model_lscpu() {
   }
   return model_name;
 }
+
+#endif
 
 // Extract a value from /proc/cpuinfo
 std::optional<std::string> get_cpu_info_str(const char* key) {
@@ -187,20 +228,20 @@ std::string get_cpu_model_name() {
   if (cpu_model.has_value()) {
     return cpu_model.value();
   } else {
-    return get_cpu_info_str("model name").value_or("ERROR");
+    return get_cpu_info_str("model name").value_or("Unknown");
   }
 }
 
 std::string get_sys_name() {
-  return get_os_release_str("PRETTY_NAME").value_or("ERROR");
+  return get_os_release_str("PRETTY_NAME").value_or("Unknown");
 }
 
 std::string get_sys_type() {
-  return get_proc_sys_value("kernel/ostype").value_or("ERROR");
+  return get_proc_sys_value("kernel/ostype").value_or("Unknown");
 }
 
 std::string get_kernel_version() {
-  return get_proc_sys_value("kernel/osrelease").value_or("ERROR");
+  return get_proc_sys_value("kernel/osrelease").value_or("Unknown");
 }
 
 }  // namespace cexa::impl
