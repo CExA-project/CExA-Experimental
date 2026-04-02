@@ -19,11 +19,6 @@ The sleef backend requires sleef v3.6.0 or later.
 
 ## Usage
 
-### Manual
-
-As the library is header only, you can include the header for your library of choice
-directly in your code.
-
 ### CMake
 
 With CMake, you can use the `find_package` command as shown in the
@@ -46,7 +41,7 @@ target_link_libraries(main PRIVATE Kokkos::kokkos cexa::simd-backends)
 You can then include `CEXA_SIMD_Backends.hpp` in your code and use the Kokkos simd math
 functions as usual.
 
-```
+```cpp
 #include <Kokkos_Core.hpp>
 #include <Kokkos_SIMD.hpp>
 #include <CEXA_SIMD_Backends.hpp>
@@ -57,4 +52,28 @@ int main(int argc, char* argv[]) {
   Kokkos::Experimental::simd<float> vec(1.f);
   vec = Kokkos::exp(vec);
 }
+```
+
+### Manual
+
+As the library is header only, you can direclty include the header
+corresponding to your SIMD library of choice directly in your code. In that
+case, you should also handle the necessary include and link flags for the
+library you choose.
+
+For example, with sleef:
+```cpp
+#include <Kokkos_Core.hpp>
+#include <Kokkos_SIMD.hpp>
+#include "CEXA_SIMD_SLEEF.hpp"
+
+int main(int argc, char* argv[]) {
+  Kokkos::ScopeGuard kokkos_scope(argc, argv);
+
+  Kokkos::Experimental::simd<float> vec(1.f);
+  vec = Kokkos::exp(vec);
+}
+```
+```
+g++ main.cpp -I<path/to/sleef/include/dir> -L<path/to/sleef/lib/dir> -lsleef
 ```
