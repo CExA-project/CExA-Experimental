@@ -171,7 +171,7 @@ std::string get_gpu_runtime_version() { return "N/A"; }
 #else
 
 std::string get_gpu_name() {
-  return "Not compiled with a supported GPU backend (CUDA, HIP, SYCL, OpenACC)";
+  return "Not compiled with one of the supported GPU backend: CUDA, HIP, SYCL, or OpenACC";
 }
 
 std::string get_gpu_arch() { return "N/A"; }
