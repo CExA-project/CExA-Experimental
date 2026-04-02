@@ -186,15 +186,21 @@ jobs:
           ref: 5.1.0
           path: kokkos
       - name: Run the Kokkos SIMD perf tests
+        # We use "math .[^c]" as benchmark_filter to only run benchmarks for
+        # math functions and to exclude the scalar ones, ".[^c]" will exclude
+        # "scalar" but not "avx", "neon" or "sve".
+        # We also increase the number of iterations to get more stable results,
+        # we can afford it since we don't run the scalar benchmarks.
         working-directory: ${{ github.workspace }}/kokkos
         run: |
+          sed -i 's/Iterations(3)/Iterations(300)/' simd/perf_tests/include/PerfTest_Host.hpp
           cmake -S . -B build \
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_BUILD_TYPE=Release \
             -DKokkos_ARCH_NATIVE=ON \
             -DKokkos_ENABLE_BENCHMARKS=ON
           cmake --build build -j --target Kokkos_PerformanceTest_SIMD_Host
-          ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=baseline.json --benchmark_filter="math"
+          ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=baseline.json --benchmark_filter="math .[^c]"
       - name: Patch the Kokkos SIMD perf tests to use the Sleef backend
         working-directory: ${{ github.workspace }}/kokkos/simd/perf_tests
         run: |
@@ -205,7 +211,7 @@ jobs:
         working-directory: ${{ github.workspace }}/kokkos
         run: |
           cmake --build build -j --target Kokkos_PerformanceTest_SIMD_Host
-          ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=sleef.json --benchmark_filter="math"
+          ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=sleef.json --benchmark_filter="math .[^c]"
       - name: Compare the perf test results
         working-directory: ${{ github.workspace }}/kokkos
         run: |
