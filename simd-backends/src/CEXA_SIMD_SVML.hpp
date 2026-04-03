@@ -51,7 +51,7 @@ namespace Kokkos {
 // CEXA_IMPL_SVML_AVX2_UNARY_FUNCTION(abs)
 // There are already calls to these svml functions in kokkos simd if using an
 // intel compiler
-#if KOKKOS_VERSION_LESS(5, 0, 0)
+#if KOKKOS_VERSION_LESS(5, 0, 0) || !defined(KOKKOS_COMPILER_INTEL_LLVM)
 CEXA_IMPL_SVML_AVX2_UNARY_FUNCTION(exp)
 CEXA_IMPL_SVML_AVX2_UNARY_FUNCTION(log)
 CEXA_IMPL_SVML_AVX2_UNARY_FUNCTION(cbrt)
@@ -153,7 +153,7 @@ CEXA_IMPL_SVML_AVX2_BINARY_FUNCTION(atan2)
 // CEXA_IMPL_SVML_AVX512_UNARY_FUNCTION(abs)
 // There are already calls to these svml functions in kokkos simd if using an
 // intel compiler
-#if KOKKOS_VERSION_LESS(5, 0, 0)
+#if KOKKOS_VERSION_LESS(5, 0, 0) || !defined(KOKKOS_COMPILER_INTEL_LLVM)
 CEXA_IMPL_SVML_AVX512_UNARY_FUNCTION(exp)
 CEXA_IMPL_SVML_AVX512_UNARY_FUNCTION(log)
 CEXA_IMPL_SVML_AVX512_UNARY_FUNCTION(cbrt)
