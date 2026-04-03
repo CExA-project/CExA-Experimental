@@ -1,0 +1,226 @@
+# SPDX-FileCopyrightText: 2026 CExA-project
+# SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
+
+name: SIMD Backends Tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/simd-backends.yml'
+      - 'simd-backends/**'
+      - '!simd-backends/README.md'
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.event_name }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  unit-tests:
+    continue-on-error: true
+
+    strategy:
+      matrix:
+        kokkos-version: [4.6.00, 5.1.0]
+
+    runs-on: ubuntu-latest
+
+    env:
+      CMAKE_GENERATOR: Ninja
+      Kokkos_ROOT: ${{ github.workspace }}/opt/kokkos
+      sleef_ROOT: ${{ github.workspace }}/opt/sleef
+      CexaSimdBackends_ROOT: ${{ github.workspace }}/simd-backends/install
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        id: cache-sleef
+        with:
+          path: opt/sleef
+          key: simd-backends-sleef-ubuntu-latest
+      - name: Checkout Sleef
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        if: steps.cache-sleef.outputs.cache-hit != 'true'
+        with:
+          repository: shibatch/sleef
+          ref: 3.9.0
+          path: sleef
+      - name: Install Sleef
+        if: steps.cache-sleef.outputs.cache-hit != 'true'
+        run: |
+          cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_INSTALL_PREFIX="$sleef_ROOT" \
+            -DSLEEF_BUILD_GNUABI_LIBS=OFF \
+            -DSLEEF_BUILD_TESTS=OFF \
+            -DSLEEF_ENABLE_TLFLOAT=OFF \
+            -DSLEEF_ENABLE_FFTW=OFF \
+            -DSLEEF_ENABLE_MPFR=OFF \
+            -B sleef/build -S sleef
+          cmake --build sleef/build -j $(nproc) --target install
+      - name: Checkout Kokkos
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ matrix.kokkos-version }}
+          path: kokkos
+      - name: Install kokkos
+        run: |
+          cmake \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_INSTALL_PREFIX="$Kokkos_ROOT" \
+            -DKokkos_ARCH_NATIVE=ON \
+            -B kokkos/build -S kokkos
+          cmake --build kokkos/build -j $(nproc) --target install
+      - name: Configure
+        working-directory: ${{ github.workspace }}/simd-backends
+        run:
+          cmake
+            -DCMAKE_CXX_COMPILER=g++
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo
+            -DCMAKE_INSTALL_PREFIX="$CexaSimdBackends_ROOT"
+            -DCEXA_SIMD_ENABLE_SLEEF=ON
+            -DCEXA_SIMD_ENABLE_TESTS=ON
+            -B build -S .
+      - name: Build
+        working-directory: ${{ github.workspace }}/simd-backends
+        run: cmake --build build -j $(nproc)
+      - name: Install
+        working-directory: ${{ github.workspace }}/simd-backends
+        run: cmake --install build
+      - name: Test install
+        working-directory: ${{ github.workspace }}/simd-backends/test/install_test
+        run: |
+          cmake \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -B build -S .
+          cmake --build build -j $(nproc)
+          ./build/main
+      - name: Patch the Kokkos SIMD unit tests to use the Sleef backend
+        working-directory: ${{ github.workspace }}/kokkos/simd/unit_tests
+        run: |
+          cp "$CexaSimdBackends_ROOT/include/CEXA_SIMD_SLEEF.hpp" include
+          sed -i '/kokkos_add_executable_and_test/a find_package(sleef REQUIRED)\ntarget_link_libraries(Kokkos_UnitTest_SIMD PRIVATE sleef::sleef)' CMakeLists.txt
+          sed -i '/include <Kokkos_SIMD.hpp>/a #include <CEXA_SIMD_SLEEF.hpp>' include/TestSIMD_MathOps.hpp
+      - name: Run the Kokkos SIMD unit tests using the Sleef backend
+        working-directory: ${{ github.workspace }}/kokkos
+        run: |
+          cmake \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DKokkos_ARCH_NATIVE=ON \
+            -DKokkos_ENABLE_TESTS=ON \
+            -B build -S .
+          cmake --build build -j $(nproc) --target Kokkos_UnitTest_SIMD
+          ctest --test-dir build --output-on-failure -R SIMD
+
+  performance-tests:
+    continue-on-error: true
+
+    runs-on: ubuntu-latest
+
+    env:
+      CMAKE_GENERATOR: Ninja
+      sleef_ROOT: ${{ github.workspace }}/opt/sleef
+      compare_ROOT: ${{ github.workspace }}/opt/compare
+      benchmark_VERSION: v1.9.5
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        id: cache-sleef
+        with:
+          path: opt/sleef
+          key: simd-backends-sleef-ubuntu-latest
+      - name: Checkout Sleef
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        if: steps.cache-sleef.outputs.cache-hit != 'true'
+        with:
+          repository: shibatch/sleef
+          ref: 3.9.0
+          path: sleef
+      - name: Install Sleef
+        if: steps.cache-sleef.outputs.cache-hit != 'true'
+        run: |
+          cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_INSTALL_PREFIX="$sleef_ROOT" \
+            -DSLEEF_BUILD_GNUABI_LIBS=OFF \
+            -DSLEEF_BUILD_TESTS=OFF \
+            -DSLEEF_ENABLE_TLFLOAT=OFF \
+            -DSLEEF_ENABLE_FFTW=OFF \
+            -DSLEEF_ENABLE_MPFR=OFF \
+            -B sleef/build -S sleef
+          cmake --build sleef/build -j $(nproc) --target install
+      - run: echo "PYTHON_VERSION=$(python3 --version | sed 's/ /_/')" >> $GITHUB_ENV
+      - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        id: cache-gbench-compare
+        with:
+          path: ${{ env.compare_ROOT }}
+          key: simd-backends-gbench-ubuntu-latest-${{ env.benchmark_VERSION }}-${{ env.PYTHON_VERSION }}
+      - name: Checkout google benchmark
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        if: steps.cache-gbench-compare.outputs.cache-hit != 'true'
+        with:
+          repository: google/benchmark
+          ref: ${{ env.benchmark_VERSION }}
+          path: benchmark
+      - name: Get the compare script from google benchmark
+        if: steps.cache-gbench-compare.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ${{ env.compare_ROOT }}
+          cp -r benchmark/tools/* ${{ env.compare_ROOT }}
+      - name: Install python dependencies
+        working-directory: ${{ env.compare_ROOT }}
+        if: steps.cache-gbench-compare.outputs.cache-hit != 'true'
+        run: |
+          python3 -m venv ./venv
+          source ./venv/bin/activate
+          pip3 install -r ./requirements.txt
+      - name: Checkout Kokkos
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: kokkos/kokkos
+          ref: 5.1.0
+          path: kokkos
+      - name: Run the Kokkos SIMD perf tests
+        # We use "math .[^c]" as benchmark_filter to only run benchmarks for
+        # math functions and to exclude the scalar ones, ".[^c]" will exclude
+        # "scalar" but not "avx", "neon" or "sve".
+        # We also increase the number of iterations to get more stable results,
+        # we can afford it since we don't run the scalar benchmarks.
+        working-directory: ${{ github.workspace }}/kokkos
+        run: |
+          sed -i 's/Iterations(3)/Iterations(300)/' simd/perf_tests/include/PerfTest_Host.hpp
+          cmake \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DKokkos_ARCH_NATIVE=ON \
+            -DKokkos_ENABLE_BENCHMARKS=ON \
+            -B build -S .
+          cmake --build build -j $(nproc) --target Kokkos_PerformanceTest_SIMD_Host
+          ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=baseline.json --benchmark_filter="math .[^c]"
+      - name: Patch the Kokkos SIMD perf tests to use the Sleef backend
+        working-directory: ${{ github.workspace }}/kokkos/simd/perf_tests
+        run: |
+          cp "${{ github.workspace }}/simd-backends/src/CEXA_SIMD_SLEEF.hpp" include
+          sed -i '/KOKKOS_IMPL_SIMD_DEVICE_PERFTEST/a find_package(sleef REQUIRED)\ntarget_link_libraries(Kokkos_PerformanceTest_SIMD_Host PRIVATE sleef::sleef)' CMakeLists.txt
+          sed -i '/include <Kokkos_SIMD.hpp>/a #include <CEXA_SIMD_SLEEF.hpp>' include/PerfTest_Host.hpp
+      - name: Run the Kokkos SIMD perf tests using the Sleef backend
+        working-directory: ${{ github.workspace }}/kokkos
+        run: |
+          cmake --build build -j $(nproc) --target Kokkos_PerformanceTest_SIMD_Host
+          ./build/simd/perf_tests/Kokkos_PerformanceTest_SIMD_Host --benchmark_out=sleef.json --benchmark_filter="math .[^c]"
+      - name: Compare the perf test results
+        working-directory: ${{ github.workspace }}/kokkos
+        run: |
+          source ${{ env.compare_ROOT }}/venv/bin/activate
+          ${{ env.compare_ROOT }}/compare.py benchmarks baseline.json sleef.json
