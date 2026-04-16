@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2026 CExA-project
 // SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 
-#ifndef CEXA_WINDWOS_ARCHINFO_HPP
-#define CEXA_WINDWOS_ARCHINFO_HPP
+#if defined(_WIN32)
 
 #include "cexa_ArchInfo.hpp"
 
@@ -15,8 +14,6 @@
 #include <windows.h>
 #include <intrin.h>
 
-// This header is only included in a single cpp file
-// NOLINTBEGIN(misc-definitions-in-headers)
 namespace cexa::impl {
 
 template <class T>
@@ -169,6 +166,5 @@ std::string get_kernel_version() {
 }
 
 }  // namespace cexa::impl
-// NOLINTEND(misc-definitions-in-headers)
 
 #endif

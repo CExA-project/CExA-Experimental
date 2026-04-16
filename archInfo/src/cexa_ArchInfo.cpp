@@ -9,16 +9,6 @@
 #include <ostream>
 #include <iostream>
 
-#if defined(UNIX) || defined(__unix__)
-#include <cexa_unixArchInfo.hpp>
-#elif defined(_WIN32)
-#include <cexa_windowsArchInfo.hpp>
-#elif defined(__APPLE__)
-#include <cexa_macosArchInfo.hpp>
-#else
-#error "This utility only supports unix, windows and macos"
-#endif
-
 namespace cexa {
 
 namespace impl {

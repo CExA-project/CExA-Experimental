@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2026 CExA-project
 // SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 
-#ifndef CEXA_MACOS_ARCHINFO_HPP
-#define CEXA_MACOS_ARCHINFO_HPP
+#if defined(__APPLE__)
 
 #include "cexa_ArchInfo.hpp"
 
@@ -13,9 +12,6 @@
 #include <string_view>
 #include <sys/sysctl.h>
 
-// This header is only included in a single cpp file, and adding inline to the
-// functions leads to undefined references with apple clang
-// NOLINTBEGIN(misc-definitions-in-headers)
 namespace cexa::impl {
 
 std::optional<std::string> get_sysctl_string(std::string_view name) {
@@ -136,6 +132,5 @@ std::string get_kernel_version() {
 }
 
 }  // namespace cexa::impl
-// NOLINTEND(misc-definitions-in-headers)
 
 #endif

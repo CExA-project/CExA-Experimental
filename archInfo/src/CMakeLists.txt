@@ -14,6 +14,9 @@ target_sources(
       cexa_ArchInfo.hpp
   PRIVATE
     cexa_ArchInfo.cpp
+    cexa_unixArchInfo.cpp
+    cexa_windowsArchInfo.cpp
+    cexa_macosArchInfo.cpp
 )
 
 target_compile_features(archInfo PUBLIC cxx_std_17)
