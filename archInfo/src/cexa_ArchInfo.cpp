@@ -11,8 +11,6 @@
 
 namespace cexa {
 
-namespace impl {
-
 // Kokkos can use a subset of the available threads
 std::size_t get_kokkos_concurrency() { return Kokkos::num_threads(); }
 
@@ -103,6 +101,8 @@ std::string get_gpu_runtime_version() {
 
 #elif defined(KOKKOS_ENABLE_SYCL)
 
+namespace impl {
+
 template <class Info>
 std::string get_sycl_info() {
   sycl::device d;
@@ -114,18 +114,22 @@ std::string get_sycl_info() {
   return d.get_info<Info>();
 }
 
-std::string get_gpu_name() { return get_sycl_info<sycl::info::device::name>(); }
+}  // namespace impl
+
+std::string get_gpu_name() {
+  return impl::get_sycl_info<sycl::info::device::name>();
+}
 
 // The GPU architecture isn't currently exposed by the SYCL api (and wouldn't
 // make sense for Intel GPUs).
 std::string get_gpu_arch() { return "N/A"; }
 
 std::string get_gpu_driver_version() {
-  return get_sycl_info<sycl::info::device::driver_version>();
+  return impl::get_sycl_info<sycl::info::device::driver_version>();
 }
 
 std::string get_gpu_runtime_version() {
-  return get_sycl_info<sycl::info::device::version>();
+  return impl::get_sycl_info<sycl::info::device::version>();
 }
 
 #elif defined(KOKKOS_ENABLE_OPENACC)
@@ -161,7 +165,8 @@ std::string get_gpu_runtime_version() { return "N/A"; }
 #else
 
 std::string get_gpu_name() {
-  return "Not compiled with one of the supported GPU backend: CUDA, HIP, SYCL, or OpenACC";
+  return "Not compiled with one of the supported GPU backend: CUDA, HIP, SYCL, "
+         "or OpenACC";
 }
 
 std::string get_gpu_arch() { return "N/A"; }
@@ -172,10 +177,7 @@ std::string get_gpu_runtime_version() { return "N/A"; }
 
 #endif
 
-}  // namespace impl
-
 void print_host_info(std::ostream& ostream) {
-  using namespace cexa::impl;
   ostream << "HOST:\n"
           << "- CPU Model: " << get_cpu_model_name() << '\n'
           << "- Cores per socket: " << get_core_count_per_socket() << '\n'
@@ -185,7 +187,6 @@ void print_host_info(std::ostream& ostream) {
 }
 
 void print_os_info(std::ostream& ostream) {
-  using namespace cexa::impl;
   ostream << "OS:\n"
           << "- Type: " << get_sys_type() << '\n'
           << "- Name: " << get_sys_name() << '\n'
@@ -193,7 +194,6 @@ void print_os_info(std::ostream& ostream) {
 }
 
 void print_device_info(std::ostream& ostream) {
-  using namespace cexa::impl;
   ostream << "DEVICE:\n"
           << "- Model: " << get_gpu_name() << '\n'
           << "- Arch: " << get_gpu_arch() << '\n'

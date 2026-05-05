@@ -212,38 +212,44 @@ std::optional<std::string> get_os_release_str(const char* key) {
   return std::nullopt;
 }
 
-std::size_t get_physical_socket_count() { return topology.n_sockets; }
+}  // namespace cexa::impl
 
-std::size_t get_core_count_per_socket() { return topology.procs_per_socket; }
+namespace cexa {
+
+std::size_t get_physical_socket_count() { return impl::topology.n_sockets; }
+
+std::size_t get_core_count_per_socket() {
+  return impl::topology.procs_per_socket;
+}
 
 std::size_t get_thread_count_per_socket() {
-  return topology.threads_per_socket;
+  return impl::topology.threads_per_socket;
 }
 
 std::string get_cpu_model_name() {
   // NOTE: /proc/cpuinfo on arm does not provide the CPU model name, lscpu on
   // the other hand seems to be reliable. If it fails we fall back to reading
   // from /proc/cpuinfo
-  std::optional<std::string> cpu_model = read_cpu_model_lscpu();
+  std::optional<std::string> cpu_model = impl::read_cpu_model_lscpu();
   if (cpu_model.has_value()) {
     return cpu_model.value();
   } else {
-    return get_cpu_info_str("model name").value_or("Unknown");
+    return impl::get_cpu_info_str("model name").value_or("Unknown");
   }
 }
 
 std::string get_sys_name() {
-  return get_os_release_str("PRETTY_NAME").value_or("Unknown");
+  return impl::get_os_release_str("PRETTY_NAME").value_or("Unknown");
 }
 
 std::string get_sys_type() {
-  return get_proc_sys_value("kernel/ostype").value_or("Unknown");
+  return impl::get_proc_sys_value("kernel/ostype").value_or("Unknown");
 }
 
 std::string get_kernel_version() {
-  return get_proc_sys_value("kernel/osrelease").value_or("Unknown");
+  return impl::get_proc_sys_value("kernel/osrelease").value_or("Unknown");
 }
 
-}  // namespace cexa::impl
+}  // namespace cexa
 
 #endif

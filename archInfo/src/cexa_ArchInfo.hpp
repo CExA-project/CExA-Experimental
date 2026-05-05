@@ -10,8 +10,6 @@
 
 namespace cexa {
 
-namespace impl {
-
 std::size_t get_kokkos_concurrency();
 
 // CPU
@@ -30,8 +28,6 @@ std::string get_gpu_name();
 std::string get_gpu_arch();
 std::string get_gpu_driver_version();
 std::string get_gpu_runtime_version();
-
-}  // namespace impl
 
 void print_os_info(std::ostream& ostream = std::cout);
 void print_host_info(std::ostream& ostream = std::cout);

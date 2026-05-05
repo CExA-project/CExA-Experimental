@@ -82,20 +82,24 @@ std::optional<std::string> extract_plist_value(const std::string& line) {
   return line.substr(pos, end - pos);
 }
 
+}  // namespace cexa::impl
+
+namespace cexa {
+
 std::size_t get_physical_socket_count() {
-  return get_sysctl_int("hw.packages").value_or(-1);
+  return impl::get_sysctl_int("hw.packages").value_or(-1);
 }
 
 std::size_t get_core_count_per_socket() {
-  return get_sysctl_int("machdep.cpu.cores_per_package").value_or(-1);
+  return impl::get_sysctl_int("machdep.cpu.cores_per_package").value_or(-1);
 }
 
 std::size_t get_thread_count_per_socket() {
-  return get_sysctl_int("machdep.cpu.logical_per_package").value_or(-1);
+  return impl::get_sysctl_int("machdep.cpu.logical_per_package").value_or(-1);
 }
 
 std::string get_cpu_model_name() {
-  return get_sysctl_string("machdep.cpu.brand_string").value_or("ERROR");
+  return impl::get_sysctl_string("machdep.cpu.brand_string").value_or("ERROR");
 }
 
 std::string get_sys_name() {
@@ -112,10 +116,10 @@ std::string get_sys_name() {
   while (std::getline(plist_file, line)) {
     if (line.find("<key>ProductName</key>") != std::string::npos) {
       std::getline(plist_file, line);
-      name = extract_plist_value(line).value_or("ERROR");
+      name = impl::extract_plist_value(line).value_or("ERROR");
     } else if (line.find("<key>ProductVersion</key>") != std::string::npos) {
       std::getline(plist_file, line);
-      version = extract_plist_value(line).value_or("");
+      version = impl::extract_plist_value(line).value_or("");
     }
     line.clear();
   }
@@ -124,13 +128,13 @@ std::string get_sys_name() {
 }
 
 std::string get_sys_type() {
-  return get_sysctl_string("kern.ostype").value_or("ERROR");
+  return impl::get_sysctl_string("kern.ostype").value_or("ERROR");
 }
 
 std::string get_kernel_version() {
-  return get_sysctl_string("kern.osrelease").value_or("ERROR");
+  return impl::get_sysctl_string("kern.osrelease").value_or("ERROR");
 }
 
-}  // namespace cexa::impl
+}  // namespace cexa
 
 #endif

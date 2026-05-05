@@ -50,6 +50,10 @@ std::optional<T> read_registry_value(std::string_view path,
   return value;
 }
 
+}  // namespace cexa::impl
+
+namespace cexa {
+
 std::size_t get_physical_socket_count() {
   DWORD length = 0;
   GetLogicalProcessorInformationEx(RelationProcessorPackage, nullptr, &length);
@@ -133,15 +137,16 @@ std::size_t get_thread_count_per_socket() {
 }
 
 std::string get_cpu_model_name() {
-  std::optional<std::string> cpu_model_name = read_registry_value<std::string>(
-      "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
-      "ProcessorNameString");
+  std::optional<std::string> cpu_model_name =
+      impl::read_registry_value<std::string>(
+          "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+          "ProcessorNameString");
 
   return cpu_model_name.value_or("ERROR");
 }
 
 std::string get_sys_name() {
-  std::optional<std::string> sys_name = read_registry_value<std::string>(
+  std::optional<std::string> sys_name = impl::read_registry_value<std::string>(
       "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", "ProductName");
 
   return sys_name.value_or("ERROR");
@@ -150,13 +155,15 @@ std::string get_sys_name() {
 std::string get_sys_type() { return "Windows"; }
 
 std::string get_kernel_version() {
-  std::optional<std::string> current_build = read_registry_value<std::string>(
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", "CurrentBuildNumber");
+  std::optional<std::string> current_build =
+      impl::read_registry_value<std::string>(
+          "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
+          "CurrentBuildNumber");
   if (!current_build) {
     return "ERROR";
   }
 
-  std::optional<DWORD> ubr = read_registry_value<DWORD>(
+  std::optional<DWORD> ubr = impl::read_registry_value<DWORD>(
       "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", "UBR");
   if (!ubr) {
     return "ERROR";
@@ -165,6 +172,6 @@ std::string get_kernel_version() {
   return current_build.value() + "." + std::to_string(ubr.value());
 }
 
-}  // namespace cexa::impl
+}  // namespace cexa
 
 #endif
