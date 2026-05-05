@@ -84,7 +84,11 @@ std::string get_gpu_driver_version() {
     return "ERROR";
   }
   char buffer[NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE];
-  nvmlSystemGetDriverVersion(buffer, NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE);
+  if (NVML_SUCCESS != nvmlSystemGetDriverVersion(
+                          buffer, NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE)) {
+    nvmlShutdown();
+    return "ERROR";
+  }
   nvmlShutdown();
   return buffer;
 }
