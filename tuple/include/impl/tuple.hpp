@@ -173,15 +173,19 @@ struct store<T, Types...> {
   T value{};
   store<Types...> rest;
 
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   KOKKOS_DEFAULTED_FUNCTION constexpr store() = default;
 
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   KOKKOS_DEFAULTED_FUNCTION constexpr store(const store& other) = default;
 
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   KOKKOS_INLINE_FUNCTION constexpr store(store&& other) noexcept(
       std::is_nothrow_move_constructible_v<T> &&
       (std::is_nothrow_move_constructible_v<Types> && ...))
       : value(FWD(other.value)), rest(FWD(other.rest)) {}
 
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   template <typename U, typename... UTypes>
     requires(!is_store_v<U> && (!is_store_v<UTypes> && ...))
   KOKKOS_INLINE_FUNCTION constexpr explicit store(
@@ -191,8 +195,10 @@ struct store<T, Types...> {
                                   ...))
       : value(FWD(u)), rest(FWD(args)...) {}
 
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   KOKKOS_DEFAULTED_FUNCTION constexpr ~store() = default;
 
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   template <
       class U, class... UTypes,
       class = std::enable_if_t<sizeof...(UTypes) == sizeof...(Types) &&
@@ -205,6 +211,8 @@ struct store<T, Types...> {
     rest  = other.rest;
     return *this;
   }
+
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   template <
       class U, class... UTypes,
       class = std::enable_if_t<sizeof...(UTypes) == sizeof...(Types) &&
@@ -218,6 +226,7 @@ struct store<T, Types...> {
     return *this;
   }
 
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   // FIXME: defaulting this operator leads to compile errors where the
   // generated constructor would be ill-formed
   // NOLINTNEXTLINE(hicpp-use-equals-default, modernize-use-equals-default)
@@ -232,6 +241,7 @@ struct store<T, Types...> {
     return *this;
   }
 
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   KOKKOS_INLINE_FUNCTION constexpr store& operator=(store&& other) noexcept(
       std::is_nothrow_move_assignable_v<T> &&
       (std::is_nothrow_move_assignable_v<Types> && ...))
@@ -243,6 +253,7 @@ struct store<T, Types...> {
   }
 
 #if defined(CEXA_HAS_CXX23)
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   KOKKOS_INLINE_FUNCTION constexpr const store& operator=(
       const store& other) const
     requires(std::is_copy_assignable_v<const T>)
@@ -252,6 +263,7 @@ struct store<T, Types...> {
     return *this;
   }
 
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   KOKKOS_INLINE_FUNCTION constexpr const store& operator=(store&& other) const
       noexcept(std::is_nothrow_move_assignable_v<const T> &&
                (std::is_nothrow_move_assignable_v<const Types> && ...))
@@ -262,6 +274,7 @@ struct store<T, Types...> {
     return *this;
   }
 
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   template <
       class U, class... UTypes,
       class = std::enable_if_t<sizeof...(UTypes) == sizeof...(Types) &&
@@ -274,6 +287,8 @@ struct store<T, Types...> {
     rest  = other.rest;
     return *this;
   }
+
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   template <
       class U, class... UTypes,
       class = std::enable_if_t<sizeof...(UTypes) == sizeof...(Types) &&
@@ -350,6 +365,7 @@ struct store<T, Types...> {
     set_all(get<Ints>(FWD(u))...);
   }
 
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   KOKKOS_INLINE_FUNCTION constexpr void swap(store& rhs) noexcept(
       std::is_nothrow_swappable_v<T> &&
       (std::is_nothrow_swappable_v<Types> && ...)) {
@@ -359,6 +375,7 @@ struct store<T, Types...> {
   }
 
 #if defined(CEXA_HAS_CXX23)
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   KOKKOS_INLINE_FUNCTION constexpr void swap(const store& rhs) const
       noexcept(std::is_nothrow_swappable_v<const T> &&
                (std::is_nothrow_swappable_v<const Types> && ...)) {
@@ -370,6 +387,7 @@ struct store<T, Types...> {
 #endif
 
 #if defined(CEXA_TUPLE_IMPL_USE_SPACESHIP_OPERATOR)
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   template <class U, class... UTypes>
     requires std::three_way_comparable_with<T, U>
   KOKKOS_INLINE_FUNCTION constexpr auto operator<=>(
@@ -379,6 +397,8 @@ struct store<T, Types...> {
     auto res = value <=> rhs.value;
     return res != 0 ? res : rest <=> rhs.rest;
   }
+
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   template <class U, class... UTypes>
   KOKKOS_INLINE_FUNCTION constexpr std::weak_ordering operator<=>(
       const store<U, UTypes...>& rhs) const {
@@ -390,17 +410,21 @@ struct store<T, Types...> {
       return static_cast<std::weak_ordering>(rest <=> rhs.rest);
     }
   }
+
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   template <class U, class... UTypes>
   KOKKOS_INLINE_FUNCTION constexpr bool operator==(
       const store<U, UTypes...>& rhs) const {
     return operator<=>(rhs) == 0;
   }
 #else
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   template <class U, class... UTypes>
   KOKKOS_INLINE_FUNCTION constexpr bool operator==(
       const store<U, UTypes...>& rhs) const {
     return value == rhs.value && rest == rhs.rest;
   }
+  CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   template <class U, class... UTypes>
   KOKKOS_INLINE_FUNCTION constexpr bool operator<(
       const store<U, UTypes...>& rhs) const {

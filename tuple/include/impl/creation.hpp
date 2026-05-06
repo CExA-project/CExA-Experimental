@@ -66,6 +66,8 @@ struct cartesian_product
                                  std::remove_reference_t<Tuples>>::value>...> {
 };
 
+// We might call std::get depending on the types in Tuples
+CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
 template <class... Tuples, std::size_t... Ints1, std::size_t... Ints2>
 KOKKOS_FORCEINLINE_FUNCTION constexpr tuple<cexa::tuple_element_t<
     Ints1,

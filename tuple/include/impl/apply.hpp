@@ -9,6 +9,10 @@
 #include "traits.hpp"
 #include "tuple.hpp"
 
+#ifdef CEXA_HAS_CXX23
+#include <functional>
+#endif
+
 namespace cexa {
 
 namespace impl {
@@ -48,6 +52,8 @@ KOKKOS_INLINE_FUNCTION constexpr decltype(auto) invoke_ptr(Pointed C::* member,
   }
 }
 
+// f may be a host function
+CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
 template <class F, class... Args>
 KOKKOS_INLINE_FUNCTION constexpr decltype(auto) invoke(F&& f, Args&&... args) {
   if constexpr (std::is_member_pointer_v<std::remove_cvref_t<F>>) {
@@ -63,6 +69,8 @@ KOKKOS_INLINE_FUNCTION constexpr decltype(auto) apply(
   return invoke(std::forward<F>(f), cexa::get<I>(std::forward<Tuple>(t))...);
 }
 
+// This might call a host only constructor
+CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
 template <class T, class Tuple, std::size_t... I>
 KOKKOS_INLINE_FUNCTION constexpr T make_from_tuple(Tuple&& t,
                                                    std::index_sequence<I...>) {
@@ -93,10 +101,30 @@ inline constexpr bool is_constructible_from_tuple_v =
                                 std::make_index_sequence<tuple_size_v<
                                     std::remove_cvref_t<Tuple>>>>::value;
 
+#ifdef CEXA_HAS_CXX23
+template <class F, class Tuple, class Other>
+struct is_nothrow_applicable : std::false_type {};
+
+template <class F, class Tuple, std::size_t... Is>
+struct is_nothrow_applicable<F, Tuple, std::index_sequence<Is...>> {
+  static constexpr bool value = noexcept(
+      std::invoke(std::declval<F>(), get<Is>(std::declval<Tuple>())...));
+};
+
+template <class F, class Tuple>
+constexpr bool is_nothrow_applicable_v =
+    is_nothrow_applicable<F, Tuple,
+                          decltype(std::make_index_sequence<tuple_size_v<
+                                       std::remove_cvref_t<Tuple>>>{})>::value;
+#endif
 }  // namespace impl
 
 template <class F, class Tuple>
-KOKKOS_INLINE_FUNCTION constexpr decltype(auto) apply(F&& f, Tuple&& t) {
+KOKKOS_INLINE_FUNCTION constexpr decltype(auto) apply(F&& f, Tuple&& t)
+#ifdef CEXA_HAS_CXX23
+    noexcept(impl::is_nothrow_applicable_v<F, Tuple>)
+#endif
+{
   static_assert(impl::is_tuple_v<std::remove_cvref_t<Tuple>>,
                 "cexa::apply can only be called with cexa::tuple");
   return impl::apply(

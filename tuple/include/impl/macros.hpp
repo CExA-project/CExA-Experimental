@@ -16,6 +16,12 @@
 #define CEXA_HAS_CXX23
 #endif
 
+#if defined(KOKKOS_COMPILER_NVCC)
+#define CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE _Pragma("nv_exec_check_disable")
+#else
+#define CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
+#endif
+
 // FIXME: As of cuda 13, support for operator<=> in device code is still brittle
 #if !defined(KOKKOS_COMPILER_NVCC)
 #define CEXA_TUPLE_IMPL_USE_SPACESHIP_OPERATOR

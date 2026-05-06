@@ -116,7 +116,6 @@ CEXA_TEST(tuple_cnstr, convert_move, (
     }
 ))
 
-    CEXA_HOST_DEVICE_NVCC_WARNINGS_PUSH()
 TEST(tuple_cnstr, convert_move_host) {
     typedef cexa::tuple<long, char, std::unique_ptr<D>> T0;
     typedef cexa::tuple<long long, int, std::unique_ptr<B>> T1;
@@ -126,5 +125,4 @@ TEST(tuple_cnstr, convert_move_host) {
     CEXA_EXPECT_EQ(cexa::get<1>(t1), int('a'));
     CEXA_EXPECT_EQ(cexa::get<2>(t1)->id_, 3);
 }
-    CEXA_HOST_DEVICE_NVCC_WARNINGS_POP()
 // clang-format on

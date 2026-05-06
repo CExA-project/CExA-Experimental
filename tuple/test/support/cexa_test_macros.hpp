@@ -35,14 +35,3 @@
     (defined(KOKKOS_ENABLE_SYCL) && defined(__SYCL_DEVICE_ONLY__))
 #define CEXA_ON_DEVICE
 #endif
-
-#if defined(KOKKOS_ENABLE_CUDA)
-#define CEXA_HOST_DEVICE_NVCC_WARNINGS_PUSH() \
-  _Pragma("nv_diagnostic push")               \
-      _Pragma("nv_diag_suppress 20011,20013,20014,20015")
-
-#define CEXA_HOST_DEVICE_NVCC_WARNINGS_POP() _Pragma("nv_diagnostic pop")
-#else
-#define CEXA_HOST_DEVICE_NVCC_WARNINGS_PUSH()
-#define CEXA_HOST_DEVICE_NVCC_WARNINGS_POP()
-#endif

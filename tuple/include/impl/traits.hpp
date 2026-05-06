@@ -171,7 +171,7 @@ struct common_type_helper<TTuple, UTuple, std::index_sequence<Ints...>> {
 
 // tuple.common.ref
 // NOTE: specializations of std::basic_common_reference are allowed if T1 and/or
-// T2 is a user defined type and std::decay is and identity transformation for
+// T2 is a user defined type and std::decay is an identity transformation for
 // T1 and T2
 // NOLINTBEGIN(cert-dcl58-cpp)
 template <class... TTypes, class UTuple, template <class> class TQual,
