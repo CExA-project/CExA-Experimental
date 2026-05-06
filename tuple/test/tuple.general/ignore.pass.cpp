@@ -51,7 +51,7 @@ KOKKOS_INLINE_FUNCTION constexpr bool test() {
   { // Test that cexa::ignore provides copy/move assignment
     auto copy  = cexa::ignore;
     copy       = cexa::ignore;
-    auto moved = cexa::ignore;
+    [[maybe_unused]] auto moved = cexa::ignore;
     moved      = std::move(copy);
   }
 

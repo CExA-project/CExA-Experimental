@@ -195,7 +195,7 @@ KOKKOS_INLINE_FUNCTION void test_noexcept()
     {
         // test that the functions noexcept-ness is propagated
         using Tup = cexa::tuple<int, const char*, long>;
-        Tup t;
+        [[maybe_unused]] Tup t;
 // #if TEST_STD_VER >= 23
 //         ASSERT_NOEXCEPT(cexa::apply(nec, t));
 // #else
@@ -206,7 +206,7 @@ KOKKOS_INLINE_FUNCTION void test_noexcept()
     {
         // test that the noexcept-ness of the argument conversions is checked.
         using Tup = cexa::tuple<NothrowMoveable, int>;
-        Tup t;
+        [[maybe_unused]] Tup t;
         ASSERT_NOT_NOEXCEPT(cexa::apply(nec, t));
 // #if TEST_STD_VER >= 23
 //         ASSERT_NOEXCEPT(cexa::apply(nec, std::move(t)));

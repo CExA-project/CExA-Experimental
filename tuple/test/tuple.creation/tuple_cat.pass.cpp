@@ -78,12 +78,10 @@ KOKKOS_INLINE_FUNCTION constexpr bool test_tuple_cat_with_unconstrained_construc
 
 TEST(host_tuple_creation, tuple_cat_host) {
     {
-        cexa::tuple<> t = cexa::tuple_cat(std::array<int, 0>());
-        ((void)t); // Prevent unused warning
+        [[maybe_unused]] cexa::tuple<> t = cexa::tuple_cat(std::array<int, 0>());
     }
     {
-        constexpr cexa::tuple<> t = cexa::tuple_cat(std::array<int, 0>());
-        ((void)t); // Prevent unused warning
+        [[maybe_unused]] constexpr cexa::tuple<> t = cexa::tuple_cat(std::array<int, 0>());
     }
     {
         cexa::tuple<int, int, int> t = cexa::tuple_cat(std::array<int, 3>());

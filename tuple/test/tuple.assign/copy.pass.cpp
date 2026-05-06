@@ -50,13 +50,12 @@ struct CopyAssignableInt {
   CopyAssignableInt& operator=(int&) { return *this; }
 };
 
-constexpr
-bool test()
+KOKKOS_INLINE_FUNCTION constexpr bool test()
 {
     {
         typedef cexa::tuple<> T;
         T t0;
-        T t;
+        [[maybe_unused]] T t;
         t = t0;
     }
     {
