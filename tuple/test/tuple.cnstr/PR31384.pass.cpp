@@ -22,6 +22,7 @@
 #include <support/cexa_test_macros.hpp>
 #include <support/test_macros.h>
 
+#if !defined(KOKKOS_COMPILER_GNU) || (KOKKOS_COMPILER_GNU < 14)
 #if defined(CEXA_ON_DEVICE)
 __device__ int count = 0;
 #else
@@ -101,3 +102,4 @@ CEXA_TEST(tuple_cnstr, PR31384, (
   count = 0;
 ))
 // clang-format on
+#endif

@@ -57,18 +57,19 @@ KOKKOS_INLINE_FUNCTION constexpr bool test_tuple_cat_with_unconstrained_construc
     CEXA_EXPECT_EQ(cexa::get<0>(tup).data, 7);
   }
   {
-    auto tup_src = cexa::tuple(Unconstrained(8));
+    // FIXME: we cannot rely on CTAD here since single argument CTAD fails with nvcc
+    auto tup_src = cexa::tuple<Unconstrained>(Unconstrained(8));
     auto tup     = cexa::tuple_cat(tup_src);
     ASSERT_SAME_TYPE(decltype(tup), cexa::tuple<Unconstrained>);
     CEXA_EXPECT_EQ(cexa::get<0>(tup).data, 8);
   }
   {
-    auto tup = cexa::tuple_cat(cexa::tuple(Unconstrained(9)));
+    auto tup = cexa::tuple_cat(cexa::tuple<Unconstrained>(Unconstrained(9)));
     ASSERT_SAME_TYPE(decltype(tup), cexa::tuple<Unconstrained>);
     CEXA_EXPECT_EQ(cexa::get<0>(tup).data, 9);
   }
   {
-    auto tup = cexa::tuple_cat(cexa::tuple(Unconstrained(10)), cexa::tuple());
+    auto tup = cexa::tuple_cat(cexa::tuple<Unconstrained>(Unconstrained(10)), cexa::tuple());
     ASSERT_SAME_TYPE(decltype(tup), cexa::tuple<Unconstrained>);
     CEXA_EXPECT_EQ(cexa::get<0>(tup).data, 10);
   }
