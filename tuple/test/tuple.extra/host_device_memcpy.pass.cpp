@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: 2026 CExA-project
 // SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
-//
-// This is a modified version of the tuple tests from llvm's libcxx tests,
-// below is the original copyright statement
+
 #include <tuple.hpp>
 #include <support/cexa_test_macros.hpp>
 #include <support/test_macros.h>
