@@ -128,8 +128,8 @@ struct store<> {
   KOKKOS_DEFAULTED_FUNCTION constexpr store(const store&) = default;
   KOKKOS_DEFAULTED_FUNCTION constexpr store(store&&)      = default;
 #if defined(CEXA_HAS_CXX23)
-  KOKKOS_DEFAULTED_FUNCTION constexpr store(store&) noexcept {}
-  KOKKOS_DEFAULTED_FUNCTION constexpr store(const store&&) noexcept {};
+  KOKKOS_DEFAULTED_FUNCTION constexpr store(store&) noexcept = default;
+  KOKKOS_INLINE_FUNCTION constexpr store(const store&&) noexcept {};
 #endif
   KOKKOS_DEFAULTED_FUNCTION constexpr ~store() = default;
 
@@ -137,11 +137,13 @@ struct store<> {
   KOKKOS_DEFAULTED_FUNCTION constexpr store& operator=(store&&)      = default;
 
 #if defined(CEXA_HAS_CXX23)
-  KOKKOS_DEFAULTED_FUNCTION constexpr const store& operator=(
+  // NOLINTNEXTLINE(misc-unconventional-assign-operator,cppcoreguidelines-c-copy-assignment-signature)
+  KOKKOS_INLINE_FUNCTION constexpr const store& operator=(
       const store&) const noexcept {
     return *this;
   }
-  KOKKOS_DEFAULTED_FUNCTION constexpr const store& operator=(
+  // NOLINTNEXTLINE(misc-unconventional-assign-operator,cppcoreguidelines-c-copy-assignment-signature)
+  KOKKOS_INLINE_FUNCTION constexpr const store& operator=(
       store&&) const noexcept {
     return *this;
   }
@@ -174,16 +176,19 @@ struct store<T, Types...> {
   KOKKOS_DEFAULTED_FUNCTION constexpr store() = default;
 
   KOKKOS_DEFAULTED_FUNCTION constexpr store(const store& other) = default;
-  template <class Dummy = void,
-            class       = std::enable_if_t<std::is_same_v<Dummy, void> &&
-                                           std::is_move_constructible_v<T>>>
-  KOKKOS_INLINE_FUNCTION constexpr explicit store(store&& other)
+
+  KOKKOS_INLINE_FUNCTION constexpr store(store&& other) noexcept(
+      std::is_nothrow_move_constructible_v<T> &&
+      (std::is_nothrow_move_constructible_v<Types> && ...))
       : value(FWD(other.value)), rest(FWD(other.rest)) {}
 
-  template <
-      typename U, typename... UTypes,
-      class = std::enable_if_t<!is_store_v<U> && (!is_store_v<UTypes> && ...)>>
-  KOKKOS_INLINE_FUNCTION constexpr store(U&& u, UTypes&&... args)
+  template <typename U, typename... UTypes>
+    requires(!is_store_v<U> && (!is_store_v<UTypes> && ...))
+  KOKKOS_INLINE_FUNCTION constexpr explicit store(
+      U&& u,
+      UTypes&&... args) noexcept(std::is_nothrow_move_constructible_v<T> &&
+                                 (std::is_nothrow_move_constructible_v<Types> &&
+                                  ...))
       : value(FWD(u)), rest(FWD(args)...) {}
 
   KOKKOS_DEFAULTED_FUNCTION constexpr ~store() = default;
@@ -213,6 +218,9 @@ struct store<T, Types...> {
     return *this;
   }
 
+  // FIXME: defaulting this operator leads to compile errors where the
+  // generated constructor would be ill-formed
+  // NOLINTNEXTLINE(hicpp-use-equals-default, modernize-use-equals-default)
   KOKKOS_INLINE_FUNCTION constexpr store& operator=(
       const store& other) noexcept(std::is_nothrow_copy_assignable_v<T> &&
                                    (std::is_nothrow_copy_assignable_v<Types> &&
@@ -420,10 +428,14 @@ class tuple<> {
   KOKKOS_DEFAULTED_FUNCTION constexpr tuple& operator=(tuple&& u) noexcept =
       default;
 #if defined(CEXA_HAS_CXX23)
-  KOKKOS_DEFAULTED_FUNCTION constexpr tuple& operator=(
-      const tuple& u) const noexcept = default;
-  KOKKOS_DEFAULTED_FUNCTION constexpr tuple& operator=(
-      tuple&& u) const noexcept = default;
+  KOKKOS_INLINE_FUNCTION constexpr const tuple& operator=(
+      const tuple& u) const noexcept {
+    return *this;
+  }
+  KOKKOS_INLINE_FUNCTION constexpr const tuple& operator=(
+      tuple&& u) const noexcept {
+    return *this;
+  }
 #endif
 
   KOKKOS_INLINE_FUNCTION constexpr void swap(tuple&) noexcept {}
@@ -463,26 +475,8 @@ KOKKOS_INLINE_FUNCTION constexpr bool operator>=(const tuple<>&,
 }
 #endif
 
-template <typename... Types>
-// NOTE: move ctor is defined but not detected by clang-tidy, assignment ops are
-// intentionally not defined, so that the compiler can default/delete them based
-// on what's done inside tuple_assign_helper
-// NO_NO_LINT_NEXTLINE(cppcoreguidelines-special-member-functions)
-class tuple {
- private:
-  template <typename... Ts>
-  using T0 = typename impl::nth_type<0, Ts...>::type;
-  template <typename... Ts>
-  using T1 = typename impl::nth_type<sizeof...(Ts) == 1 ? 0 : 1, Ts...>::type;
-
-  struct converting_tag {};
-  struct tuple_like_tag {};
-
-  template <class... UTypes>
-  friend class tuple;
-
-  impl::store<Types...> values;
-
+namespace impl {
+// We use sfinae instead of a concept since the concept would depend on itself
 // NOLINTBEGIN(bugprone-macro-parentheses)
 #define CONVERTING_TUPLE_CTOR_CONSTRAINTS(CONST, REF)                    \
   class = std::enable_if_t<std::conjunction_v<                           \
@@ -501,81 +495,52 @@ class tuple {
               std::is_same<T0<Types...>, T0<UTypes...>>>>>,              \
       std::negation<impl::any_types_reference_constructs_from_temporary< \
           tuple<Types...>, CONST tuple<UTypes...> REF>>>>
-#define IMPL_CONVERTING_TUPLE_CONSTRUCTOR(CONST, REF)                          \
- public:                                                                       \
-  template <                                                                   \
-      typename... UTypes,                                                      \
-      class = std::enable_if_t<std::conjunction_v<                             \
-          std::bool_constant<sizeof...(Types) == sizeof...(UTypes)>,           \
-          impl::all_types_constructible<tuple<Types...>,                       \
-                                        CONST tuple<UTypes...> REF>,           \
-          std::disjunction<                                                    \
-              std::bool_constant<sizeof...(Types) != 1>,                       \
-              std::negation<std::disjunction<                                  \
-                  std::is_convertible<                                         \
-                      decltype(std::declval<CONST tuple<UTypes...> REF>()),    \
-                      T0<Types...>>,                                           \
-                  std::is_constructible<                                       \
-                      T0<Types...>,                                            \
-                      decltype(std::declval<CONST tuple<UTypes...> REF>())>,   \
-                  std::is_same<T0<Types...>, T0<UTypes...>>>>>,                \
-          std::negation<impl::any_types_reference_constructs_from_temporary<   \
-              tuple<Types...>, CONST tuple<UTypes...> REF>>>>>                 \
-  KOKKOS_INLINE_FUNCTION explicit(                                             \
-      !(impl::all_types_convertible_v<                                         \
-          CONST tuple<UTypes...> REF,                                          \
-          tuple<Types...>>)) constexpr tuple(CONST tuple<UTypes...> REF other) \
-      : tuple(converting_tag{}, FWD(other),                                    \
-              std::make_index_sequence<sizeof...(Types)>{}) {}
+// NOLINTEND(bugprone-macro-parentheses)
 
-#define PAIR_CTOR_CONSTRAINTS(CONST, REF)                                  \
-  class = std::enable_if_t < sizeof...(Types) == 2 &&                      \
-          std::is_constructible_v<                                         \
-              T0<Types...>,                                                \
-              decltype(std::get<0>(                                        \
-                  FWD((std::declval<CONST std::pair<U1, U2> REF>()))))> && \
-          std::is_constructible_v<                                         \
-              T1<Types...>,                                                \
-              decltype(std::get<1>(                                        \
-                  FWD((std::declval<CONST std::pair<U1, U2> REF>()))))> && \
-          !impl::reference_constructs_from_temporary_v<                    \
-              T0<Types...>,                                                \
-              decltype(std::get<0>(                                        \
-                  FWD((std::declval<CONST std::pair<U1, U2> REF>()))))> && \
-          !impl::reference_constructs_from_temporary_v < T1<Types...>,     \
-  decltype(std::get<1>(FWD((std::declval<CONST std::pair<U1, U2> REF>())))) >>
+template <class Tuple, class UPair>
+concept pair_constructible =
+    tuple_size_v<Tuple> == 2 &&
+    std::constructible_from<tuple_element_t<0, std::remove_cvref_t<Tuple>>,
+                            decltype(std::get<0>(
+                                FWD((std::declval<UPair>()))))> &&
+    std::constructible_from<tuple_element_t<1, std::remove_cvref_t<Tuple>>,
+                            decltype(std::get<1>(
+                                FWD((std::declval<UPair>()))))> &&
+    !impl::reference_constructs_from_temporary_v<
+        tuple_element_t<0, std::remove_cvref_t<Tuple>>,
+        decltype(std::get<0>(FWD((std::declval<UPair>()))))> &&
+    !impl::reference_constructs_from_temporary_v<
+        tuple_element_t<1, std::remove_cvref_t<Tuple>>,
+        decltype(std::get<1>(FWD((std::declval<UPair>()))))>;
 
-#define IMPL_PAIR_CONSTRUCTOR(CONST, REF)                                    \
-  template <class U1, class U2,                                              \
-            class = std::enable_if_t<                                        \
-                sizeof...(Types) == 2 &&                                     \
-                std::is_constructible_v<                                     \
-                    T0<Types...>,                                            \
-                    decltype(std::get<0>(FWD(                                \
-                        (std::declval<CONST std::pair<U1, U2> REF>()))))> && \
-                std::is_constructible_v<                                     \
-                    T1<Types...>,                                            \
-                    decltype(std::get<1>(FWD(                                \
-                        (std::declval<CONST std::pair<U1, U2> REF>()))))> && \
-                !impl::reference_constructs_from_temporary_v<                \
-                    T0<Types...>,                                            \
-                    decltype(std::get<0>(FWD(                                \
-                        (std::declval<CONST std::pair<U1, U2> REF>()))))> && \
-                !impl::reference_constructs_from_temporary_v<                \
-                    T1<Types...>,                                            \
-                    decltype(std::get<1>(FWD(                                \
-                        (std::declval<CONST std::pair<U1, U2> REF>()))))>>>  \
-  inline constexpr explicit(                                                 \
-      (!std::is_convertible_v<                                               \
-           decltype(std::get<0>(                                             \
-               FWD((std::declval<CONST std::pair<U1, U2> REF>())))),         \
-           T0<Types...>> ||                                                  \
-       !std::is_convertible_v<                                               \
-           decltype(std::get<1>(                                             \
-               FWD((std::declval<CONST std::pair<U1, U2> REF>())))),         \
-           T1<Types...>>)) tuple(CONST std::pair<U1, U2> REF u)              \
-      : values(std::get<0>(FWD(u)), std::get<1>(FWD(u))) {}
-  // NOLINTEND(bugprone-macro-parentheses)
+template <class Tuple, class UTuple>
+concept tuple_like_constructible =
+    impl::is_tuple_like_v<UTuple> &&
+    tuple_size_v<Tuple> == tuple_size_v<std::remove_reference_t<UTuple>> &&
+    impl::all_types_constructible_v<Tuple, UTuple&&> &&
+    !impl::is_tuple_v<std::remove_cvref_t<UTuple>> &&
+    !impl::is_subrange_v<std::remove_cvref_t<UTuple>> &&
+    !impl::any_types_reference_constructs_from_temporary_v<Tuple, UTuple> &&
+    (tuple_size_v<Tuple> != 1 ||
+     !(std::convertible_to<UTuple, tuple_element_t<0, Tuple>> ||
+       std::constructible_from<tuple_element_t<0, Tuple>, UTuple>));
+}  // namespace impl
+
+template <typename... Types>
+class tuple {
+ private:
+  template <typename... Ts>
+  using T0 = typename impl::nth_type<0, Ts...>::type;
+  template <typename... Ts>
+  using T1 = typename impl::nth_type<sizeof...(Ts) == 1 ? 0 : 1, Ts...>::type;
+
+  struct converting_tag {};
+  struct tuple_like_tag {};
+
+  template <class... UTypes>
+  friend class tuple;
+
+  impl::store<Types...> values;
 
   template <class UTuple, std::size_t... Ints>
   KOKKOS_INLINE_FUNCTION constexpr tuple(converting_tag, UTuple&& u,
@@ -588,23 +553,19 @@ class tuple {
 
  public:
   // tuple.cnstr
-  template <
-      class Dummy = void,
-      class       = std::enable_if_t<std::conjunction_v<
-                std::is_same<Dummy, void>, std::is_default_constructible<Types>...>>>
   KOKKOS_INLINE_FUNCTION explicit(
       (!impl::empty_copy_list_initializable_v<Types> ||
        ...)) constexpr tuple() noexcept((std::
                                              is_nothrow_default_constructible_v<
                                                  Types> &&
                                          ...))
+    requires(std::is_default_constructible_v<Types> && ...)
       : values{} {}
 
-  template <
-      class Dummy = void,
-      class       = std::enable_if_t<std::is_same_v<Dummy, void> &&
-                                     (sizeof...(Types) >= 1 &&
-                                (std::is_copy_constructible_v<Types> && ...))>>
+  template <class Dummy = void,
+            class       = std::enable_if_t<
+                std::is_same_v<Dummy, void> && (sizeof...(Types) >= 1) &&
+                (std::is_copy_constructible_v<Types> && ...)>>
   KOKKOS_INLINE_FUNCTION explicit((
       !std::is_convertible_v<const Types&, Types> ||
       ...)) constexpr tuple(const Types&... vals) noexcept((std::
@@ -641,13 +602,10 @@ class tuple {
       : values(FWD(args)...) {}
 
   KOKKOS_DEFAULTED_FUNCTION constexpr tuple(const tuple& u) = default;
-  template <
-      class Dummy = void,
-      class       = std::enable_if_t<std::is_same_v<Dummy, void> &&
-                                     (std::is_move_constructible_v<Types> && ...)>>
-  // FIXME: give a reason why we can't mark this one explicit
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  KOKKOS_INLINE_FUNCTION constexpr tuple(tuple&& u)
+
+  KOKKOS_INLINE_FUNCTION constexpr tuple(tuple&& u) noexcept(
+      (std::is_nothrow_move_assignable_v<Types> && ...))
+    requires(std::move_constructible<Types> && ...)
       : values(std::move(u.values)) {}
 
   template <class... UTypes, CONVERTING_TUPLE_CTOR_CONSTRAINTS(const, &)>
@@ -683,14 +641,9 @@ class tuple {
       : tuple(converting_tag{}, std::move(other),
               std::make_index_sequence<sizeof...(Types)>{}) {}
 #endif
-  //   IMPL_CONVERTING_TUPLE_CONSTRUCTOR(const, &)
-  //   IMPL_CONVERTING_TUPLE_CONSTRUCTOR(, &&)
-  // #if defined(CEXA_HAS_CXX23)
-  //   IMPL_CONVERTING_TUPLE_CONSTRUCTOR(, &)
-  //   IMPL_CONVERTING_TUPLE_CONSTRUCTOR(const, &&)
-  // #endif
 
-  template <class U1, class U2, PAIR_CTOR_CONSTRAINTS(const, &)>
+  template <class U1, class U2>
+    requires impl::pair_constructible<tuple, const std::pair<U1, U2>&>
   constexpr explicit(
       (!std::is_convertible_v<decltype(std::get<0>(FWD(
                                   (std::declval<const std::pair<U1, U2>&>())))),
@@ -700,7 +653,8 @@ class tuple {
                               T1<Types...>>)) tuple(const std::pair<U1, U2>& u)
       : values(u.first, u.second) {}
 
-  template <class U1, class U2, PAIR_CTOR_CONSTRAINTS(, &&)>
+  template <class U1, class U2>
+    requires impl::pair_constructible<tuple, std::pair<U1, U2>&&>
   constexpr explicit(
       (!std::is_convertible_v<
            decltype(std::get<0>(FWD((std::declval<std::pair<U1, U2>&&>())))),
@@ -709,10 +663,11 @@ class tuple {
            decltype(std::get<1>(FWD((std::declval<std::pair<U1, U2>&&>())))),
            T1<Types...>>)) tuple(std::pair<U1, U2>&& u)
       : values(std::move(u.first), std::move(u.second)) {
-  }  // FIXME: see if we should use forward instead
+  }  // TODO: see if we should use forward instead
 
 #if defined(CEXA_HAS_CXX23)
-  template <class U1, class U2, PAIR_CTOR_CONSTRAINTS(, &)>
+  template <class U1, class U2>
+    requires impl::pair_constructible<tuple, std::pair<U1, U2>&>
   constexpr explicit(
       (!std::is_convertible_v<
            decltype(std::get<0>(FWD((std::declval<std::pair<U1, U2>&>())))),
@@ -722,7 +677,8 @@ class tuple {
            T1<Types...>>)) tuple(std::pair<U1, U2>& u)
       : values(u.first, u.second) {}
 
-  template <class U1, class U2, PAIR_CTOR_CONSTRAINTS(const, &&)>
+  template <class U1, class U2>
+    requires impl::pair_constructible<tuple, std::pair<U1, U2>&>
   constexpr explicit((
       !std::is_convertible_v<decltype(std::get<0>(FWD(
                                  (std::declval<const std::pair<U1, U2>&&>())))),
@@ -730,32 +686,11 @@ class tuple {
       !std::is_convertible_v<decltype(std::get<1>(FWD(
                                  (std::declval<const std::pair<U1, U2>&&>())))),
                              T1<Types...>>)) tuple(const std::pair<U1, U2>&& u)
-      : values(std::move(u.first), std::move(u.second)) {
-  }  // FIXME: see if we should use forward instead
+      : values(std::move(u.first), std::move(u.second)) {}
 #endif
-  //   IMPL_PAIR_CONSTRUCTOR(const, &)
-  //   IMPL_PAIR_CONSTRUCTOR(, &&)
-  // #if defined(CEXA_HAS_CXX23)
-  //   IMPL_PAIR_CONSTRUCTOR(, &)
-  //   IMPL_PAIR_CONSTRUCTOR(const, &&)
-  // #endif
 
-  template <
-      class UTuple,
-      class = std::enable_if_t<std::conjunction_v<
-          impl::is_tuple_like<UTuple>,
-          std::bool_constant<
-              sizeof...(Types) ==
-              tuple_size<std::remove_reference_t<UTuple>>::value>,
-          impl::all_types_constructible<tuple<Types...>, UTuple&&>,
-          std::negation<impl::is_tuple<std::remove_cvref_t<UTuple>>>,
-          std::negation<impl::is_subrange<std::remove_cvref_t<UTuple>>>,
-          std::negation<impl::any_types_reference_constructs_from_temporary<
-              tuple<Types...>, UTuple>>,
-          std::conjunction<std::bool_constant<sizeof...(Types) != 1>,
-                           std::negation<std::disjunction<
-                               std::is_convertible<UTuple, T0<Types...>>,
-                               std::is_constructible<T0<Types...>, UTuple>>>>>>>
+  template <class UTuple>
+    requires impl::tuple_like_constructible<tuple, UTuple>
   constexpr explicit(
       (!impl::all_types_convertible_v<UTuple&&, tuple<Types...>>))
       tuple(UTuple&& u)
@@ -764,11 +699,6 @@ class tuple {
 
   KOKKOS_DEFAULTED_FUNCTION
   constexpr ~tuple() = default;
-
-#undef CONVERTING_TUPLE_CTOR_CONSTRAINTS
-#undef PAIR_CTOR_CONSTRAINTS
-#undef IMPL_CONVERTING_TUPLE_CONSTRUCTOR
-#undef IMPL_PAIR_CONSTRUCTOR
 
   // tuple.assign
   KOKKOS_DEFAULTED_FUNCTION constexpr tuple& operator=(const tuple& u)
@@ -781,19 +711,25 @@ class tuple {
   = default;
 
 #if defined(CEXA_HAS_CXX23)
-  KOKKOS_DEFAULTED_FUNCTION constexpr tuple& operator=(const tuple& u) const
+  KOKKOS_INLINE_FUNCTION constexpr const tuple& operator=(const tuple& u) const
     requires(std::is_copy_assignable_v<const Types> && ...)
-  = default;
+  {
+    values = u.values;
+    return *this;
+  }
 
-  KOKKOS_DEFAULTED_FUNCTION constexpr tuple& operator=(tuple&& u) const
+  KOKKOS_INLINE_FUNCTION constexpr const tuple& operator=(tuple&& u) const
+      noexcept((std::is_nothrow_move_assignable_v<const Types> && ...))
     requires(std::is_assignable_v<const Types&, Types> && ...)
-  = default;
+  {
+    values = std::move(u.values);
+    return *this;
+  }
 #endif
 
-  template <class... UTypes,
-            class = std::enable_if_t<std::conjunction_v<
-                std::bool_constant<sizeof...(Types) == sizeof...(UTypes)>,
-                std::is_assignable<Types&, const UTypes&>...>>>
+  template <class... UTypes>
+    requires(sizeof...(Types) == sizeof...(UTypes)) &&
+            std::conjunction_v<std::is_assignable<Types&, const UTypes&>...>
   KOKKOS_INLINE_FUNCTION constexpr tuple&
   operator=(const tuple<UTypes...>& other) noexcept(
       (std::is_nothrow_assignable_v<Types&, const UTypes&> && ...)) {
@@ -801,10 +737,9 @@ class tuple {
     return *this;
   }
 
-  template <class... UTypes,
-            class = std::enable_if_t<std::conjunction_v<
-                std::bool_constant<sizeof...(Types) == sizeof...(UTypes)>,
-                std::is_assignable<Types&, UTypes>...>>>
+  template <class... UTypes>
+    requires(sizeof...(Types) == sizeof...(UTypes)) &&
+            std::conjunction_v<std::is_assignable<Types&, UTypes>...>
   KOKKOS_INLINE_FUNCTION constexpr tuple&
   operator=(tuple<UTypes...>&& other) noexcept(
       (std::is_nothrow_assignable_v<Types&, UTypes> && ...)) {
@@ -813,10 +748,10 @@ class tuple {
   }
 
 #if defined(CEXA_HAS_CXX23)
-  template <class... UTypes,
-            class = std::enable_if_t<std::conjunction_v<
-                std::bool_constant<sizeof...(Types) == sizeof...(UTypes)>,
-                std::is_assignable<const Types&, const UTypes&>...>>>
+  template <class... UTypes>
+    requires(sizeof...(Types) == sizeof...(UTypes)) &&
+            std::conjunction_v<
+                std::is_assignable<const Types&, const UTypes&>...>
   KOKKOS_INLINE_FUNCTION constexpr const tuple& operator=(
       const tuple<UTypes...>& other) const
       noexcept((std::is_nothrow_assignable_v<const Types&, const UTypes&> &&
@@ -825,10 +760,9 @@ class tuple {
     return *this;
   }
 
-  template <class... UTypes,
-            class = std::enable_if_t<std::conjunction_v<
-                std::bool_constant<sizeof...(Types) == sizeof...(UTypes)>,
-                std::is_assignable<const Types&, UTypes>...>>>
+  template <class... UTypes>
+    requires(sizeof...(Types) == sizeof...(UTypes)) &&
+            std::conjunction_v<std::is_assignable<const Types&, UTypes>...>
   KOKKOS_INLINE_FUNCTION constexpr const tuple& operator=(
       tuple<UTypes...>&& other) const
       noexcept((std::is_nothrow_assignable_v<const Types&, UTypes> && ...)) {
@@ -837,11 +771,10 @@ class tuple {
   }
 #endif
 
-  template <class U1, class U2,
-            class = std::enable_if_t<std::conjunction_v<
-                std::bool_constant<sizeof...(Types) == 2>,
-                std::is_assignable<T0<Types...>&, const U1&>,
-                std::is_assignable<T1<Types...>&, const U2&>>>>
+  template <class U1, class U2>
+    requires(sizeof...(Types) == 2) &&
+            std::conjunction_v<std::is_assignable<T0<Types...>&, const U1&>,
+                               std::is_assignable<T1<Types...>&, const U2&>>
   constexpr tuple& operator=(const std::pair<U1, U2>& p) noexcept(
       std::is_nothrow_assignable_v<T0<Types...>&, const U1&> &&
       std::is_nothrow_assignable_v<T1<Types...>&, const U2&>) {
@@ -850,11 +783,10 @@ class tuple {
     return *this;
   }
 
-  template <class U1, class U2,
-            class = std::enable_if_t<
-                std::conjunction_v<std::bool_constant<sizeof...(Types) == 2>,
-                                   std::is_assignable<T0<Types...>&, U1>,
-                                   std::is_assignable<T1<Types...>&, U2>>>>
+  template <class U1, class U2>
+    requires(sizeof...(Types) == 2) &&
+            std::conjunction_v<std::is_assignable<T0<Types...>&, U1>,
+                               std::is_assignable<T1<Types...>&, U2>>
   // NOTE: we use forward in order to not move out of references contained
   // inside the pair
   // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
@@ -867,11 +799,12 @@ class tuple {
   }
 
 #if defined(CEXA_HAS_CXX23)
-  template <class U1, class U2,
-            class = std::enable_if_t<std::conjunction_v<
-                std::bool_constant<sizeof...(Types) == 2>,
+  template <class U1, class U2>
+    requires(sizeof...(Types) == 2) &&
+            std::conjunction_v<
                 std::is_assignable<const T0<Types...>&, const U1&>,
-                std::is_assignable<const T1<Types...>&, const U2&>>>>
+                std::is_assignable<const T1<Types...>&, const U2&>>
+  // NOLINTNEXTLINE(misc-unconventional-assign-operator,cppcoreguidelines-c-copy-assignment-signature)
   constexpr const tuple& operator=(const std::pair<U1, U2>& p) const
       noexcept(std::is_nothrow_assignable_v<const T0<Types...>&, const U1&> &&
                std::is_nothrow_assignable_v<const T1<Types...>&, const U2&>) {
@@ -880,14 +813,13 @@ class tuple {
     return *this;
   }
 
-  template <class U1, class U2,
-            class = std::enable_if_t<std::conjunction_v<
-                std::bool_constant<sizeof...(Types) == 2>,
-                std::is_assignable<const T0<Types...>&, U1>,
-                std::is_assignable<const T1<Types...>&, U2>>>>
+  template <class U1, class U2>
+    requires(sizeof...(Types) == 2) &&
+            std::conjunction_v<std::is_assignable<const T0<Types...>&, U1>,
+                               std::is_assignable<const T1<Types...>&, U2>>
   // NOTE: we use forward in order to not move out of references contained
   // inside the pair
-  // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
+  // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved,misc-unconventional-assign-operator,cppcoreguidelines-c-copy-assignment-signature)
   constexpr const tuple& operator=(std::pair<U1, U2>&& p) const
       noexcept(std::is_nothrow_assignable_v<const T0<Types...>&, U1> &&
                std::is_nothrow_assignable_v<const T1<Types...>&, U2>) {
@@ -897,34 +829,33 @@ class tuple {
   }
 #endif
 
-  // TODO: use conjunction_v here
-  // NOTE: This overload is introduced in C++23
-  template <class UTuple,
-            class = std::enable_if_t<
-                impl::is_tuple_like_v<UTuple> &&
-                !impl::is_tuple_v<std::remove_cvref_t<UTuple>> &&
-                !impl::is_pair<std::remove_cvref_t<UTuple>>::value &&
-                impl::is_different_from_v<UTuple, tuple> &&
-                !impl::is_subrange_v<UTuple> &&
-                sizeof...(Types) ==
-                    tuple_size<std::remove_reference_t<UTuple>>::value>>
+#if defined(CEXA_HAS_CXX23)
+  template <class UTuple>
+    requires std::conjunction_v<
+        impl::is_tuple_like<UTuple>,
+        std::negation<impl::is_tuple<std::remove_cvref_t<UTuple>>>,
+        std::negation<impl::is_pair<std::remove_cvref_t<UTuple>>>,
+        impl::is_different_from<UTuple, tuple>,
+        std::negation<impl::is_subrange<UTuple>>,
+        std::bool_constant<sizeof...(Types) ==
+                           tuple_size<std::remove_reference_t<UTuple>>::value>>
   // The check for is_assignable is delegated to store.set_all()
   constexpr tuple& operator=(UTuple&& u) {
     values.set(FWD(u));
     return *this;
   }
 
-#if defined(CEXA_HAS_CXX23)
-  template <class UTuple,
-            class = std::enable_if_t<
-                impl::is_tuple_like_v<UTuple> &&
-                !impl::is_tuple_v<std::remove_cvref_t<UTuple>> &&
-                !impl::is_pair<std::remove_cvref_t<UTuple>>::value &&
-                impl::is_different_from_v<UTuple, tuple> &&
-                !impl::is_subrange_v<std::remove_cvref_t<UTuple>> &&
-                sizeof...(Types) ==
-                    tuple_size<std::remove_reference_t<UTuple>>::value>>
+  template <class UTuple>
+    requires std::conjunction_v<
+        impl::is_tuple_like<UTuple>,
+        std::negation<impl::is_tuple<std::remove_cvref_t<UTuple>>>,
+        std::negation<impl::is_pair<std::remove_cvref_t<UTuple>>>,
+        impl::is_different_from<UTuple, tuple>,
+        std::negation<impl::is_subrange<UTuple>>,
+        std::bool_constant<sizeof...(Types) ==
+                           tuple_size<std::remove_reference_t<UTuple>>::value>>
   // The check for is_assignable is delegated to store.set_all()
+  // NOLINTNEXTLINE(misc-unconventional-assign-operator,cppcoreguidelines-c-copy-assignment-signature)
   constexpr const tuple& operator=(UTuple&& u) const {
     values.set(FWD(u));
     return *this;

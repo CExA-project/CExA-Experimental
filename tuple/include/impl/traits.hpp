@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <ranges>
 
+#include "macros.hpp"
 #include "tuple_fwd.hpp"
 
 namespace cexa::impl {
@@ -99,6 +100,10 @@ template <class T, class U>
 inline constexpr bool is_different_from_v = is_different_from<T, U>::value;
 
 // reference_constructs_from_temporary
+#ifdef CEXA_HAS_CXX23
+using std::reference_constructs_from_temporary;
+using std::reference_constructs_from_temporary_v;
+#else
 template <class T, class U>
 struct reference_constructs_from_temporary : std::false_type {};
 
@@ -135,6 +140,7 @@ struct reference_constructs_from_temporary<T&&, U>
 template <class T, class U>
 constexpr inline bool reference_constructs_from_temporary_v =
     reference_constructs_from_temporary<T, U>::value;
+#endif
 
 // common_reference helper
 template <class TTuple, class UTuple, template <class> class TQual,

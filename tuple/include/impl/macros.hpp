@@ -10,10 +10,9 @@
 #define CEXA_STD_VERSION __cplusplus
 #endif
 
-#if CEXA_STD_VERSION >= 202002L
-#define CEXA_HAS_CXX20
-#endif
-#if CEXA_STD_VERSION >= 202302L
+// GCC 13 defines __cplusplus to 202100L when in c++23
+#if (defined(KOKKOS_COMPILER_GNU) && CEXA_STD_VERSION >= 202100L) || \
+    CEXA_STD_VERSION >= 202302L
 #define CEXA_HAS_CXX23
 #endif
 
