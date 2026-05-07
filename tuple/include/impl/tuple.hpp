@@ -539,18 +539,6 @@ concept pair_constructible =
     !impl::reference_constructs_from_temporary_v<
         tuple_element_t<1, std::remove_cvref_t<Tuple>>,
         decltype(std::get<1>(FWD((std::declval<UPair>()))))>;
-
-template <class Tuple, class UTuple>
-concept tuple_like_constructible =
-    impl::is_tuple_like_v<UTuple> &&
-    tuple_size_v<Tuple> == tuple_size_v<std::remove_reference_t<UTuple>> &&
-    impl::all_types_constructible_v<Tuple, UTuple&&> &&
-    !impl::is_tuple_v<std::remove_cvref_t<UTuple>> &&
-    !impl::is_subrange_v<std::remove_cvref_t<UTuple>> &&
-    !impl::any_types_reference_constructs_from_temporary_v<Tuple, UTuple> &&
-    (tuple_size_v<Tuple> != 1 ||
-     !(std::convertible_to<UTuple, tuple_element_t<0, Tuple>> ||
-       std::constructible_from<tuple_element_t<0, Tuple>, UTuple>));
 }  // namespace impl
 
 template <typename... Types>
@@ -724,13 +712,32 @@ class tuple {
       : m_values(std::move(u.first), std::move(u.second)) {}
 #endif
 
-  template <class UTuple>
-    requires impl::tuple_like_constructible<tuple, UTuple>
+  // Using a concept for this leads to compile failures with older clang
+  // versions (fails with clang 16)
+  // NOLINTBEGIN(modernize-use-constraints)
+  template <
+      class UTuple,
+      class = std::enable_if_t<std::conjunction_v<
+          impl::is_tuple_like<UTuple>,
+          std::bool_constant<
+              sizeof...(Types) ==
+              tuple_size<std::remove_reference_t<UTuple>>::value>,
+          impl::all_types_constructible<tuple, UTuple&&>,
+          std::negation<impl::is_tuple<std::remove_cvref_t<UTuple>>>,
+          std::negation<impl::is_subrange<std::remove_cvref_t<UTuple>>>,
+          std::negation<impl::any_types_reference_constructs_from_temporary<
+              tuple, UTuple>>,
+          std::disjunction<
+              std::bool_constant<sizeof...(Types) != 1>,
+              std::negation<std::disjunction<
+                  std::is_convertible<UTuple, tuple_element_t<0, tuple>>,
+                  std::is_constructible<tuple_element_t<0, tuple>, UTuple>>>>>>>
   constexpr explicit(
       (!impl::all_types_convertible_v<UTuple&&, tuple<Types...>>))
       tuple(UTuple&& u)
       : tuple(tuple_like_tag{}, FWD(u),
               std::make_index_sequence<sizeof...(Types)>{}) {}
+  // NOLINTEND(modernize-use-constraints)
 
   KOKKOS_DEFAULTED_FUNCTION
   constexpr ~tuple() = default;
