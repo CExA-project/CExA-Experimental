@@ -129,7 +129,7 @@ struct store<> {
   KOKKOS_DEFAULTED_FUNCTION constexpr store(store&&)      = default;
 #if defined(CEXA_HAS_CXX23)
   KOKKOS_DEFAULTED_FUNCTION constexpr store(store&) noexcept = default;
-  KOKKOS_INLINE_FUNCTION constexpr store(const store&&) noexcept {};
+  KOKKOS_INLINE_FUNCTION constexpr store(const store&&) noexcept {}
 #endif
   KOKKOS_DEFAULTED_FUNCTION constexpr ~store() = default;
 
@@ -443,24 +443,24 @@ class tuple<> {
  public:
   KOKKOS_DEFAULTED_FUNCTION constexpr tuple() noexcept = default;
 
-  KOKKOS_DEFAULTED_FUNCTION constexpr tuple(const tuple& u) noexcept = default;
-  KOKKOS_DEFAULTED_FUNCTION constexpr tuple(tuple&& u) noexcept      = default;
+  KOKKOS_DEFAULTED_FUNCTION constexpr tuple(const tuple&) noexcept = default;
+  KOKKOS_DEFAULTED_FUNCTION constexpr tuple(tuple&&) noexcept      = default;
 
   KOKKOS_DEFAULTED_FUNCTION constexpr ~tuple() = default;
 
-  KOKKOS_DEFAULTED_FUNCTION constexpr tuple& operator=(
-      const tuple& u) noexcept = default;
-  KOKKOS_DEFAULTED_FUNCTION constexpr tuple& operator=(tuple&& u) noexcept =
+  KOKKOS_DEFAULTED_FUNCTION constexpr tuple& operator=(const tuple&) noexcept =
+      default;
+  KOKKOS_DEFAULTED_FUNCTION constexpr tuple& operator=(tuple&&) noexcept =
       default;
 #if defined(CEXA_HAS_CXX23)
   // We don't care about self assignment since this is an empty class
   // NOLINTNEXTLINE(cert-oop54-cpp)
   KOKKOS_INLINE_FUNCTION constexpr const tuple& operator=(
-      const tuple& u) const noexcept {
+      const tuple&) const noexcept {
     return *this;
   }
   KOKKOS_INLINE_FUNCTION constexpr const tuple& operator=(
-      tuple&& u) const noexcept {
+      tuple&&) const noexcept {
     return *this;
   }
 #endif
