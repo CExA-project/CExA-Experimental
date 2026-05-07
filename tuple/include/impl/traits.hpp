@@ -13,25 +13,25 @@ namespace cexa::impl {
 // NOTE: Since const T& t = {} is not an expression, we check that a member of
 // type T can be initialized with empty braces when calling a constructor.
 template <class U, class = void>
-struct empty_copy_list_initializable_helper : std::false_type {};
+struct is_empty_copy_list_initializable_helper : std::false_type {};
 template <class U>
-struct empty_copy_list_initializable_helper<U, std::void_t<decltype(U({}))>>
+struct is_empty_copy_list_initializable_helper<U, std::void_t<decltype(U({}))>>
     : std::true_type {};
 
 template <class T>
-struct empty_copy_list_initializable {
+struct is_empty_copy_list_initializable {
   struct helper {
     // NOLINTNEXTLINE(google-explicit-constructor)
     helper(const T&) {}
   };
 
   static constexpr bool value =
-      empty_copy_list_initializable_helper<helper>::value;
+      is_empty_copy_list_initializable_helper<helper>::value;
 };
 
 template <class T>
-inline constexpr bool empty_copy_list_initializable_v =
-    empty_copy_list_initializable<T>::value;
+inline constexpr bool is_empty_copy_list_initializable_v =
+    is_empty_copy_list_initializable<T>::value;
 
 // is_tuple_like
 // tells if a type is tuple-like, tuple-like types include array, pair,

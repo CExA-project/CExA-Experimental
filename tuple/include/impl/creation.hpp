@@ -78,8 +78,8 @@ tuple_cat_impl(tuple<Tuples...>&& tuples, std::index_sequence<Ints1...>,
 }
 }  // namespace impl
 
-template <class... Tuples,
-          class = std::enable_if_t<(impl::is_tuple_like<Tuples>::value && ...)>>
+template <class... Tuples>
+  requires(impl::is_tuple_like<Tuples>::value && ...)
 KOKKOS_INLINE_FUNCTION constexpr auto tuple_cat(Tuples&&... tuples) {
   using cartesian_product_t = impl::cartesian_product<Tuples...>;
   return impl::tuple_cat_impl(cexa::forward_as_tuple(tuples...),

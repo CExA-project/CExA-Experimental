@@ -86,7 +86,7 @@ struct make_tuple_constraint<U, Tuple, 1> {
       U, decltype(get<0>(std::declval<Tuple>()))>;
 };
 
-template <class T, class Tuple, class seq>
+template <class T, class Tuple, class Seq>
 struct is_constructible_from_tuple;
 
 template <class T, class Tuple, std::size_t... Ints>
@@ -132,9 +132,8 @@ KOKKOS_INLINE_FUNCTION constexpr decltype(auto) apply(F&& f, Tuple&& t)
       std::make_index_sequence<tuple_size_v<std::remove_reference_t<Tuple>>>{});
 }
 
-template <
-    class T, class Tuple,
-    class = std::enable_if_t<impl::is_constructible_from_tuple_v<T, Tuple>>>
+template <class T, class Tuple>
+  requires impl::is_constructible_from_tuple_v<T, Tuple>
 KOKKOS_INLINE_FUNCTION constexpr T make_from_tuple(Tuple&& t) {
   static_assert(impl::is_tuple_v<std::remove_cvref_t<Tuple>>,
                 "cexa::make_from_tuple can only be called with cexa::tuple");

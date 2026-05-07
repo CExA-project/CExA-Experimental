@@ -137,7 +137,7 @@ struct store<> {
   KOKKOS_DEFAULTED_FUNCTION constexpr store& operator=(store&&)      = default;
 
 #if defined(CEXA_HAS_CXX23)
-  // NOLINTNEXTLINE(misc-unconventional-assign-operator,cppcoreguidelines-c-copy-assignment-signature)
+  // NOLINTNEXTLINE(misc-unconventional-assign-operator,cppcoreguidelines-c-copy-assignment-signature,cert-oop54-cpp)
   KOKKOS_INLINE_FUNCTION constexpr const store& operator=(
       const store&) const noexcept {
     return *this;
@@ -199,12 +199,11 @@ struct store<T, Types...> {
   KOKKOS_DEFAULTED_FUNCTION constexpr ~store() = default;
 
   CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
-  template <
-      class U, class... UTypes,
-      class = std::enable_if_t<sizeof...(UTypes) == sizeof...(Types) &&
-                               !(std::is_same_v<U, T> &&
-                                 (std::is_same_v<UTypes, Types> && ...)) &&
-                               std::is_assignable_v<T&, const U&>>>
+  template <class U, class... UTypes>
+    requires(sizeof...(UTypes) == sizeof...(Types) &&
+             !(std::is_same_v<U, T> &&
+               (std::is_same_v<UTypes, Types> && ...)) &&
+             std::is_assignable_v<T&, const U&>)
   KOKKOS_INLINE_FUNCTION constexpr store& operator=(
       const store<U, UTypes...>& other) {
     value = other.value;
@@ -213,12 +212,11 @@ struct store<T, Types...> {
   }
 
   CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
-  template <
-      class U, class... UTypes,
-      class = std::enable_if_t<sizeof...(UTypes) == sizeof...(Types) &&
-                               !(std::is_same_v<U, T> &&
-                                 (std::is_same_v<UTypes, Types> && ...)) &&
-                               std::is_assignable_v<T&, U&&>>>
+  template <class U, class... UTypes>
+    requires(sizeof...(UTypes) == sizeof...(Types) &&
+             !(std::is_same_v<U, T> &&
+               (std::is_same_v<UTypes, Types> && ...)) &&
+             std::is_assignable_v<T&, U &&>)
   KOKKOS_INLINE_FUNCTION constexpr store& operator=(
       store<U, UTypes...>&& other) {
     value = FWD(other.value);
@@ -236,8 +234,10 @@ struct store<T, Types...> {
                                     ...))
     requires(std::is_copy_assignable_v<T>)
   {
-    value = other.value;
-    rest  = other.rest;
+    if (this != &other) {
+      value = other.value;
+      rest  = other.rest;
+    }
     return *this;
   }
 
@@ -258,8 +258,10 @@ struct store<T, Types...> {
       const store& other) const
     requires(std::is_copy_assignable_v<const T>)
   {
-    value = other.value;
-    rest  = other.rest;
+    if (this != &other) {
+      value = other.value;
+      rest  = other.rest;
+    }
     return *this;
   }
 
@@ -275,12 +277,11 @@ struct store<T, Types...> {
   }
 
   CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
-  template <
-      class U, class... UTypes,
-      class = std::enable_if_t<sizeof...(UTypes) == sizeof...(Types) &&
-                               !(std::is_same_v<U, T> &&
-                                 (std::is_same_v<UTypes, Types> && ...)) &&
-                               std::is_assignable_v<const T&, const U&>>>
+  template <class U, class... UTypes>
+    requires(sizeof...(UTypes) == sizeof...(Types) &&
+             !(std::is_same_v<U, T> &&
+               (std::is_same_v<UTypes, Types> && ...)) &&
+             std::is_assignable_v<const T&, const U&>)
   KOKKOS_INLINE_FUNCTION constexpr const store& operator=(
       const store<U, UTypes...>& other) const {
     value = other.value;
@@ -289,12 +290,11 @@ struct store<T, Types...> {
   }
 
   CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
-  template <
-      class U, class... UTypes,
-      class = std::enable_if_t<sizeof...(UTypes) == sizeof...(Types) &&
-                               !(std::is_same_v<U, T> &&
-                                 (std::is_same_v<UTypes, Types> && ...)) &&
-                               std::is_assignable_v<const T&, U&&>>>
+  template <class U, class... UTypes>
+    requires(sizeof...(UTypes) == sizeof...(Types) &&
+             !(std::is_same_v<U, T> &&
+               (std::is_same_v<UTypes, Types> && ...)) &&
+             std::is_assignable_v<const T&, U &&>)
   KOKKOS_INLINE_FUNCTION constexpr const store& operator=(
       store<U, UTypes...>&& other) const {
     value = FWD(other.value);
@@ -341,15 +341,16 @@ struct store<T, Types...> {
     }
   }
 
-  template <class U, class = std::enable_if_t<std::is_assignable_v<
-                         T&, decltype(std::forward<U>(std::declval<U&&>()))>>>
+  template <class U>
+    requires std::is_assignable_v<
+        T&, decltype(std::forward<U>(std::declval<U&&>()))>
   KOKKOS_INLINE_FUNCTION constexpr void set_all(U&& u) {
     value = u;
   }
 
-  template <class U, class... UTypes,
-            class = std::enable_if_t<std::is_assignable_v<
-                T&, decltype(std::forward<U>(std::declval<U&&>()))>>>
+  template <class U, class... UTypes>
+    requires std::is_assignable_v<
+        T&, decltype(std::forward<U>(std::declval<U&&>()))>
   KOKKOS_INLINE_FUNCTION constexpr void set_all(U&& head, UTypes&&... tail) {
     value = head;
     rest.set_all(FWD(tail)...);
@@ -404,11 +405,11 @@ struct store<T, Types...> {
       const store<U, UTypes...>& rhs) const {
     if (value < rhs.value) {
       return std::weak_ordering::less;
-    } else if (rhs.value < value) {
-      return std::weak_ordering::greater;
-    } else {
-      return static_cast<std::weak_ordering>(rest <=> rhs.rest);
     }
+    if (rhs.value < value) {
+      return std::weak_ordering::greater;
+    }
+    return static_cast<std::weak_ordering>(rest <=> rhs.rest);
   }
 
   CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
@@ -452,6 +453,8 @@ class tuple<> {
   KOKKOS_DEFAULTED_FUNCTION constexpr tuple& operator=(tuple&& u) noexcept =
       default;
 #if defined(CEXA_HAS_CXX23)
+  // We don't care about self assignment since this is an empty class
+  // NOLINTNEXTLINE(cert-oop54-cpp)
   KOKKOS_INLINE_FUNCTION constexpr const tuple& operator=(
       const tuple& u) const noexcept {
     return *this;
@@ -564,28 +567,32 @@ class tuple {
   template <class... UTypes>
   friend class tuple;
 
-  impl::store<Types...> values;
+  impl::store<Types...> m_values;
 
   template <class UTuple, std::size_t... Ints>
   KOKKOS_INLINE_FUNCTION constexpr tuple(converting_tag, UTuple&& u,
                                          std::index_sequence<Ints...>)
-      : values(get<Ints>(FWD(u))...) {}
+      : m_values(get<Ints>(FWD(u))...) {}
 
   template <class UTuple, std::size_t... Ints>
   constexpr tuple(tuple_like_tag, UTuple&& u, std::index_sequence<Ints...>)
-      : values(std::get<Ints>(FWD(u))...) {}
+      : m_values(std::get<Ints>(FWD(u))...) {}
 
  public:
   // tuple.cnstr
   KOKKOS_INLINE_FUNCTION explicit(
-      (!impl::empty_copy_list_initializable_v<Types> ||
+      (!impl::is_empty_copy_list_initializable_v<Types> ||
        ...)) constexpr tuple() noexcept((std::
                                              is_nothrow_default_constructible_v<
                                                  Types> &&
                                          ...))
     requires(std::is_default_constructible_v<Types> && ...)
-      : values{} {}
+      : m_values{} {}
 
+  // NOTE: We have to use sfinae for these constructors, as using a requires
+  // clause would lead to a compile error about the atomic constraint depending
+  // on itself
+  // NOLINTBEGIN(modernize-use-constraints)
   template <class Dummy = void,
             class       = std::enable_if_t<
                 std::is_same_v<Dummy, void> && (sizeof...(Types) >= 1) &&
@@ -596,7 +603,7 @@ class tuple {
                                                                 is_nothrow_copy_constructible_v<
                                                                     Types> &&
                                                             ...))
-      : values(vals...) {}
+      : m_values(vals...) {}
 
   template <
       class... UTypes,
@@ -623,14 +630,14 @@ class tuple {
           std::is_constructible<Types, UTypes>...>>>
   KOKKOS_INLINE_FUNCTION explicit((!std::is_convertible_v<UTypes&&, Types> ||
                                    ...)) constexpr tuple(UTypes&&... args)
-      : values(FWD(args)...) {}
+      : m_values(FWD(args)...) {}
 
   KOKKOS_DEFAULTED_FUNCTION constexpr tuple(const tuple& u) = default;
 
   KOKKOS_INLINE_FUNCTION constexpr tuple(tuple&& u) noexcept(
       (std::is_nothrow_move_assignable_v<Types> && ...))
     requires(std::move_constructible<Types> && ...)
-      : values(std::move(u.values)) {}
+      : m_values(std::move(u.m_values)) {}
 
   template <class... UTypes, CONVERTING_TUPLE_CTOR_CONSTRAINTS(const, &)>
   KOKKOS_INLINE_FUNCTION explicit(
@@ -665,6 +672,7 @@ class tuple {
       : tuple(converting_tag{}, std::move(other),
               std::make_index_sequence<sizeof...(Types)>{}) {}
 #endif
+  // NOLINTEND(modernize-use-constraints)
 
   template <class U1, class U2>
     requires impl::pair_constructible<tuple, const std::pair<U1, U2>&>
@@ -675,7 +683,7 @@ class tuple {
        !std::is_convertible_v<decltype(std::get<1>(FWD(
                                   (std::declval<const std::pair<U1, U2>&>())))),
                               T1<Types...>>)) tuple(const std::pair<U1, U2>& u)
-      : values(u.first, u.second) {}
+      : m_values(u.first, u.second) {}
 
   template <class U1, class U2>
     requires impl::pair_constructible<tuple, std::pair<U1, U2>&&>
@@ -686,7 +694,7 @@ class tuple {
        !std::is_convertible_v<
            decltype(std::get<1>(FWD((std::declval<std::pair<U1, U2>&&>())))),
            T1<Types...>>)) tuple(std::pair<U1, U2>&& u)
-      : values(std::move(u.first), std::move(u.second)) {
+      : m_values(std::move(u.first), std::move(u.second)) {
   }  // TODO: see if we should use forward instead
 
 #if defined(CEXA_HAS_CXX23)
@@ -699,7 +707,7 @@ class tuple {
        !std::is_convertible_v<
            decltype(std::get<1>(FWD((std::declval<std::pair<U1, U2>&>())))),
            T1<Types...>>)) tuple(std::pair<U1, U2>& u)
-      : values(u.first, u.second) {}
+      : m_values(u.first, u.second) {}
 
   template <class U1, class U2>
     requires impl::pair_constructible<tuple, std::pair<U1, U2>&>
@@ -710,7 +718,7 @@ class tuple {
       !std::is_convertible_v<decltype(std::get<1>(FWD(
                                  (std::declval<const std::pair<U1, U2>&&>())))),
                              T1<Types...>>)) tuple(const std::pair<U1, U2>&& u)
-      : values(std::move(u.first), std::move(u.second)) {}
+      : m_values(std::move(u.first), std::move(u.second)) {}
 #endif
 
   template <class UTuple>
@@ -738,7 +746,9 @@ class tuple {
   KOKKOS_INLINE_FUNCTION constexpr const tuple& operator=(const tuple& u) const
     requires(std::is_copy_assignable_v<const Types> && ...)
   {
-    values = u.values;
+    if (this != &u) {
+      m_values = u.m_values;
+    }
     return *this;
   }
 
@@ -746,7 +756,7 @@ class tuple {
       noexcept((std::is_nothrow_move_assignable_v<const Types> && ...))
     requires(std::is_assignable_v<const Types&, Types> && ...)
   {
-    values = std::move(u.values);
+    m_values = std::move(u.m_values);
     return *this;
   }
 #endif
@@ -757,7 +767,7 @@ class tuple {
   KOKKOS_INLINE_FUNCTION constexpr tuple&
   operator=(const tuple<UTypes...>& other) noexcept(
       (std::is_nothrow_assignable_v<Types&, const UTypes&> && ...)) {
-    values = other.values;
+    m_values = other.m_values;
     return *this;
   }
 
@@ -767,7 +777,7 @@ class tuple {
   KOKKOS_INLINE_FUNCTION constexpr tuple&
   operator=(tuple<UTypes...>&& other) noexcept(
       (std::is_nothrow_assignable_v<Types&, UTypes> && ...)) {
-    values = std::move(other.values);
+    m_values = std::move(other.m_values);
     return *this;
   }
 
@@ -780,7 +790,7 @@ class tuple {
       const tuple<UTypes...>& other) const
       noexcept((std::is_nothrow_assignable_v<const Types&, const UTypes&> &&
                 ...)) {
-    values = other.values;
+    m_values = other.m_values;
     return *this;
   }
 
@@ -790,7 +800,7 @@ class tuple {
   KOKKOS_INLINE_FUNCTION constexpr const tuple& operator=(
       tuple<UTypes...>&& other) const
       noexcept((std::is_nothrow_assignable_v<const Types&, UTypes> && ...)) {
-    values = std::move(other.values);
+    m_values = std::move(other.m_values);
     return *this;
   }
 #endif
@@ -802,8 +812,8 @@ class tuple {
   constexpr tuple& operator=(const std::pair<U1, U2>& p) noexcept(
       std::is_nothrow_assignable_v<T0<Types...>&, const U1&> &&
       std::is_nothrow_assignable_v<T1<Types...>&, const U2&>) {
-    values.value      = p.first;
-    values.rest.value = p.second;
+    m_values.value      = p.first;
+    m_values.rest.value = p.second;
     return *this;
   }
 
@@ -817,8 +827,8 @@ class tuple {
   constexpr tuple& operator=(std::pair<U1, U2>&& p) noexcept(
       std::is_nothrow_assignable_v<T0<Types...>&, U1> &&
       std::is_nothrow_assignable_v<T1<Types...>&, U2>) {
-    values.value      = FWD(p.first);
-    values.rest.value = FWD(p.second);
+    m_values.value      = FWD(p.first);
+    m_values.rest.value = FWD(p.second);
     return *this;
   }
 
@@ -832,8 +842,8 @@ class tuple {
   constexpr const tuple& operator=(const std::pair<U1, U2>& p) const
       noexcept(std::is_nothrow_assignable_v<const T0<Types...>&, const U1&> &&
                std::is_nothrow_assignable_v<const T1<Types...>&, const U2&>) {
-    values.value      = p.first;
-    values.rest.value = p.second;
+    m_values.value      = p.first;
+    m_values.rest.value = p.second;
     return *this;
   }
 
@@ -847,8 +857,8 @@ class tuple {
   constexpr const tuple& operator=(std::pair<U1, U2>&& p) const
       noexcept(std::is_nothrow_assignable_v<const T0<Types...>&, U1> &&
                std::is_nothrow_assignable_v<const T1<Types...>&, U2>) {
-    values.value      = FWD(p.first);
-    values.rest.value = FWD(p.second);
+    m_values.value      = FWD(p.first);
+    m_values.rest.value = FWD(p.second);
     return *this;
   }
 #endif
@@ -865,7 +875,7 @@ class tuple {
                            tuple_size<std::remove_reference_t<UTuple>>::value>>
   // The check for is_assignable is delegated to store.set_all()
   constexpr tuple& operator=(UTuple&& u) {
-    values.set(FWD(u));
+    m_values.set(FWD(u));
     return *this;
   }
 
@@ -881,7 +891,7 @@ class tuple {
   // The check for is_assignable is delegated to store.set_all()
   // NOLINTNEXTLINE(misc-unconventional-assign-operator,cppcoreguidelines-c-copy-assignment-signature)
   constexpr const tuple& operator=(UTuple&& u) const {
-    values.set(FWD(u));
+    m_values.set(FWD(u));
     return *this;
   }
 #endif
@@ -889,49 +899,48 @@ class tuple {
 
   KOKKOS_INLINE_FUNCTION constexpr void swap(tuple& rhs) noexcept(
       (std::is_nothrow_swappable_v<Types> && ...)) {
-    return values.swap(rhs.values);
+    return m_values.swap(rhs.m_values);
   }
 
 #if defined(CEXA_HAS_CXX23)
   KOKKOS_INLINE_FUNCTION constexpr void swap(const tuple& rhs) const
       noexcept((std::is_nothrow_swappable_v<const Types> && ...)) {
-    return values.swap(rhs.values);
+    return m_values.swap(rhs.m_values);
   }
 #endif
 
   template <std::size_t I, class... Ts>
-  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
-      (I < sizeof...(Ts)), typename tuple_element<I, tuple<Ts...>>::type&>
-  get(tuple<Ts...>& t) noexcept;
+    requires(I < sizeof...(Ts))
+  KOKKOS_INLINE_FUNCTION friend constexpr tuple_element_t<I, tuple<Ts...>>& get(
+      tuple<Ts...>& t) noexcept;
   template <std::size_t I, class... Ts>
-  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
-      (I < sizeof...(Ts)), typename tuple_element<I, tuple<Ts...>>::type&&>
+    requires(I < sizeof...(Ts))
+  KOKKOS_INLINE_FUNCTION friend constexpr tuple_element_t<I, tuple<Ts...>>&&
   get(tuple<Ts...>&& t) noexcept;
   template <std::size_t I, class... Ts>
-  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
-      (I < sizeof...(Ts)), const typename tuple_element<I, tuple<Ts...>>::type&>
+    requires(I < sizeof...(Ts))
+  KOKKOS_INLINE_FUNCTION friend constexpr const tuple_element_t<I,
+                                                                tuple<Ts...>>&
   get(const tuple<Ts...>& t) noexcept;
   template <std::size_t I, class... Ts>
-  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
-      (I < sizeof...(Ts)),
-      const typename tuple_element<I, tuple<Ts...>>::type&&>
+    requires(I < sizeof...(Ts))
+  KOKKOS_INLINE_FUNCTION friend constexpr const tuple_element_t<I,
+                                                                tuple<Ts...>>&&
   get(const tuple<Ts...>&& t) noexcept;
   template <class T, class... Ts>
-  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
-      (std::is_same_v<T, Ts> || ...), T&>
-  get(tuple<Ts...>& t) noexcept;
+    requires(std::is_same_v<T, Ts> || ...)
+  KOKKOS_INLINE_FUNCTION friend constexpr T& get(tuple<Ts...>& t) noexcept;
   template <class T, class... Ts>
-  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
-      (std::is_same_v<T, Ts> || ...), T&&>
-  get(tuple<Ts...>&& t) noexcept;
+    requires(std::is_same_v<T, Ts> || ...)
+  KOKKOS_INLINE_FUNCTION friend constexpr T&& get(tuple<Ts...>&& t) noexcept;
   template <class T, class... Ts>
-  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
-      (std::is_same_v<T, Ts> || ...), const T&>
-  get(const tuple<Ts...>& t) noexcept;
+    requires(std::is_same_v<T, Ts> || ...)
+  KOKKOS_INLINE_FUNCTION friend constexpr const T& get(
+      const tuple<Ts...>& t) noexcept;
   template <class T, class... Ts>
-  KOKKOS_INLINE_FUNCTION friend constexpr const std::enable_if_t<
-      (std::is_same_v<T, Ts> || ...), const T&&>
-  get(const tuple<Ts...>&& t) noexcept;
+    requires(std::is_same_v<T, Ts> || ...)
+  KOKKOS_INLINE_FUNCTION friend constexpr const T&& get(
+      const tuple<Ts...>&& t) noexcept;
 
   // tuple.rel
 #if defined(CEXA_TUPLE_IMPL_USE_SPACESHIP_OPERATOR)
@@ -939,51 +948,51 @@ class tuple {
     requires(sizeof...(Types) == sizeof...(UTypes))
   KOKKOS_INLINE_FUNCTION constexpr auto operator<=>(
       const tuple<UTypes...>& rhs) const {
-    return values <=> rhs.values;
+    return m_values <=> rhs.m_values;
   }
 
   template <class... UTypes>
     requires(sizeof...(Types) == sizeof...(UTypes))
   KOKKOS_INLINE_FUNCTION constexpr bool operator==(
       const tuple<UTypes...>& rhs) const {
-    return (values <=> rhs.values) == 0;
+    return (m_values <=> rhs.m_values) == 0;
   }
 #else
   template <class... UTypes>
     requires(sizeof...(Types) == sizeof...(UTypes))
   KOKKOS_INLINE_FUNCTION constexpr bool operator==(
       const tuple<UTypes...>& rhs) const {
-    return values == rhs.values;
+    return m_values == rhs.m_values;
   }
   template <class... UTypes>
     requires(sizeof...(Types) == sizeof...(UTypes))
   KOKKOS_INLINE_FUNCTION constexpr bool operator!=(
       const tuple<UTypes...>& rhs) const {
-    return !(values == rhs.values);
+    return !(m_values == rhs.m_values);
   }
   template <class... UTypes>
     requires(sizeof...(Types) == sizeof...(UTypes))
   KOKKOS_INLINE_FUNCTION constexpr bool operator<(
       const tuple<UTypes...>& rhs) const {
-    return values < rhs.values;
+    return m_values < rhs.m_values;
   }
   template <class... UTypes>
     requires(sizeof...(Types) == sizeof...(UTypes))
   KOKKOS_INLINE_FUNCTION constexpr bool operator<=(
       const tuple<UTypes...>& rhs) const {
-    return !(rhs.values < values);
+    return !(rhs.m_values < m_values);
   }
   template <class... UTypes>
     requires(sizeof...(Types) == sizeof...(UTypes))
   KOKKOS_INLINE_FUNCTION constexpr bool operator>(
       const tuple<UTypes...>& rhs) const {
-    return rhs.values < values;
+    return rhs.m_values < m_values;
   }
   template <class... UTypes>
     requires(sizeof...(Types) == sizeof...(UTypes))
   KOKKOS_INLINE_FUNCTION constexpr bool operator>=(
       const tuple<UTypes...>& rhs) const {
-    return !(values < rhs.values);
+    return !(m_values < rhs.m_values);
   }
 #endif
 };
@@ -996,64 +1005,61 @@ tuple(std::pair<T1, T2>) -> tuple<T1, T2>;
 
 // tuple.elem
 template <std::size_t I, class... Types>
-KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
-    (I < sizeof...(Types)), typename tuple_element<I, tuple<Types...>>::type&>
-get(tuple<Types...>& t) noexcept {
-  return t.values.template get_value<I>();
+  requires(I < sizeof...(Types))
+KOKKOS_INLINE_FUNCTION constexpr tuple_element_t<I, tuple<Types...>>& get(
+    tuple<Types...>& t) noexcept {
+  return t.m_values.template get_value<I>();
 }
 template <std::size_t I, class... Types>
-KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
-    (I < sizeof...(Types)), typename tuple_element<I, tuple<Types...>>::type&&>
+  requires(I < sizeof...(Types))
+KOKKOS_INLINE_FUNCTION constexpr tuple_element_t<I, tuple<Types...>>&&
 // NOTE: this doesn't work with std::move
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 get(tuple<Types...>&& t) noexcept {
   return static_cast<tuple_element_t<I, tuple<Types...>>&&>(
-      t.values.template get_value<I>());
+      t.m_values.template get_value<I>());
 }
 template <std::size_t I, class... Types>
-KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
-    (I < sizeof...(Types)),
-    const typename tuple_element<I, tuple<Types...>>::type&>
-get(const tuple<Types...>& t) noexcept {
-  return t.values.template get_value<I>();
+  requires(I < sizeof...(Types))
+KOKKOS_INLINE_FUNCTION constexpr const tuple_element_t<I, tuple<Types...>>& get(
+    const tuple<Types...>& t) noexcept {
+  return t.m_values.template get_value<I>();
 }
 template <std::size_t I, class... Types>
-KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
-    (I < sizeof...(Types)),
-    const typename tuple_element<I, tuple<Types...>>::type&&>
+  requires(I < sizeof...(Types))
+KOKKOS_INLINE_FUNCTION constexpr const tuple_element_t<I, tuple<Types...>>&&
 get(const tuple<Types...>&& t) noexcept {
   return static_cast<const tuple_element_t<I, tuple<Types...>>&&>(
-      t.values.template get_value<I>());
+      t.m_values.template get_value<I>());
 }
 template <class T, class... Types>
-KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
-    (std::is_same_v<T, Types> || ...), T&>
-get(tuple<Types...>& t) noexcept {
-  return t.values.template get_value<T>();
+  requires(std::is_same_v<T, Types> || ...)
+KOKKOS_INLINE_FUNCTION constexpr T& get(tuple<Types...>& t) noexcept {
+  return t.m_values.template get_value<T>();
 }
 template <class T, class... Types>
-KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
-    (std::is_same_v<T, Types> || ...), T&&>
+  requires(std::is_same_v<T, Types> || ...)
+KOKKOS_INLINE_FUNCTION constexpr T&&
 // NOTE: this doesn't work with std::move
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 get(tuple<Types...>&& t) noexcept {
-  return static_cast<T&&>(t.values.template get_value<T>());
+  return static_cast<T&&>(t.m_values.template get_value<T>());
 }
 template <class T, class... Types>
-KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
-    (std::is_same_v<T, Types> || ...), const T&>
-get(const tuple<Types...>& t) noexcept {
-  return t.values.template get_value<T>();
+  requires(std::is_same_v<T, Types> || ...)
+KOKKOS_INLINE_FUNCTION constexpr const T& get(
+    const tuple<Types...>& t) noexcept {
+  return t.m_values.template get_value<T>();
 }
 template <class T, class... Types>
-KOKKOS_INLINE_FUNCTION constexpr const std::enable_if_t<
-    (std::is_same_v<T, Types> || ...), const T&&>
-get(const tuple<Types...>&& t) noexcept {
-  return static_cast<const T&&>(t.values.template get_value<T>());
+  requires(std::is_same_v<T, Types> || ...)
+KOKKOS_INLINE_FUNCTION constexpr const T&& get(
+    const tuple<Types...>&& t) noexcept {
+  return static_cast<const T&&>(t.m_values.template get_value<T>());
 }
 
-template <class... Types,
-          class = std::enable_if_t<(std::is_swappable_v<Types> && ...)>>
+template <class... Types>
+  requires(std::is_swappable_v<Types> && ...)
 KOKKOS_INLINE_FUNCTION constexpr void swap(
     tuple<Types...>& lhs,
     tuple<Types...>& rhs) noexcept((std::is_nothrow_swappable_v<Types> &&
@@ -1062,8 +1068,8 @@ KOKKOS_INLINE_FUNCTION constexpr void swap(
 }
 
 #if defined(CEXA_HAS_CXX23)
-template <class... Types,
-          class = std::enable_if_t<(std::is_swappable_v<const Types> && ...)>>
+template <class... Types>
+  requires(std::is_swappable_v<const Types> && ...)
 KOKKOS_INLINE_FUNCTION constexpr void
 swap(const tuple<Types...>& lhs, const tuple<Types...>& rhs) noexcept(
     (std::is_nothrow_swappable_v<const Types> && ...)) {
