@@ -554,12 +554,13 @@ concept tuple_like_constructible =
 }  // namespace impl
 
 template <typename... Types>
+// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
 class tuple {
  private:
   template <typename... Ts>
-  using T0 = typename impl::nth_type<0, Ts...>::type;
+  using T0 = impl::nth_type<0, Ts...>::type;
   template <typename... Ts>
-  using T1 = typename impl::nth_type<sizeof...(Ts) == 1 ? 0 : 1, Ts...>::type;
+  using T1 = impl::nth_type<sizeof...(Ts) == 1 ? 0 : 1, Ts...>::type;
 
   struct converting_tag {};
   struct tuple_like_tag {};
@@ -569,6 +570,7 @@ class tuple {
 
   impl::store<Types...> m_values;
 
+  // NOLINTBEGIN(bugprone-use-after-move,hicpp-invalid-access-moved)
   template <class UTuple, std::size_t... Ints>
   KOKKOS_INLINE_FUNCTION constexpr tuple(converting_tag, UTuple&& u,
                                          std::index_sequence<Ints...>)
@@ -577,6 +579,7 @@ class tuple {
   template <class UTuple, std::size_t... Ints>
   constexpr tuple(tuple_like_tag, UTuple&& u, std::index_sequence<Ints...>)
       : m_values(std::get<Ints>(FWD(u))...) {}
+  // NOLINTEND(bugprone-use-after-move,hicpp-invalid-access-moved)
 
  public:
   // tuple.cnstr
@@ -909,38 +912,42 @@ class tuple {
   }
 #endif
 
+  // Using requires here leads to ambiguous calls to get with clang
+  // NOLINTBEGIN(modernize-use-constraints)
   template <std::size_t I, class... Ts>
-    requires(I < sizeof...(Ts))
-  KOKKOS_INLINE_FUNCTION friend constexpr tuple_element_t<I, tuple<Ts...>>& get(
-      tuple<Ts...>& t) noexcept;
+  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
+      (I < sizeof...(Ts)), typename tuple_element<I, tuple<Ts...>>::type&>
+  get(tuple<Ts...>& t) noexcept;
   template <std::size_t I, class... Ts>
-    requires(I < sizeof...(Ts))
-  KOKKOS_INLINE_FUNCTION friend constexpr tuple_element_t<I, tuple<Ts...>>&&
+  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
+      (I < sizeof...(Ts)), typename tuple_element<I, tuple<Ts...>>::type&&>
   get(tuple<Ts...>&& t) noexcept;
   template <std::size_t I, class... Ts>
-    requires(I < sizeof...(Ts))
-  KOKKOS_INLINE_FUNCTION friend constexpr const tuple_element_t<I,
-                                                                tuple<Ts...>>&
+  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
+      (I < sizeof...(Ts)), const typename tuple_element<I, tuple<Ts...>>::type&>
   get(const tuple<Ts...>& t) noexcept;
   template <std::size_t I, class... Ts>
-    requires(I < sizeof...(Ts))
-  KOKKOS_INLINE_FUNCTION friend constexpr const tuple_element_t<I,
-                                                                tuple<Ts...>>&&
+  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
+      (I < sizeof...(Ts)),
+      const typename tuple_element<I, tuple<Ts...>>::type&&>
   get(const tuple<Ts...>&& t) noexcept;
   template <class T, class... Ts>
-    requires(std::is_same_v<T, Ts> || ...)
-  KOKKOS_INLINE_FUNCTION friend constexpr T& get(tuple<Ts...>& t) noexcept;
+  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
+      (std::is_same_v<T, Ts> || ...), T&>
+  get(tuple<Ts...>& t) noexcept;
   template <class T, class... Ts>
-    requires(std::is_same_v<T, Ts> || ...)
-  KOKKOS_INLINE_FUNCTION friend constexpr T&& get(tuple<Ts...>&& t) noexcept;
+  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
+      (std::is_same_v<T, Ts> || ...), T&&>
+  get(tuple<Ts...>&& t) noexcept;
   template <class T, class... Ts>
-    requires(std::is_same_v<T, Ts> || ...)
-  KOKKOS_INLINE_FUNCTION friend constexpr const T& get(
-      const tuple<Ts...>& t) noexcept;
+  KOKKOS_INLINE_FUNCTION friend constexpr std::enable_if_t<
+      (std::is_same_v<T, Ts> || ...), const T&>
+  get(const tuple<Ts...>& t) noexcept;
   template <class T, class... Ts>
-    requires(std::is_same_v<T, Ts> || ...)
-  KOKKOS_INLINE_FUNCTION friend constexpr const T&& get(
-      const tuple<Ts...>&& t) noexcept;
+  KOKKOS_INLINE_FUNCTION friend constexpr const std::enable_if_t<
+      (std::is_same_v<T, Ts> || ...), const T&&>
+  get(const tuple<Ts...>&& t) noexcept;
+  // NOLINTEND(modernize-use-constraints)
 
   // tuple.rel
 #if defined(CEXA_TUPLE_IMPL_USE_SPACESHIP_OPERATOR)
@@ -1004,15 +1011,16 @@ template <class T1, class T2>
 tuple(std::pair<T1, T2>) -> tuple<T1, T2>;
 
 // tuple.elem
+// NOLINTBEGIN(modernize-use-constraints)
 template <std::size_t I, class... Types>
-  requires(I < sizeof...(Types))
-KOKKOS_INLINE_FUNCTION constexpr tuple_element_t<I, tuple<Types...>>& get(
-    tuple<Types...>& t) noexcept {
+KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
+    (I < sizeof...(Types)), typename tuple_element<I, tuple<Types...>>::type&>
+get(tuple<Types...>& t) noexcept {
   return t.m_values.template get_value<I>();
 }
 template <std::size_t I, class... Types>
-  requires(I < sizeof...(Types))
-KOKKOS_INLINE_FUNCTION constexpr tuple_element_t<I, tuple<Types...>>&&
+KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
+    (I < sizeof...(Types)), typename tuple_element<I, tuple<Types...>>::type&&>
 // NOTE: this doesn't work with std::move
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 get(tuple<Types...>&& t) noexcept {
@@ -1020,43 +1028,47 @@ get(tuple<Types...>&& t) noexcept {
       t.m_values.template get_value<I>());
 }
 template <std::size_t I, class... Types>
-  requires(I < sizeof...(Types))
-KOKKOS_INLINE_FUNCTION constexpr const tuple_element_t<I, tuple<Types...>>& get(
-    const tuple<Types...>& t) noexcept {
+KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
+    (I < sizeof...(Types)),
+    const typename tuple_element<I, tuple<Types...>>::type&>
+get(const tuple<Types...>& t) noexcept {
   return t.m_values.template get_value<I>();
 }
 template <std::size_t I, class... Types>
-  requires(I < sizeof...(Types))
-KOKKOS_INLINE_FUNCTION constexpr const tuple_element_t<I, tuple<Types...>>&&
+KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
+    (I < sizeof...(Types)),
+    const typename tuple_element<I, tuple<Types...>>::type&&>
 get(const tuple<Types...>&& t) noexcept {
   return static_cast<const tuple_element_t<I, tuple<Types...>>&&>(
       t.m_values.template get_value<I>());
 }
 template <class T, class... Types>
-  requires(std::is_same_v<T, Types> || ...)
-KOKKOS_INLINE_FUNCTION constexpr T& get(tuple<Types...>& t) noexcept {
+KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
+    (std::is_same_v<T, Types> || ...), T&>
+get(tuple<Types...>& t) noexcept {
   return t.m_values.template get_value<T>();
 }
 template <class T, class... Types>
-  requires(std::is_same_v<T, Types> || ...)
-KOKKOS_INLINE_FUNCTION constexpr T&&
+KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
+    (std::is_same_v<T, Types> || ...), T&&>
 // NOTE: this doesn't work with std::move
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 get(tuple<Types...>&& t) noexcept {
   return static_cast<T&&>(t.m_values.template get_value<T>());
 }
 template <class T, class... Types>
-  requires(std::is_same_v<T, Types> || ...)
-KOKKOS_INLINE_FUNCTION constexpr const T& get(
-    const tuple<Types...>& t) noexcept {
+KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<
+    (std::is_same_v<T, Types> || ...), const T&>
+get(const tuple<Types...>& t) noexcept {
   return t.m_values.template get_value<T>();
 }
 template <class T, class... Types>
-  requires(std::is_same_v<T, Types> || ...)
-KOKKOS_INLINE_FUNCTION constexpr const T&& get(
-    const tuple<Types...>&& t) noexcept {
+KOKKOS_INLINE_FUNCTION constexpr const std::enable_if_t<
+    (std::is_same_v<T, Types> || ...), const T&&>
+get(const tuple<Types...>&& t) noexcept {
   return static_cast<const T&&>(t.m_values.template get_value<T>());
 }
+// NOLINTEND(modernize-use-constraints)
 
 template <class... Types>
   requires(std::is_swappable_v<Types> && ...)
