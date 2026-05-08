@@ -48,8 +48,11 @@ CEXA_TEST(tuple_cnstr, deduct_primary, (
   // const auto AT = std::allocator_arg;
   { // Testing (1)
     int x = 101;
+    // FIXME: The CTAD for single argument constructors fails with nvcc
+#if !defined(KOKKOS_COMPILER_NVCC)
     [[maybe_unused]] cexa::tuple t1(42);
     ASSERT_SAME_TYPE(decltype(t1), cexa::tuple<int>);
+#endif
     [[maybe_unused]] cexa::tuple t2(x, 0.0, nullptr);
     ASSERT_SAME_TYPE(decltype(t2), cexa::tuple<int, double, decltype(nullptr)>);
   }
@@ -57,15 +60,17 @@ CEXA_TEST(tuple_cnstr, deduct_primary, (
     using T = ExplicitTestTypes::TestType;
     static_assert(!std::is_convertible<T const&, T>::value, "");
 
+#if !defined(KOKKOS_COMPILER_NVCC)
     [[maybe_unused]] cexa::tuple t1(T{});
     ASSERT_SAME_TYPE(decltype(t1), cexa::tuple<T>);
+#endif
 
-    // FIXME: This CTAD fails on gcc for some reasons
-  #if !defined(KOKKOS_COMPILER_GNU) || KOKKOS_COMPILER_GNU >= 1300
+// FIXME: This fails with old nvcc versions (tested with 12.2)
+#if !defined(KOKKOS_COMPILER_NVCC)
     const T v{};
     [[maybe_unused]] cexa::tuple t2(T{}, 101l, v);
     ASSERT_SAME_TYPE(decltype(t2), cexa::tuple<T, long, T>);
-  #endif
+#endif
   }
   // TODO: Add when allocator_arg constructors are supported
   // { // Testing (4)

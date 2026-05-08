@@ -2,22 +2,12 @@
 // SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 #pragma once
 
-#include "macros.hpp"
 #include <Kokkos_Macros.hpp>
 
 namespace cexa {
 namespace impl {
-// FIXME: address this
-// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
 struct ignore_t {
-  KOKKOS_DEFAULTED_FUNCTION constexpr ignore_t() = default;
-  KOKKOS_DEFAULTED_FUNCTION
-#if defined(CEXA_HAS_CXX20)
-  constexpr
-#endif
-      ~ignore_t() = default;
-
-  template <typename T>
+  template <class T>
   KOKKOS_INLINE_FUNCTION constexpr const ignore_t& operator=(
       const T&) const noexcept {
     return *this;

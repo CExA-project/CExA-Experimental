@@ -93,7 +93,7 @@ struct TrackMove
     bool moved_from;
 };
 
-KOKKOS_INLINE_FUNCTION TEST_CONSTEXPR_CXX20
+KOKKOS_INLINE_FUNCTION constexpr
 bool test()
 {
     {
@@ -143,9 +143,7 @@ TEST(tuple_assign, convert_move_host) {
 // clang-format off
 CEXA_TEST(tuple_assign, convert_move, (
     test();
-#if TEST_STD_VER >= 20
     static_assert(test());
-#endif
 
     {
         typedef cexa::tuple<long, char, D> T0;

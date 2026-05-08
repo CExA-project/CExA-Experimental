@@ -46,21 +46,21 @@ KOKKOS_INLINE_FUNCTION void test_constexpr_evaluation()
     {
         using Tup = cexa::tuple<>;
         using Fn = int(&)();
-        constexpr Tup t;
+        [[maybe_unused]] constexpr Tup t;
         static_assert(cexa::apply(static_cast<Fn>(constexpr_sum_fn), t) == 0, "");
         static_assert(cexa::apply(sum_obj, t) == 0, "");
     }
     {
         using Tup = cexa::tuple<int>;
         using Fn = int(&)(int);
-        constexpr Tup t(42);
+        [[maybe_unused]] constexpr Tup t(42);
         static_assert(cexa::apply(static_cast<Fn>(constexpr_sum_fn), t) == 42, "");
         static_assert(cexa::apply(sum_obj, t) == 42, "");
     }
     {
         using Tup = cexa::tuple<int, long>;
         using Fn = int(&)(int, int);
-        constexpr Tup t(42, 101);
+        [[maybe_unused]] constexpr Tup t(42, 101);
         static_assert(cexa::apply(static_cast<Fn>(constexpr_sum_fn), t) == 143, "");
         static_assert(cexa::apply(sum_obj, t) == 143, "");
     }
@@ -74,7 +74,7 @@ KOKKOS_INLINE_FUNCTION void test_constexpr_evaluation()
     {
         using Tup = cexa::tuple<int, long, int>;
         using Fn = int(&)(int, int, int);
-        constexpr Tup t(42, 101, -1);
+        [[maybe_unused]] constexpr Tup t(42, 101, -1);
         static_assert(cexa::apply(static_cast<Fn>(constexpr_sum_fn), t) == 142, "");
         static_assert(cexa::apply(sum_obj, t) == 142, "");
     }
@@ -195,24 +195,20 @@ KOKKOS_INLINE_FUNCTION void test_noexcept()
     {
         // test that the functions noexcept-ness is propagated
         using Tup = cexa::tuple<int, const char*, long>;
-        Tup t;
-// #if TEST_STD_VER >= 23
-//         ASSERT_NOEXCEPT(cexa::apply(nec, t));
-// #else
-        LIBCPP_ASSERT_NOEXCEPT(cexa::apply(nec, t));
-// #endif
+        [[maybe_unused]] Tup t;
+#if TEST_STD_VER >= 23
+        ASSERT_NOEXCEPT(cexa::apply(nec, t));
+#endif
         ASSERT_NOT_NOEXCEPT(cexa::apply(tc, t));
     }
     {
         // test that the noexcept-ness of the argument conversions is checked.
         using Tup = cexa::tuple<NothrowMoveable, int>;
-        Tup t;
+        [[maybe_unused]] Tup t;
         ASSERT_NOT_NOEXCEPT(cexa::apply(nec, t));
-// #if TEST_STD_VER >= 23
-//         ASSERT_NOEXCEPT(cexa::apply(nec, std::move(t)));
-// #else
-        LIBCPP_ASSERT_NOEXCEPT(cexa::apply(nec, std::move(t)));
-// #endif
+#if TEST_STD_VER >= 23
+        ASSERT_NOEXCEPT(cexa::apply(nec, std::move(t)));
+#endif
     }
 }
 
@@ -250,8 +246,8 @@ namespace ReturnTypeTest {
         using RawInvokeResult = decltype(f(index<Func>{}));
         static_assert(std::is_same<RawInvokeResult, Expect>::value, "");
         using FnType = RawInvokeResult (*) (index<Func>);
-        FnType fn = f;
-        cexa::tuple<index<Func>> t; ((void)t);
+        [[maybe_unused]] FnType fn = f;
+        [[maybe_unused]] cexa::tuple<index<Func>> t;
         using InvokeResult = decltype(cexa::apply(fn, t));
         static_assert(std::is_same<InvokeResult, Expect>::value, "");
     }

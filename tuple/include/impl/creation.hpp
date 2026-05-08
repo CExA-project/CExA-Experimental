@@ -13,7 +13,7 @@ namespace cexa {
 
 // tuple.creation
 template <class... TTypes>
-KOKKOS_INLINE_FUNCTION constexpr tuple<impl::unwrap_ref_decay_t<TTypes>...>
+KOKKOS_INLINE_FUNCTION constexpr tuple<std::unwrap_ref_decay_t<TTypes>...>
 make_tuple(TTypes&&... t) {
   return {std::forward<TTypes>(t)...};
 }
@@ -66,18 +66,20 @@ struct cartesian_product
                                  std::remove_reference_t<Tuples>>::value>...> {
 };
 
+// We might call std::get depending on the types in Tuples
+CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
 template <class... Tuples, std::size_t... Ints1, std::size_t... Ints2>
 KOKKOS_FORCEINLINE_FUNCTION constexpr tuple<cexa::tuple_element_t<
     Ints1,
-    impl::remove_cvref_t<cexa::tuple_element_t<Ints2, tuple<Tuples...>>>>...>
+    std::remove_cvref_t<cexa::tuple_element_t<Ints2, tuple<Tuples...>>>>...>
 tuple_cat_impl(tuple<Tuples...>&& tuples, std::index_sequence<Ints1...>,
                std::index_sequence<Ints2...>) {
   return {get<Ints1>(std::move(get<Ints2>(tuples)))...};
 }
 }  // namespace impl
 
-template <class... Tuples,
-          class = std::enable_if_t<(impl::is_tuple_like<Tuples>::value && ...)>>
+template <class... Tuples>
+  requires(impl::is_tuple_like<Tuples>::value && ...)
 KOKKOS_INLINE_FUNCTION constexpr auto tuple_cat(Tuples&&... tuples) {
   using cartesian_product_t = impl::cartesian_product<Tuples...>;
   return impl::tuple_cat_impl(cexa::forward_as_tuple(tuples...),

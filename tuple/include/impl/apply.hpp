@@ -9,6 +9,10 @@
 #include "traits.hpp"
 #include "tuple.hpp"
 
+#if defined(CEXA_HAS_CXX23)
+#include <functional>
+#endif
+
 namespace cexa {
 
 namespace impl {
@@ -21,7 +25,7 @@ template <class C, class Pointed, class Object, class... Args>
 KOKKOS_INLINE_FUNCTION constexpr decltype(auto) invoke_ptr(Pointed C::* member,
                                                            Object&& object,
                                                            Args&&... args) {
-  using object_t            = remove_cvref_t<Object>;
+  using object_t            = std::remove_cvref_t<Object>;
   constexpr bool is_wrapped = is_reference_wrapper_v<object_t>;
   constexpr bool is_derived_object =
       std::is_same_v<C, object_t> || std::is_base_of_v<C, object_t>;
@@ -48,9 +52,11 @@ KOKKOS_INLINE_FUNCTION constexpr decltype(auto) invoke_ptr(Pointed C::* member,
   }
 }
 
+// f may be a host function
+CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
 template <class F, class... Args>
 KOKKOS_INLINE_FUNCTION constexpr decltype(auto) invoke(F&& f, Args&&... args) {
-  if constexpr (std::is_member_pointer_v<remove_cvref_t<F>>) {
+  if constexpr (std::is_member_pointer_v<std::remove_cvref_t<F>>) {
     return invoke_ptr(f, std::forward<Args>(args)...);
   } else {
     return (std::forward<F>(f))(std::forward<Args>(args)...);
@@ -63,13 +69,15 @@ KOKKOS_INLINE_FUNCTION constexpr decltype(auto) apply(
   return invoke(std::forward<F>(f), cexa::get<I>(std::forward<Tuple>(t))...);
 }
 
+// This might call a host only constructor
+CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
 template <class T, class Tuple, std::size_t... I>
 KOKKOS_INLINE_FUNCTION constexpr T make_from_tuple(Tuple&& t,
                                                    std::index_sequence<I...>) {
   return T(cexa::get<I>(std::forward<Tuple>(t))...);
 }
 
-template <class U, class T, std::size_t = tuple_size_v<impl::remove_cvref_t<T>>>
+template <class U, class T, std::size_t = tuple_size_v<std::remove_cvref_t<T>>>
 struct make_tuple_constraint : std::true_type {};
 
 template <class U, class Tuple>
@@ -78,7 +86,7 @@ struct make_tuple_constraint<U, Tuple, 1> {
       U, decltype(get<0>(std::declval<Tuple>()))>;
 };
 
-template <class T, class Tuple, class seq>
+template <class T, class Tuple, class Seq>
 struct is_constructible_from_tuple;
 
 template <class T, class Tuple, std::size_t... Ints>
@@ -91,28 +99,47 @@ template <class T, class Tuple>
 inline constexpr bool is_constructible_from_tuple_v =
     is_constructible_from_tuple<T, Tuple,
                                 std::make_index_sequence<tuple_size_v<
-                                    impl::remove_cvref_t<Tuple>>>>::value;
+                                    std::remove_cvref_t<Tuple>>>>::value;
 
+#if defined(CEXA_HAS_CXX23)
+template <class F, class Tuple, class Other>
+struct is_nothrow_applicable : std::false_type {};
+
+template <class F, class Tuple, std::size_t... Is>
+struct is_nothrow_applicable<F, Tuple, std::index_sequence<Is...>> {
+  static constexpr bool value = noexcept(
+      std::invoke(std::declval<F>(), get<Is>(std::declval<Tuple>())...));
+};
+
+template <class F, class Tuple>
+constexpr bool is_nothrow_applicable_v =
+    is_nothrow_applicable<F, Tuple,
+                          decltype(std::make_index_sequence<tuple_size_v<
+                                       std::remove_cvref_t<Tuple>>>{})>::value;
+#endif
 }  // namespace impl
 
 template <class F, class Tuple>
-KOKKOS_INLINE_FUNCTION constexpr decltype(auto) apply(F&& f, Tuple&& t) {
-  static_assert(impl::is_tuple_v<impl::remove_cvref_t<Tuple>>,
+KOKKOS_INLINE_FUNCTION constexpr decltype(auto) apply(F&& f, Tuple&& t)
+#if defined(CEXA_HAS_CXX23)
+    noexcept(impl::is_nothrow_applicable_v<F, Tuple>)
+#endif
+{
+  static_assert(impl::is_tuple_v<std::remove_cvref_t<Tuple>>,
                 "cexa::apply can only be called with cexa::tuple");
   return impl::apply(
       std::forward<F>(f), std::forward<Tuple>(t),
       std::make_index_sequence<tuple_size_v<std::remove_reference_t<Tuple>>>{});
 }
 
-template <
-    class T, class Tuple,
-    class = std::enable_if_t<impl::is_constructible_from_tuple_v<T, Tuple>>>
+template <class T, class Tuple>
+  requires impl::is_constructible_from_tuple_v<T, Tuple>
 KOKKOS_INLINE_FUNCTION constexpr T make_from_tuple(Tuple&& t) {
-  static_assert(impl::is_tuple_v<impl::remove_cvref_t<Tuple>>,
+  static_assert(impl::is_tuple_v<std::remove_cvref_t<Tuple>>,
                 "cexa::make_from_tuple can only be called with cexa::tuple");
   constexpr std::size_t size = tuple_size_v<std::remove_reference_t<Tuple>>;
   static_assert(
-      impl::make_tuple_constraint<T, impl::remove_cvref_t<Tuple>>::value);
+      impl::make_tuple_constraint<T, std::remove_cvref_t<Tuple>>::value);
   return impl::make_from_tuple<T>(std::forward<Tuple>(t),
                                   std::make_index_sequence<size>{});
 }

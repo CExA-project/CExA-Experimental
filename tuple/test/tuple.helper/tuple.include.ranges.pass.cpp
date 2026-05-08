@@ -20,7 +20,6 @@
 
 #include <tuple.hpp>
 
-#if defined(CEXA_HAS_CXX20)
 #include <ranges>
 
 // Note: make sure to not include `<utility>` (or any other header including `<utility>`) because it also makes some
@@ -69,6 +68,3 @@ int main(int, char**) {
 
   return 0;
 }
-#else
-int main() {}
-#endif

@@ -38,7 +38,7 @@ struct TrackDtor {
   KOKKOS_INLINE_FUNCTION TEST_CONSTEXPR_CXX14 TrackDtor(TrackDtor&& that) : count_(that.count_) {
     that.count_ = nullptr;
   }
-  KOKKOS_INLINE_FUNCTION TEST_CONSTEXPR_CXX20 ~TrackDtor() {
+  KOKKOS_INLINE_FUNCTION constexpr ~TrackDtor() {
     if (count_) ++*count_;
   }
 };

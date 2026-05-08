@@ -5,9 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <type_traits>  // integral_constant
-#if defined(CEXA_HAS_CXX20)
 #include <ranges>
-#endif
 
 #include "tuple_fwd.hpp"
 #include "traits.hpp"
@@ -65,7 +63,6 @@ struct tuple_element<I, std::array<T, N>> {
   using type = T;
 };
 
-#if defined(CEXA_HAS_CXX20)
 template <class I, class S, std::ranges::subrange_kind K>
 struct tuple_element<0, std::ranges::subrange<I, S, K>> {
   using type = I;
@@ -75,10 +72,9 @@ template <class I, class S, std::ranges::subrange_kind K>
 struct tuple_element<1, std::ranges::subrange<I, S, K>> {
   using type = S;
 };
-#endif
 
 template <std::size_t I, class T>
-using tuple_element_t = typename tuple_element<I, T>::type;
+using tuple_element_t = tuple_element<I, T>::type;
 
 // tuple_size
 template <class T>
@@ -108,11 +104,9 @@ struct tuple_size<std::pair<T, U>> : std::integral_constant<std::size_t, 2> {};
 template <class T, std::size_t N>
 struct tuple_size<std::array<T, N>> : std::integral_constant<std::size_t, N> {};
 
-#if defined(CEXA_HAS_CXX20)
 template <class I, class S, std::ranges::subrange_kind K>
 struct tuple_size<std::ranges::subrange<I, S, K>>
     : std::integral_constant<std::size_t, 2> {};
-#endif
 
 template <class T>
 inline constexpr std::size_t tuple_size_v = tuple_size<T>::value;
@@ -120,7 +114,7 @@ inline constexpr std::size_t tuple_size_v = tuple_size<T>::value;
 
 // NOTE: specializations of std::tuple_size and std::tuple_element for user
 // defined types are allowed.
-// NOLINTBEGIN(cert-dcl58-cpp)
+// NOLINTBEGIN(cert-dcl58-cpp,bugprone-std-namespace-modification)
 template <typename... Types>
 struct std::tuple_size<cexa::tuple<Types...>>
     : std::integral_constant<std::size_t, sizeof...(Types)> {};
@@ -128,4 +122,4 @@ struct std::tuple_size<cexa::tuple<Types...>>
 template <std::size_t I, typename... Types>
 struct std::tuple_element<I, cexa::tuple<Types...>>
     : cexa::tuple_element<I, cexa::tuple<Types...>> {};
-// NOLINTEND(cert-dcl58-cpp)
+// NOLINTEND(cert-dcl58-cpp,bugprone-std-namespace-modification)

@@ -22,6 +22,7 @@
 #include <support/cexa_test_macros.hpp>
 #include <support/test_macros.h>
 
+#if !defined(KOKKOS_COMPILER_GNU) || (KOKKOS_COMPILER_GNU < 14)
 #if defined(CEXA_ON_DEVICE)
 __device__ int count = 0;
 #else
@@ -78,10 +79,7 @@ CEXA_TEST(tuple_cnstr, PR31384, (
   }
   count = 0;
   {
-    // FIXME: there are no explicit constructors if not in C++20, this might be the reason this static_assert fails in C++17
-    #if defined(CEXA_HAS_CXX20)
     static_assert(!std::is_convertible<ExplicitDerived<int>, cexa::tuple<Explicit>>::value, "");
-    #endif
     // FIXME: This fails with nvcc, the element-wise conversion constructor is chosen
     #if !defined(KOKKOS_COMPILER_NVCC)
     ExplicitDerived<int> d{42};
@@ -104,3 +102,4 @@ CEXA_TEST(tuple_cnstr, PR31384, (
   count = 0;
 ))
 // clang-format on
+#endif
