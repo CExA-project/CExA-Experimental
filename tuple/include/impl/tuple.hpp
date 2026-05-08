@@ -198,12 +198,16 @@ struct store<T, Types...> {
   CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   KOKKOS_DEFAULTED_FUNCTION constexpr ~store() = default;
 
+  // FIXME: using requires here leads to compile errors with old nvcc versions
+  // (tested with 12.2)
+  // NOLINTBEGIN(modernize-use-constraints)
   CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
-  template <class U, class... UTypes>
-    requires(sizeof...(UTypes) == sizeof...(Types) &&
-             !(std::is_same_v<U, T> &&
-               (std::is_same_v<UTypes, Types> && ...)) &&
-             std::is_assignable_v<T&, const U&>)
+  template <
+      class U, class... UTypes,
+      class = std::enable_if_t<sizeof...(UTypes) == sizeof...(Types) &&
+                               !(std::is_same_v<U, T> &&
+                                 (std::is_same_v<UTypes, Types> && ...)) &&
+                               std::is_assignable_v<T&, const U&>>>
   KOKKOS_INLINE_FUNCTION constexpr store& operator=(
       const store<U, UTypes...>& other) {
     value = other.value;
@@ -212,17 +216,19 @@ struct store<T, Types...> {
   }
 
   CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
-  template <class U, class... UTypes>
-    requires(sizeof...(UTypes) == sizeof...(Types) &&
-             !(std::is_same_v<U, T> &&
-               (std::is_same_v<UTypes, Types> && ...)) &&
-             std::is_assignable_v<T&, U &&>)
+  template <
+      class U, class... UTypes,
+      class = std::enable_if_t<sizeof...(UTypes) == sizeof...(Types) &&
+                               !(std::is_same_v<U, T> &&
+                                 (std::is_same_v<UTypes, Types> && ...)) &&
+                               std::is_assignable_v<T&, U&&>>>
   KOKKOS_INLINE_FUNCTION constexpr store& operator=(
       store<U, UTypes...>&& other) {
     value = FWD(other.value);
     rest  = std::move(other.rest);
     return *this;
   }
+  // NOLINTEND(modernize-use-constraints)
 
   CEXA_NVCC_HOST_DEVICE_CHECK_DISABLE
   // FIXME: defaulting this operator leads to compile errors where the
@@ -771,9 +777,14 @@ class tuple {
   }
 #endif
 
-  template <class... UTypes>
-    requires(sizeof...(Types) == sizeof...(UTypes)) &&
-            std::conjunction_v<std::is_assignable<Types&, const UTypes&>...>
+  // FIXME: using requires here leads to compile errors with old nvcc versions
+  // (tested with 12.2)
+  // NOLINTBEGIN(modernize-use-constraints)
+  template <
+      class... UTypes,
+      class = std::enable_if_t<
+          sizeof...(Types) == sizeof...(UTypes) &&
+          std::conjunction_v<std::is_assignable<Types&, const UTypes&>...>>>
   KOKKOS_INLINE_FUNCTION constexpr tuple&
   operator=(const tuple<UTypes...>& other) noexcept(
       (std::is_nothrow_assignable_v<Types&, const UTypes&> && ...)) {
@@ -781,15 +792,17 @@ class tuple {
     return *this;
   }
 
-  template <class... UTypes>
-    requires(sizeof...(Types) == sizeof...(UTypes)) &&
-            std::conjunction_v<std::is_assignable<Types&, UTypes>...>
+  template <class... UTypes,
+            class = std::enable_if_t<
+                sizeof...(Types) == sizeof...(UTypes) &&
+                std::conjunction_v<std::is_assignable<Types&, UTypes>...>>>
   KOKKOS_INLINE_FUNCTION constexpr tuple&
   operator=(tuple<UTypes...>&& other) noexcept(
       (std::is_nothrow_assignable_v<Types&, UTypes> && ...)) {
     m_values = std::move(other.m_values);
     return *this;
   }
+  // NOLINTEND(modernize-use-constraints)
 
 #if defined(CEXA_HAS_CXX23)
   template <class... UTypes>

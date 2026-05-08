@@ -246,8 +246,8 @@ namespace ReturnTypeTest {
         using RawInvokeResult = decltype(f(index<Func>{}));
         static_assert(std::is_same<RawInvokeResult, Expect>::value, "");
         using FnType = RawInvokeResult (*) (index<Func>);
-        FnType fn = f;
-        cexa::tuple<index<Func>> t; ((void)t);
+        [[maybe_unused]] FnType fn = f;
+        [[maybe_unused]] cexa::tuple<index<Func>> t;
         using InvokeResult = decltype(cexa::apply(fn, t));
         static_assert(std::is_same<InvokeResult, Expect>::value, "");
     }
