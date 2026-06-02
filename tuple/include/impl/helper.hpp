@@ -4,7 +4,7 @@
 
 #include <array>
 #include <cstddef>
-#include <type_traits>  // integral_constant
+#include <type_traits>
 #include <ranges>
 
 #include "tuple_fwd.hpp"
