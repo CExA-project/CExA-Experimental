@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2026 CExA-project
+SPDX-FileCopyrightText: Copyright (C) The CExA project
 
 SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
 -->

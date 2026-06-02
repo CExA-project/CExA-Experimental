@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 CExA-project
+# SPDX-FileCopyrightText: Copyright (C) The CExA project
 # SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 find_package(GTest QUIET)
 if (NOT GTest_FOUND)
