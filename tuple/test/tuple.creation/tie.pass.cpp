@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 CExA-project
+// SPDX-FileCopyrightText: Copyright (C) The CExA project
 // SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 //
 // This is a modified version of the tuple tests from llvm's libcxx tests,
@@ -39,11 +39,9 @@ KOKKOS_INLINE_FUNCTION constexpr bool test_tie()
         CEXA_EXPECT_EQ(&cexa::get<1>(res), &cexa::ignore);
         CEXA_EXPECT_EQ(&cexa::get<2>(res), &f);
 
-#if TEST_STD_VER >= 20
         res = cexa::make_tuple(101, nullptr, -1.0);
         CEXA_EXPECT_EQ(i, 101);
         CEXA_EXPECT_EQ(f, -1.0);
-#endif
     }
     return true;
 }

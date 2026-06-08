@@ -26,12 +26,14 @@ Checks: >
   -cppcoreguidelines-narrowing-conversions,
   -cppcoreguidelines-non-private-member-variables-in-classes,
   -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
   -cppcoreguidelines-pro-bounds-constant-array-index,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -cppcoreguidelines-pro-type-member-init,
   -cppcoreguidelines-pro-type-reinterpret-cast,
   google-*,
   -google-readability-todo,
+  -google-runtime-float,
   -google-runtime-int,
   hicpp-*,
   -hicpp-explicit-conversions,
@@ -48,7 +50,7 @@ Checks: >
   modernize-*,
   -modernize-pass-by-value,
   -modernize-use-auto,
-  -modernize-use-constraints,
+  -modernize-use-integer-sign-comparison,
   -modernize-use-nodiscard,
   -modernize-use-trailing-return-type,
   performance-*,
@@ -58,23 +60,20 @@ Checks: >
   -portability-avoid-pragma-once,
   -portability-template-virtual-member-function,
   readability-*,
-  -readability-else-after-return,
   -readability-function-cognitive-complexity,
-  -readability-identifier-naming,
   -readability-identifier-length,
   -readability-implicit-bool-conversion,
   -readability-magic-numbers,
   -readability-math-missing-parentheses,
   -readability-named-parameter,
   -readability-redundant-access-specifiers,
-  -readability-use-concise-preprocessor-directives,
-  -cert-oop54-cpp
+  -readability-use-concise-preprocessor-directives
 WarningsAsErrors: '*'
 CheckOptions:
   - key: cppcoreguidelines-rvalue-reference-param-not-moved.AllowPartialMove
     value: 'true'
   - key: readability-identifier-naming.ClassCase
-    value: CamelCase
+    value: lower_case
   - key: readability-identifier-naming.FunctionCase
     value: lower_case
   - key: readability-identifier-naming.FunctionIgnoredRegexp
@@ -88,8 +87,6 @@ CheckOptions:
   - key: readability-identifier-naming.PrivateMemberPrefix
     value: m_
   - key: readability-identifier-naming.StructCase
-    value: CamelCase
-  - key: readability-identifier-naming.StructIgnoredRegexp
-    value: '(is_.*|sum|prod|land|lor|band|bor|bxor|min|max|minmax|coordinate_of|chunk_traits|rebind|kwArgs_fft)'
+    value: lower_case
   - key: readability-identifier-naming.TemplateParameterCase
     value: CamelCase

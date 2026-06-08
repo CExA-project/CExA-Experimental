@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 CExA-project
+// SPDX-FileCopyrightText: Copyright (C) The CExA project
 // SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 //
 // This is a modified version of the tuple tests from llvm's libcxx tests,
@@ -62,7 +62,7 @@ struct CountAssign {
   KOKKOS_INLINE_FUNCTION CountAssign& operator=(CountAssign&&) { ++moved; return *this; }
 };
 
-KOKKOS_INLINE_FUNCTION TEST_CONSTEXPR_CXX20
+KOKKOS_INLINE_FUNCTION constexpr
 bool test()
 {
     {
@@ -116,10 +116,7 @@ bool test()
 // clang-format off
 CEXA_TEST(tuple_assign, move, (
     test();
-    // TODO: see if this is also constexpr in 17
-#if TEST_STD_VER >= 20
     static_assert(test());
-#endif
 
     {
         // test that the implicitly generated move assignment operator

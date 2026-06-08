@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 CExA-project
+// SPDX-FileCopyrightText: Copyright (C) The CExA project
 // SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 //
 // This is a modified version of the tuple tests from llvm's libcxx tests,
@@ -24,7 +24,6 @@
 // UNSUPPORTED: c++03, c++11, c++14, c++17
 
 #include <tuple.hpp>
-#if defined(CEXA_HAS_CXX20)
 #include <array>
 #include <complex>
 #include <ranges>
@@ -50,6 +49,5 @@ static_assert(!can_compare<T1, std::complex<double>>);
 static_assert(!can_compare<std::complex<double>, T1>);
 static_assert(!can_compare<T1P, std::ranges::subrange<int*>>);
 static_assert(!can_compare<std::ranges::subrange<int*>, T1P>);
-#endif
 
 int main() {}

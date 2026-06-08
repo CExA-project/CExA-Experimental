@@ -60,8 +60,8 @@ public:
     template<class T>
     friend void operator,(T, MoveOnly const&) = delete;
 
-  // FIXME: The default std::swap seems to not work on on cuda 12.2 + gcc 11.2
-#if defined(KOKKOS_COMPILER_NVCC) && defined(KOKKOS_COMPILER_GNU) && KOKKOS_COMPILER_GNU < 1200
+  // FIXME: The default std::swap seems to not work with nvcc
+#if defined(KOKKOS_COMPILER_NVCC)
     KOKKOS_INLINE_FUNCTION friend constexpr void swap(MoveOnly& lhs, MoveOnly& rhs) {
         auto tmp = lhs.data_;
         lhs.data_ = rhs.data_;

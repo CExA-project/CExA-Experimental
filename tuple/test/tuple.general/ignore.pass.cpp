@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 CExA-project
+// SPDX-FileCopyrightText: Copyright (C) The CExA project
 // SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 //
 // This is a modified version of the tuple tests from llvm's libcxx tests,
@@ -51,7 +51,7 @@ KOKKOS_INLINE_FUNCTION constexpr bool test() {
   { // Test that cexa::ignore provides copy/move assignment
     auto copy  = cexa::ignore;
     copy       = cexa::ignore;
-    auto moved = cexa::ignore;
+    [[maybe_unused]] auto moved = cexa::ignore;
     moved      = std::move(copy);
   }
 

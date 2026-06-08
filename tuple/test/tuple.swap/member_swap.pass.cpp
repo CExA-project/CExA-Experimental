@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 CExA-project
+// SPDX-FileCopyrightText: Copyright (C) The CExA project
 // SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 //
 // This is a modified version of the tuple tests from llvm's libcxx tests,
@@ -24,7 +24,7 @@
 #include <support/test_macros.h>
 #include <support/MoveOnly.h>
 
-KOKKOS_INLINE_FUNCTION TEST_CONSTEXPR_CXX20
+KOKKOS_INLINE_FUNCTION constexpr
 bool test()
 {
     {

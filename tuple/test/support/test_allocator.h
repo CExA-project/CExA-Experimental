@@ -21,7 +21,7 @@
 #include "test_macros.h"
 
 template <class Alloc>
-TEST_CONSTEXPR_CXX20 inline typename std::allocator_traits<Alloc>::size_type alloc_max_size(Alloc const& a) {
+constexpr inline typename std::allocator_traits<Alloc>::size_type alloc_max_size(Alloc const& a) {
   typedef std::allocator_traits<Alloc> AT;
   return AT::max_size(a);
 }
@@ -144,7 +144,7 @@ public:
     }
   }
 
-  TEST_CONSTEXPR_CXX20 ~test_allocator() TEST_NOEXCEPT {
+  constexpr ~test_allocator() TEST_NOEXCEPT {
     assert(data_ != test_alloc_base::destructed_value);
     assert(id_ != test_alloc_base::destructed_value);
     if (stats_ != nullptr)
@@ -180,7 +180,7 @@ public:
   TEST_CONSTEXPR size_type max_size() const TEST_NOEXCEPT { return UINT_MAX / sizeof(T); }
 
   template <class U>
-  TEST_CONSTEXPR_CXX20 void construct(pointer p, U&& val) {
+  constexpr void construct(pointer p, U&& val) {
     if (stats_ != nullptr)
       ++stats_->construct_count;
 #if TEST_STD_VER > 17
@@ -251,7 +251,7 @@ public:
         id_(a.id_),
         stats_(a.stats_) {}
 
-  TEST_CONSTEXPR_CXX20 ~test_allocator() TEST_NOEXCEPT {
+  constexpr ~test_allocator() TEST_NOEXCEPT {
     data_ = test_alloc_base::destructed_value;
     id_   = test_alloc_base::destructed_value;
   }
@@ -279,8 +279,8 @@ public:
   template <class U>
   TEST_CONSTEXPR_CXX14 other_allocator(const other_allocator<U>& a) : data_(a.data_) {}
 
-  TEST_CONSTEXPR_CXX20 T* allocate(std::size_t n) { return std::allocator<value_type>().allocate(n); }
-  TEST_CONSTEXPR_CXX20 void deallocate(T* p, std::size_t s) { std::allocator<value_type>().deallocate(p, s); }
+  constexpr T* allocate(std::size_t n) { return std::allocator<value_type>().allocate(n); }
+  constexpr void deallocate(T* p, std::size_t s) { std::allocator<value_type>().deallocate(p, s); }
 
   TEST_CONSTEXPR_CXX14 other_allocator select_on_container_copy_construction() const { return other_allocator(-2); }
 
@@ -346,7 +346,7 @@ public:
   TEST_CONSTEXPR TaggingAllocator(const TaggingAllocator<U>&) {}
 
   template <typename... Args>
-  TEST_CONSTEXPR_CXX20 void construct(Tag_X* p, Args&&... args) {
+  constexpr void construct(Tag_X* p, Args&&... args) {
 #if TEST_STD_VER > 17
     std::construct_at(p, Ctor_Tag{}, std::forward<Args>(args)...);
 #else
@@ -355,12 +355,12 @@ public:
   }
 
   template <typename U>
-  TEST_CONSTEXPR_CXX20 void destroy(U* p) {
+  constexpr void destroy(U* p) {
     p->~U();
   }
 
-  TEST_CONSTEXPR_CXX20 T* allocate(std::size_t n) { return std::allocator<T>().allocate(n); }
-  TEST_CONSTEXPR_CXX20 void deallocate(T* p, std::size_t n) { std::allocator<T>().deallocate(p, n); }
+  constexpr T* allocate(std::size_t n) { return std::allocator<T>().allocate(n); }
+  constexpr void deallocate(T* p, std::size_t n) { std::allocator<T>().deallocate(p, n); }
 };
 
 template <std::size_t MaxAllocs>
@@ -369,7 +369,7 @@ struct limited_alloc_handle {
   void* last_alloc_        = nullptr;
 
   template <class T>
-  TEST_CONSTEXPR_CXX20 T* allocate(std::size_t N) {
+  constexpr T* allocate(std::size_t N) {
     if (N + outstanding_ > MaxAllocs)
       TEST_THROW(std::bad_alloc());
     auto alloc  = std::allocator<T>().allocate(N);
@@ -379,7 +379,7 @@ struct limited_alloc_handle {
   }
 
   template <class T>
-  TEST_CONSTEXPR_CXX20 void deallocate(T* ptr, std::size_t N) {
+  constexpr void deallocate(T* ptr, std::size_t N) {
     if (ptr == last_alloc_) {
       last_alloc_ = nullptr;
       assert(outstanding_ >= N);
@@ -399,7 +399,7 @@ public:
     ++block->ref_count;
   }
 
-  TEST_CONSTEXPR_CXX20 ~thread_unsafe_shared_ptr() {
+  constexpr ~thread_unsafe_shared_ptr() {
     --block->ref_count;
     if (block->ref_count != 0)
       return;
@@ -427,11 +427,11 @@ private:
   control_block* block = nullptr;
 
   template <class U, class... Args>
-  friend TEST_CONSTEXPR_CXX20 thread_unsafe_shared_ptr<U> make_thread_unsafe_shared(Args...);
+  friend constexpr thread_unsafe_shared_ptr<U> make_thread_unsafe_shared(Args...);
 };
 
 template <class T, class... Args>
-TEST_CONSTEXPR_CXX20 thread_unsafe_shared_ptr<T> make_thread_unsafe_shared(Args... args) {
+constexpr thread_unsafe_shared_ptr<T> make_thread_unsafe_shared(Args... args) {
   typedef typename thread_unsafe_shared_ptr<T>::control_block control_block_type;
   typedef std::allocator_traits<std::allocator<control_block_type> > allocator_traits;
 
@@ -465,7 +465,7 @@ public:
     typedef limited_allocator<U, N> other;
   };
 
-  TEST_CONSTEXPR_CXX20 limited_allocator() : handle_(detail::make_thread_unsafe_shared<BuffT>()) {}
+  constexpr limited_allocator() : handle_(detail::make_thread_unsafe_shared<BuffT>()) {}
 
   limited_allocator(limited_allocator const&) = default;
 
@@ -474,8 +474,8 @@ public:
 
   limited_allocator& operator=(const limited_allocator&) = delete;
 
-  TEST_CONSTEXPR_CXX20 pointer allocate(size_type n) { return handle_->template allocate<T>(n); }
-  TEST_CONSTEXPR_CXX20 void deallocate(pointer p, size_type n) { handle_->template deallocate<T>(p, n); }
+  constexpr pointer allocate(size_type n) { return handle_->template allocate<T>(n); }
+  constexpr void deallocate(pointer p, size_type n) { handle_->template deallocate<T>(p, n); }
   TEST_CONSTEXPR size_type max_size() const { return N; }
   TEST_CONSTEXPR const BuffT* getHandle() const { return handle_.get(); }
 };

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 CExA-project
+# SPDX-FileCopyrightText: Copyright (C) The CExA project
 # SPDX-License-Identifier: MIT or Apache-2.0 with LLVM-exception
 cmake_minimum_required(VERSION 3.22)
 
@@ -28,6 +28,7 @@ add_library(cexa.tuple INTERFACE)
 # )
 target_include_directories(cexa.tuple INTERFACE "${CMAKE_CURRENT_LIST_DIR}/include")
 target_link_libraries(cexa.tuple INTERFACE Kokkos::kokkos)
+target_compile_features(cexa.tuple INTERFACE cxx_std_20)
 add_library(cexa::tuple ALIAS cexa.tuple)
 
 if(CEXA_TUPLE_ENABLE_TESTS)
