@@ -8,17 +8,20 @@
     "--network=host"
   ],
   "customizations": {
-      "vscode": { 
+      "vscode": {
           "extensions": [
                "ms-vscode.cpptools-extension-pack",
                "ms-azuretools.vscode-docker"
           ],
-          "settings": { 
+          "settings": {
             "C_Cpp.default.includePath": [
               "/opt/kokkos-install/include/"
+            ],
+            "C_Cpp.default.compileCommands": [
+              "./build/compile_commands.json"
             ]
-          } 
+          }
       }
   },
-  "postStartCommand": "cmake -DKokkos_ROOT=/opt/kokkos-install -DKokkos_ENABLE_OPENMP=ON -B build"
+  "postStartCommand": "cmake -DKokkos_ROOT=/opt/kokkos-install -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B build"
 }
