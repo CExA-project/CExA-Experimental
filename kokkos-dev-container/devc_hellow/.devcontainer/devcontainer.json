@@ -1,0 +1,27 @@
+{
+  "name": "Kokkos with OpenMP backend",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "options": ["--network=host"]
+  },
+  "runArgs": [
+    "--network=host"
+  ],
+  "customizations": {
+      "vscode": {
+          "extensions": [
+               "ms-vscode.cpptools-extension-pack",
+               "ms-azuretools.vscode-docker"
+          ],
+          "settings": {
+            "C_Cpp.default.includePath": [
+              "/opt/kokkos-install/include/"
+            ],
+            "C_Cpp.default.compileCommands": [
+              "./build/compile_commands.json"
+            ]
+          }
+      }
+  },
+  "postStartCommand": "cmake -DKokkos_ROOT=/opt/kokkos-install -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B build"
+}
